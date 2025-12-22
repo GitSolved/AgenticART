@@ -382,10 +382,10 @@ class CVEMatcher:
         logger.info(f"Fetching Android CVEs from NVD (max {max_results})...")
 
         while start_index < max_results:
-            params = {
+            params: dict[str, str] = {
                 "keywordSearch": "Android",
-                "resultsPerPage": min(results_per_page, max_results - start_index),
-                "startIndex": start_index,
+                "resultsPerPage": str(min(results_per_page, max_results - start_index)),
+                "startIndex": str(start_index),
             }
 
             try:
