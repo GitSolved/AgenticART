@@ -7,6 +7,7 @@ Maintains current session state for the Planner/Summarizer loop.
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
+from core.utils import get_utc_now, calculate_duration
 
 
 @dataclass
@@ -14,7 +15,7 @@ class MemoryEntry:
     """Single memory entry."""
     key: str
     value: Any
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=get_utc_now)
     ttl_seconds: Optional[int] = None
 
 
@@ -31,7 +32,7 @@ class WorkingMemory:
 
     def __init__(self):
         self._store: dict[str, MemoryEntry] = {}
-        self.session_start = datetime.now()
+        self.session_start = get_utc_now()
 
     def set(self, key: str, value: Any, ttl: Optional[int] = None):
         """Store a value in working memory."""
@@ -45,7 +46,7 @@ class WorkingMemory:
 
         # Check TTL
         if entry.ttl_seconds:
-            elapsed = (datetime.now() - entry.timestamp).total_seconds()
+            elapsed = calculate_duration(entry.timestamp)
             if elapsed > entry.ttl_seconds:
                 del self._store[key]
                 return default
@@ -76,4 +77,4 @@ class WorkingMemory:
 
     def get_session_duration(self) -> float:
         """Get session duration in seconds."""
-        return (datetime.now() - self.session_start).total_seconds()
+        return calculate_duration(self.session_start)

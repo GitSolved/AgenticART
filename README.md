@@ -1,5 +1,7 @@
 # LLM-AndroidPentest
 
+![CI Status](https://github.com/GitSolved/LLM-AndroidPentest/actions/workflows/ci.yml/badge.svg)
+
 **LLM-Powered Android Penetration Testing Framework**
 
 An automated Android exploitation framework that uses Large Language Models to generate and execute penetration testing scripts. Converts natural language commands into executable exploits.
@@ -224,7 +226,7 @@ The demo validates all six phases from the research paper methodology.
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/LLM-AndroidPentest.git
+git clone https://github.com/GitSolved/LLM-AndroidPentest.git
 cd LLM-AndroidPentest
 
 # Run setup (installs system tools + creates venv)
@@ -337,6 +339,7 @@ This project implements several key innovations:
 | **Attack Chain** | State machine with retry logic and phase transitions |
 | **Prompt Templates** | Android-specific prompts for each exploitation phase |
 | **Governance Layer** | Human-in-the-loop approval with risk-based triage |
+| **Training Pipeline** | Export attack logs to SFT training datasets |
 
 ## Governance & Safety
 
@@ -351,6 +354,17 @@ The framework includes a governance layer that classifies actions by risk level:
 | CRITICAL | Exploit execution, `rm -rf` | Required + confirmation |
 
 All actions are logged for audit purposes.
+
+## Training Specialized Models
+
+The framework can generate high-quality synthetic data for fine-tuning security-specialized LLMs.
+
+```bash
+# Export all attack logs to Alpaca format for fine-tuning
+./scripts/export-training-data.py --format alpaca --output training_set.json
+```
+
+This transforms step-by-step exploitation trajectories into training pairs, allowing models to learn the "Chain of Thought" required for complex Android penetration testing.
 
 ## Model Recommendations
 
