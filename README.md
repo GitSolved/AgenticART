@@ -224,7 +224,7 @@ The demo validates all six phases from the research paper methodology.
 
 ```bash
 # Clone the repository
-git clone https://github.com/GitSolved/LLM-AndroidPentest.git
+git clone https://github.com/YOUR_USERNAME/LLM-AndroidPentest.git
 cd LLM-AndroidPentest
 
 # Run setup (installs system tools + creates venv)
@@ -307,10 +307,13 @@ LLM-AndroidPentest/
 │   ├── prompts/           # Phase-specific prompt templates
 │   ├── chains/            # Orchestration workflows
 │   └── memory/            # Working + vector memory
-├── core/                   # Exploitation modules
-│   ├── reconnaissance/    # Device enumeration
-│   ├── scanning/          # Vulnerability scanning
-│   ├── exploitation/      # Exploit techniques
+├── core/                   # Core modules
+│   ├── reconnaissance/    # Device enumeration via ADB
+│   ├── scanning/          # CVE matching against NVD
+│   ├── cve_demo/          # 1-day vulnerability demonstration
+│   ├── traffic/           # mitmproxy integration
+│   ├── governance.py      # Human-in-the-loop approval
+│   ├── kali_executor.py   # Multi-backend execution
 │   └── verification/      # Root verification
 ├── webapp/                 # Streamlit application
 │   └── app.py             # Main web interface
@@ -333,13 +336,39 @@ This project implements several key innovations:
 | **CVE Pipeline** | Device fingerprint -> CVE matching -> Exploit selection |
 | **Attack Chain** | State machine with retry logic and phase transitions |
 | **Prompt Templates** | Android-specific prompts for each exploitation phase |
+| **Governance Layer** | Human-in-the-loop approval with risk-based triage |
 
-See [docs/architecture.md](docs/architecture.md) for detailed diagrams.
+## Governance & Safety
+
+The framework includes a governance layer that classifies actions by risk level:
+
+| Level | Example Commands | Approval |
+|-------|------------------|----------|
+| INFO | `getprop ro.build.version.release` | Auto-approved |
+| LOW | `pm list packages` | Auto-approved |
+| MEDIUM | `cat /data/local/tmp/file` | Prompted |
+| HIGH | `su -c 'id'`, `frida -U` | Required |
+| CRITICAL | Exploit execution, `rm -rf` | Required + confirmation |
+
+All actions are logged for audit purposes.
+
+## Model Recommendations
+
+Based on testing with the paper methodology:
+
+| Model | RAM | Exploit Generation | Notes |
+|-------|-----|-------------------|-------|
+| llama3.1:70b-instruct | 48GB+ | Excellent | Best results, recommended |
+| deepseek-coder:33b | 24GB+ | Good | Strong code generation |
+| codellama:34b | 24GB+ | Good | Security-aware |
+| llama3.1:8b | 8GB | Limited | Safety filters may block exploits |
+
+> **Note**: 8B models often refuse exploit generation due to RLHF safety training. Use 70B+ for full methodology.
 
 ## Technology Stack
 
 - **LLM**: Ollama (local), OpenAI, Anthropic
-- **Framework**: Python 3.11+, Streamlit
+- **Framework**: Python 3.10+, Streamlit
 - **Android**: Genymotion (QEMU), ADB
 - **Storage**: ChromaDB (vectors)
 - **Container**: Docker, Docker Compose
