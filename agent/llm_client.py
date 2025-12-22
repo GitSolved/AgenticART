@@ -13,7 +13,7 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
 
 
 class LLMProvider(Enum):
@@ -21,6 +21,7 @@ class LLMProvider(Enum):
     ANTHROPIC = "anthropic"
     OLLAMA = "ollama"
     LOCAL = "local"  # Alias for ollama
+    MOCK = "mock"
 
 
 @dataclass
@@ -50,12 +51,12 @@ class BaseLLMClient(ABC):
 class OpenAIClient(BaseLLMClient):
     """OpenAI API client."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview") -> None:
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
         self._client = None
 
-    def _get_client(self):
+    def _get_client(self) -> Any:
         if self._client is None:
             from openai import OpenAI
             self._client = OpenAI(api_key=self.api_key)
@@ -104,12 +105,12 @@ class OpenAIClient(BaseLLMClient):
 class AnthropicClient(BaseLLMClient):
     """Anthropic Claude client."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-20250514"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-20250514") -> None:
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
         self._client = None
 
-    def _get_client(self):
+    def _get_client(self) -> Any:
         if self._client is None:
             from anthropic import Anthropic
             self._client = Anthropic(api_key=self.api_key)
@@ -159,7 +160,7 @@ class OllamaClient(BaseLLMClient):
         model: Optional[str] = None,
         temperature: float = 0.7,
         context_length: int = 8192,
-    ):
+    ) -> None:
         self.endpoint = endpoint or os.getenv("OLLAMA_HOST", "http://localhost:11434")
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1:70b-instruct-q4_K_M")
         self.temperature = float(os.getenv("OLLAMA_TEMPERATURE", str(temperature)))
@@ -281,6 +282,32 @@ class OllamaClient(BaseLLMClient):
                     yield data["message"]["content"]
 
 
+class MockClient(BaseLLMClient):
+    """Mock client for testing."""
+
+    def complete(self, prompt: str, system: Optional[str] = None) -> LLMResponse:
+        # Include part of prompt to make response unique for different calls
+        content = f"Mock response for: {prompt[:20]}"
+        if "RESULT:" in prompt or "Analyze" in prompt:
+            content = "RESULT: success\nKEY_FINDINGS:\n- Mock finding\nVULNERABILITIES:\n- None\nNEXT_STEPS:\n- Continue"
+        elif "PLAN:" in prompt or "Create a comprehensive" in prompt:
+            content = "1. Reconnaissance\nACTION: Recon\nCOMMAND: adb shell id\n2. Scanning\n3. Exploitation\n4. Privilege Escalation\n5. Verification"
+        elif "Generate a" in prompt or "```" in prompt:
+            content = "```python\nprint('Mock script')\n```"
+
+        return LLMResponse(
+            content=content,
+            model="mock",
+            provider=LLMProvider.MOCK,
+            tokens_used=0,
+            finish_reason="stop",
+        )
+
+    def stream(self, prompt: str, system: Optional[str] = None) -> Generator[str, None, None]:
+        yield "Mock "
+        yield "stream"
+
+
 # Backwards compatibility alias
 LocalLLMClient = OllamaClient
 
@@ -311,6 +338,8 @@ class LLMClient:
             return OllamaClient(
                 model=os.getenv("OLLAMA_MODEL", os.getenv("LOCAL_LLM_MODEL", "llama3.1:70b-instruct-q4_K_M"))
             )
+        elif provider == "mock":
+            return MockClient()
         else:
             raise ValueError(f"Unknown LLM provider: {provider}")
 

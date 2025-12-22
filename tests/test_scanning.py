@@ -6,6 +6,7 @@ Run with: pytest tests/test_scanning.py -v
 
 import os
 import sys
+from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -20,9 +21,9 @@ from core.scanning.vuln_scanner import VulnerabilityScanner, VulnSeverity
 class MockADB:
     """Mock ADB connection for testing."""
 
-    def __init__(self, responses: dict = None):
+    def __init__(self, responses: Optional[dict] = None) -> None:
         self.responses = responses or {}
-        self.commands_executed = []
+        self.commands_executed: list[str] = []
 
     def shell(self, command: str) -> str:
         self.commands_executed.append(command)
@@ -31,7 +32,7 @@ class MockADB:
     def get_prop(self, prop: str) -> str:
         return self.responses.get(f"getprop {prop}", "")
 
-    def execute(self, command: str, timeout: int = 30):
+    def execute(self, command: str, timeout: int = 30) -> tuple[str, str, int]:
         self.commands_executed.append(command)
         return "", "", 0
 

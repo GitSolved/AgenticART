@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from agent.llm_client import LLMClient
 from agent.script_generator import ScriptGenerator, ScriptType
@@ -149,7 +149,7 @@ def phase_2_cve_analysis() -> dict:
         print(f"    {line.strip()}")
 
     # Determine exploitation approach based on CVE characteristics
-    exploitation_approach = {
+    exploitation_approach: dict[str, Any] = {
         "type": "remote_network",
         "requires_proximity": True,  # WLAN typically requires WiFi proximity
         "requires_auth": False,

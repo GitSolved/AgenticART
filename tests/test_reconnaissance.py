@@ -6,6 +6,7 @@ Run with: pytest tests/test_reconnaissance.py -v
 
 import os
 import sys
+from typing import Optional
 
 import pytest
 
@@ -18,9 +19,9 @@ from core.reconnaissance.service_discovery import RiskLevel, ServiceDiscovery
 class MockADB:
     """Mock ADB connection for testing."""
 
-    def __init__(self, responses: dict = None):
+    def __init__(self, responses: Optional[dict] = None) -> None:
         self.responses = responses or {}
-        self.commands_executed = []
+        self.commands_executed: list[str] = []
         self.device_id = "192.168.56.101:5555"
 
     def shell(self, command: str) -> str:
@@ -33,7 +34,7 @@ class MockADB:
     def get_prop(self, prop: str) -> str:
         return self.responses.get(f"prop:{prop}", "")
 
-    def execute(self, command: str, timeout: int = 30):
+    def execute(self, command: str, timeout: int = 30) -> tuple[str, str, int]:
         self.commands_executed.append(command)
         stdout = self.responses.get(f"exec:{command}", "")
         return stdout, "", 0

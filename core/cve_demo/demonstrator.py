@@ -478,7 +478,7 @@ Output clean, executable Python code only."""
 
         return recommendations
 
-    def _save_report(self, report: DemonstrationReport):
+    def _save_report(self, report: DemonstrationReport) -> None:
         """Save demonstration report to file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_path = self.output_dir / f"report_{report.target_cve}_{timestamp}.json"

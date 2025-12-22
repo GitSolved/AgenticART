@@ -230,7 +230,7 @@ class SSHExecutor(BaseExecutor):
         """Return SSH command for interactive shell."""
         return f"ssh -p {self.port} {self.username}@{self.host}"
 
-    def close(self):
+    def close(self) -> None:
         """Close SSH connection."""
         if self._client:
             self._client.close()

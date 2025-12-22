@@ -191,25 +191,27 @@ if __name__ == '__main__':
         """Test validation catches dangerous patterns."""
         from agent.script_generator import GeneratedScript
 
-        generator = ScriptGenerator()
+        # Set environment variable to use mock client
+        with patch.dict(os.environ, {"LLM_PROVIDER": "mock"}):
+            generator = ScriptGenerator()
 
-        dangerous_script = GeneratedScript(
-            name="dangerous",
-            script_type=ScriptType.BASH,
-            content="rm -rf /",
-            description="Dangerous test",
-            source_step=PlanStep(
-                phase=PentestPhase.EXPLOITATION,
-                action="Test",
-                command=None,
-                rationale="Test",
-                risk_level="high",
-            ),
-        )
+            dangerous_script = GeneratedScript(
+                name="dangerous",
+                script_type=ScriptType.BASH,
+                content="rm -rf /",
+                description="Dangerous test",
+                source_step=PlanStep(
+                    phase=PentestPhase.EXPLOITATION,
+                    action="Test",
+                    command=None,
+                    rationale="Test",
+                    risk_level="high",
+                ),
+            )
 
-        valid, issues = generator.validate(dangerous_script)
-        assert not valid
-        assert any("BLOCKED" in i for i in issues)
+            valid, issues = generator.validate(dangerous_script)
+            assert not valid
+            assert any("BLOCKED" in i for i in issues)
 
 
 class TestMemory:
