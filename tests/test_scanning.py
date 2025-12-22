@@ -27,10 +27,10 @@ class MockADB:
 
     def shell(self, command: str) -> str:
         self.commands_executed.append(command)
-        return self.responses.get(command, "")
+        return str(self.responses.get(command, ""))
 
     def get_prop(self, prop: str) -> str:
-        return self.responses.get(f"getprop {prop}", "")
+        return str(self.responses.get(f"getprop {prop}", ""))
 
     def execute(self, command: str, timeout: int = 30) -> tuple[str, str, int]:
         self.commands_executed.append(command)

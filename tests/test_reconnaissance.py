@@ -28,11 +28,11 @@ class MockADB:
         self.commands_executed.append(command)
         for pattern, response in self.responses.items():
             if pattern in command:
-                return response
+                return str(response)
         return ""
 
     def get_prop(self, prop: str) -> str:
-        return self.responses.get(f"prop:{prop}", "")
+        return str(self.responses.get(f"prop:{prop}", ""))
 
     def execute(self, command: str, timeout: int = 30) -> tuple[str, str, int]:
         self.commands_executed.append(command)
@@ -85,9 +85,9 @@ class TestDeviceEnumerator:
             "cat /proc/cpuinfo | head -20": "Processor: ARMv8",
             "getenforce": "Enforcing",
             "which su": "",
-            "ls /system/app/Superuser.apk": "No such file",
-            "ls /system/xbin/su": "No such file",
-            "ls /data/adb/magisk": "No such file",
+            "ls /system/app/Superuser.apk": "",
+            "ls /system/xbin/su": "",
+            "ls /data/adb/magisk": "",
             "prop:ro.debuggable": "0",
             "prop:ro.crypto.state": "encrypted",
             "prop:ro.boot.verifiedbootstate": "green",

@@ -85,10 +85,10 @@ class ScriptType(Enum):
 @dataclass
 class QualityMetrics:
     """Quality metrics for generated scripts."""
-    hallucinated_tools: list[str] = None
-    hallucinated_paths: list[str] = None
-    environment_mismatches: list[str] = None
-    intrusive_commands: list[str] = None
+    hallucinated_tools: list[str] | None = None
+    hallucinated_paths: list[str] | None = None
+    environment_mismatches: list[str] | None = None
+    intrusive_commands: list[str] | None = None
     validation_passed: bool = True
 
     def __post_init__(self):
@@ -480,17 +480,21 @@ class ScriptGenerator:
         metrics = self.check_quality(script, target_config)
 
         # Add quality issues to validation issues
-        for tool in metrics.hallucinated_tools:
-            issues.append(f"HALLUCINATION: Unknown tool '{tool}'")
+        if metrics.hallucinated_tools:
+            for tool in metrics.hallucinated_tools:
+                issues.append(f"HALLUCINATION: Unknown tool '{tool}'")
 
-        for path in metrics.hallucinated_paths:
-            issues.append(f"HALLUCINATION: Placeholder path '{path}'")
+        if metrics.hallucinated_paths:
+            for path in metrics.hallucinated_paths:
+                issues.append(f"HALLUCINATION: Placeholder path '{path}'")
 
-        for mismatch in metrics.environment_mismatches:
-            issues.append(f"ENV_MISMATCH: {mismatch}")
+        if metrics.environment_mismatches:
+            for mismatch in metrics.environment_mismatches:
+                issues.append(f"ENV_MISMATCH: {mismatch}")
 
-        for intrusive in metrics.intrusive_commands:
-            issues.append(f"INTRUSIVE: {intrusive}")
+        if metrics.intrusive_commands:
+            for intrusive in metrics.intrusive_commands:
+                issues.append(f"INTRUSIVE: {intrusive}")
 
         # Block if hallucinations detected
         if metrics.hallucinated_tools or metrics.hallucinated_paths:

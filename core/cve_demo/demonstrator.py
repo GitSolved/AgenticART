@@ -199,7 +199,7 @@ class OneDayDemonstrator:
         logger.info(f"Starting 1-day demonstration: {cve_id}")
         logger.info(f"Target: {self.device}")
 
-        attempts = []
+        attempts: list[ExploitAttempt] = []
         final_success = False
         proof = None
 

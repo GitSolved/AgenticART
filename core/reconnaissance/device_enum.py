@@ -231,7 +231,7 @@ class DeviceEnumerator:
             "ACCESS_FINE_LOCATION", "READ_EXTERNAL_STORAGE",
         ]
 
-        results = {}
+        results: dict[str, list[str]] = {}
         packages = self.get_installed_packages()
 
         for pkg in packages[:20]:  # Limit for performance

@@ -6,7 +6,7 @@ Supports ChromaDB (default), with extensibility for pgvector/FAISS.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -33,8 +33,8 @@ class VectorStore:
     ):
         self.collection_name = collection_name
         self.persist_dir = persist_dir
-        self._client = None
-        self._collection = None
+        self._client: Any = None
+        self._collection: Any = None
 
     def _get_client(self):
         """Lazy load ChromaDB client."""

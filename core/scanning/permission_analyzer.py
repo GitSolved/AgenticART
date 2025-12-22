@@ -8,7 +8,7 @@ and potential attack vectors.
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from ..reconnaissance import ADBConnection
 
@@ -235,7 +235,7 @@ DANGEROUS_PERMISSIONS = {
 }
 
 # Dangerous permission combinations
-RISKY_COMBINATIONS = [
+RISKY_COMBINATIONS: list[dict[str, Any]] = [
     {
         "permissions": ["READ_SMS", "INTERNET"],
         "risk": PermissionRisk.CRITICAL,

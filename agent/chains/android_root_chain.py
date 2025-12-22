@@ -47,7 +47,7 @@ class ChainResult:
     # New fields for feedback loop tracking
     total_retries: int = 0
     successful_retries: int = 0
-    failed_after_retries: list[str] = None
+    failed_after_retries: list[str] | None = None
 
     def __post_init__(self):
         if self.failed_after_retries is None:

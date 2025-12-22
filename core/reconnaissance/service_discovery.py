@@ -351,8 +351,8 @@ class ServiceDiscovery:
         lines.append("-" * 70)
         exported_services = [s for s in result.android_services if s.is_exported]
         if exported_services:
-            for svc in exported_services[:20]:
-                lines.append(f"  [{svc.risk.value.upper()}] {svc.package}/{svc.name}")
+            for android_svc in exported_services[:20]:
+                lines.append(f"  [{android_svc.risk.value.upper()}] {android_svc.package}/{android_svc.name}")
         else:
             lines.append("  No exported services found")
 
@@ -362,7 +362,7 @@ class ServiceDiscovery:
         lines.append("EXPOSED APP COMPONENTS")
         lines.append("-" * 70)
         if result.exposed_components:
-            by_type = {}
+            by_type: dict[str, list[ExposedComponent]] = {}
             for comp in result.exposed_components:
                 t = comp.component_type.value
                 if t not in by_type:

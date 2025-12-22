@@ -203,7 +203,7 @@ class PoCFetcher:
 
     def _search_github(self, cve_id: str, max_results: int = 5) -> list[PoCEntry]:
         """Search GitHub for PoC repositories."""
-        pocs = []
+        pocs: list[PoCEntry] = []
 
         try:
             # Search repositories

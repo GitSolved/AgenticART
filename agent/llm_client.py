@@ -54,12 +54,12 @@ class OpenAIClient(BaseLLMClient):
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview") -> None:
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
-        self._client = None
+        self._client: Any = None
 
     def _get_client(self) -> Any:
         if self._client is None:
             from openai import OpenAI
-            self._client = OpenAI(api_key=self.api_key)
+            self._client = OpenAI(api_key=self.api_key)  # type: ignore
         return self._client
 
     def complete(self, prompt: str, system: Optional[str] = None) -> LLMResponse:
@@ -108,12 +108,12 @@ class AnthropicClient(BaseLLMClient):
     def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-20250514") -> None:
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
-        self._client = None
+        self._client: Any = None
 
     def _get_client(self) -> Any:
         if self._client is None:
             from anthropic import Anthropic
-            self._client = Anthropic(api_key=self.api_key)
+            self._client = Anthropic(api_key=self.api_key)  # type: ignore
         return self._client
 
     def complete(self, prompt: str, system: Optional[str] = None) -> LLMResponse:
@@ -244,7 +244,7 @@ class OllamaClient(BaseLLMClient):
 
         return LLMResponse(
             content=data["message"]["content"],
-            model=self.model,
+            model=self.model or "unknown",
             provider=LLMProvider.LOCAL,
             tokens_used=data.get("eval_count", 0) + data.get("prompt_eval_count", 0),
             finish_reason=data.get("done_reason", "stop"),
@@ -357,4 +357,4 @@ class LLMClient:
             models = client.list_models()
             model_names = [m.get("name", "unknown") for m in models]
             return True, f"Ollama running with {len(models)} models: {', '.join(model_names[:5])}"
-        return False, "Ollama not available at " + client.endpoint
+        return False, "Ollama not available at " + (client.endpoint or "unknown")
