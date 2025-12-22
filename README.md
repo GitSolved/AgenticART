@@ -1,51 +1,69 @@
-# AgenticART - Mobile Security Automation
+<div align="center">
 
-![CI Status](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg?branch=main&event=push&label=AgenticART)
+# AgenticART
 
-**LLM-Powered Android Penetration Testing & Data Generation Framework**
+**Agentic Android Red Team**
 
-An automated Android exploitation framework that uses Large Language Models to generate and execute penetration testing scripts. Converts natural language commands into executable exploits.
+*Train LLMs to Master Android Exploitation*
 
-> Based on: ["Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"](https://arxiv.org/abs/2509.07933) (arXiv:2509.07933)
+[![CI Status](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg)](https://github.com/GitSolved/AgenticART/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 
-## Key Features
+[Paper](https://arxiv.org/abs/2509.07933) • [Issues](https://github.com/GitSolved/AgenticART/issues)
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Training Pipeline](#training-pipeline)
+- [Model Recommendations](#model-recommendations)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Governance & Safety](#governance--safety)
+- [Credits](#credits)
+- [License](#license)
+
+---
+
+## Overview
+
+AgenticART is an automated Android exploitation framework that:
+
+1. **Generates** exploits using LLMs
+2. **Executes** against real/emulated devices
+3. **Captures** rich training data (scripts, reasoning, errors)
+4. **Fine-tunes** your chosen model to improve over time
+
+> **The Loop:** Template exploits → Execute → Capture → Train → Advanced exploits
+
+Based on the research paper: ["Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"](https://arxiv.org/abs/2509.07933)
+
+---
+
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| **NL to Code** | Convert "root this device" into executable Python/Bash scripts |
-| **CVE Matching** | Automatically match device fingerprint to applicable vulnerabilities |
-| **Attack Chains** | Orchestrated Recon -> Scan -> Exploit -> Verify workflow |
-| **Local LLM** | Runs entirely on Ollama - no API keys required |
-| **Genymotion** | Integrated Android emulator for safe testing |
+| **Model Training** | Fine-tune any LLM on real exploitation trajectories |
+| **Data Capture** | Log scripts, reasoning, errors, and recovery actions |
+| **NL to Code** | Convert natural language objectives to executable scripts |
+| **CVE Matching** | Match device fingerprint to applicable vulnerabilities |
+| **Attack Chains** | Orchestrated Recon → Scan → Exploit → Verify workflow |
+| **Governance** | Human-in-the-loop approval with risk-based triage |
 
-## How It Works
-
-```
-User: "Root this Android 11 Pixel 7"
-                    |
-                    v
-    +---------------+---------------+
-    |            AGENT              |
-    |   Planner -> Generator ->     |
-    |          Summarizer           |
-    +---------------+---------------+
-                    |
-                    v
-    +---------------+---------------+
-    |      GENERATED SCRIPT         |
-    |   adb shell su -c 'id'        |
-    |   if uid=0: root achieved     |
-    +---------------+---------------+
-                    |
-                    v
-    +---------------+---------------+
-    |         EXECUTION             |
-    |   Genymotion Emulator         |
-    |   Android 11 / API 30         |
-    +-------------------------------+
-```
+---
 
 ## Architecture
+
+<details>
+<summary>System Overview (click to expand)</summary>
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -57,293 +75,214 @@ User: "Root this Android 11 Pixel 7"
 │                       Agent Layer                               │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────┐    │
 │  │   Planner   │◄─┤  Summarizer  │◄─┤  Script Generator   │    │
-│  │ (Strategy)  │  │  (Analysis)  │  │  (Code Generation)  │    │
 │  └─────────────┘  └──────────────┘  └─────────────────────┘    │
-│         │                                      │                │
-│  ┌──────▼──────────────────────────────────────▼──────┐        │
-│  │                    Memory System                    │        │
-│  │         (Working + Vector Store)                    │        │
-│  └─────────────────────────────────────────────────────┘        │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────┐      │
+│  │                    Memory System                       │      │
+│  │              (Working + Vector Store)                  │      │
+│  └───────────────────────────────────────────────────────┘      │
 └──────────────────────────┬──────────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────────┐
 │                      Core Modules                               │
 │  ┌──────────────┐  ┌─────────────┐  ┌────────────────────┐     │
-│  │ Reconnaissance│  │  Scanning   │  │   Exploitation     │     │
-│  │ (Device Enum) │  │  (Vulns)    │  │ (Magisk, Kernel)   │     │
+│  │Reconnaissance│  │  Scanning   │  │   Exploitation     │     │
+│  │ (Device Enum)│  │ (CVE Match) │  │ (Magisk, Kernel)   │     │
 │  └──────────────┘  └─────────────┘  └────────────────────┘     │
-│                                      ┌────────────────────┐     │
-│                                      │   Verification     │     │
-│                                      │   (Root Check)     │     │
-│                                      └────────────────────┘     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Features
+</details>
 
-- **Dual-Module Architecture**: HackSynth-inspired Planner + Summarizer for iterative exploitation
-- **Multi-Provider LLM Support**: OpenAI, Anthropic Claude, or local models (Ollama)
-- **Automated Script Generation**: Convert natural language to executable Python/Bash scripts
-- **Android-Focused**: Genymotion emulator integration, ADB automation, Magisk rooting
-- **Memory System**: Persistent context with vector embeddings for semantic search
-- **Safety Controls**: Dry-run mode, script validation, confirmation prompts
-
-## Live Exploitation Demo
-
-Run the exploitation demo against a connected Android device:
-
-```bash
-python3 exploit_demo.py
-```
-
-**Real Output (Genymotion Android 11):**
+<details>
+<summary>Training Loop (click to expand)</summary>
 
 ```
-╔══════════════════════════════════════════════════════════════════════╗
-║         AgenticART: LIVE EXPLOITATION DEMO                           ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-══════════════════════════════════════════════════════════════════════
-  PHASE 1: RECONNAISSANCE
-══════════════════════════════════════════════════════════════════════
-  [+] Device: Pixel 7
-  [+] Android: 11 (API 30)
-  [+] Security Patch: 2021-01-05
-  [!] VULNERABLE: Device is debuggable!
-
-══════════════════════════════════════════════════════════════════════
-  PHASE 2: VULNERABILITY ASSESSMENT
-══════════════════════════════════════════════════════════════════════
-  [+] Matched 12 potential CVEs
-  [!] VULNERABLE: 3 CRITICAL vulnerabilities found!
-      • CVE-2024-0031: Bluetooth remote code execution...
-      • CVE-2021-0968: System UI heap buffer overflow...
-
-══════════════════════════════════════════════════════════════════════
-  PHASE 3: EXPLOITATION
-══════════════════════════════════════════════════════════════════════
-  [!] VULNERABLE: ADB ROOT ACHIEVED!
-  [!] VULNERABLE: Package Permissions accessible!
-  [!] VULNERABLE: System partition remountable!
-
-══════════════════════════════════════════════════════════════════════
-  EXPLOITATION REPORT
-══════════════════════════════════════════════════════════════════════
-  Success Rate: 2/3 attacks succeeded
-  [!] DEVICE COMPROMISED
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Run Exploit │────▶│ Capture Data │────▶│  Fine-tune   │
+│    Chains    │     │   (JSON)     │     │  Your Model  │
+└──────────────┘     └──────────────┘     └──────────────┘
+       ▲                                         │
+       └─────────────────────────────────────────┘
+              Model produces better exploits
 ```
 
-## Framework Demo
-
-Run the methodology validation demo:
-
-```bash
-python3 demo.py
-```
-
-**Sample Output:**
-
-```
-╔══════════════════════════════════════════════════════════════════════╗
-║          AgenticART Framework Demo                                   ║
-║          The ART of Autonomous Mobile Security                       ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-══════════════════════════════════════════════════════════════════════
-  DEMO 1: Device Reconnaissance
-══════════════════════════════════════════════════════════════════════
-  ┌─────────────────────────────────────────┐
-  │  Device Information                     │
-  │  Model:          Pixel 7                │
-  │  Android:        11                     │
-  │  API Level:      30                     │
-  │  Security Patch: 2021-01-05             │
-  └─────────────────────────────────────────┘
-
-══════════════════════════════════════════════════════════════════════
-  DEMO 2: CVE Matching
-══════════════════════════════════════════════════════════════════════
-  Found 12 applicable CVEs:
-
-  1. CVE-2024-0031
-     Severity: CRITICAL (CVSS: 9.8)
-     Bluetooth remote code execution vulnerability
-
-  2. CVE-2021-0968
-     Severity: CRITICAL (CVSS: 9.8)
-     System UI heap buffer overflow allows remote code execution
-     ⚠️  Exploit: poc_available
-
-══════════════════════════════════════════════════════════════════════
-  DEMO 3: LLM Script Generation
-══════════════════════════════════════════════════════════════════════
-  → Input: "Enumerate installed packages and check for root indicators"
-  → Target: Android 11 @ 192.168.56.101
-
-  ┌─ Generated: recon_packages_root_check.py ─────────────────────
-  │  1: #!/usr/bin/env python3
-  │  2: import subprocess
-  │  3: def run_adb(cmd):
-  │  4:     result = subprocess.run(["adb", "-s", "192.168.56.101:5555"...
-  └──────────────────────────────────────────────────
-
-  Validation: ✓ PASSED
-  Quality Check:
-    - Hallucinated tools: 0
-    - Hallucinated paths: 0
-
-══════════════════════════════════════════════════════════════════════
-  DEMO 4: Feedback Loop (Error Recovery)
-══════════════════════════════════════════════════════════════════════
-  ⚠️  Error: device '192.168.56.101:5555' not found
-
-  Error Analysis:
-    Type: device_offline
-    Suggestions:
-      • Reconnect ADB: adb connect <ip>:<port>
-      • Restart ADB server: adb kill-server && adb start-server
-
-  ✓ Feedback loop architecture: Validated
-
-══════════════════════════════════════════════════════════════════════
-  DEMO 5: Governance & Triage
-══════════════════════════════════════════════════════════════════════
-  Command                                             Level  Action
-  getprop ro.build.version.release                        1  ✓ Auto-approve
-  pm list packages                                        2  ✓ Auto-approve
-  su -c 'id'                                              4  🛑 Block
-  frida -U -n com.target.app                              4  🛑 Block
-  rm -rf /data/local/tmp/*                                5  🛑 Block
-```
-
-The demo validates all six phases from the research paper methodology.
+</details>
 
 ---
 
 ## Quick Start
 
-### 1. Install Dependencies
+### Prerequisites
+
+- Python 3.10+
+- Docker (optional)
+- Genymotion or Android Emulator
+
+### Installation
 
 ```bash
-# Clone the repository
+# Clone
 git clone https://github.com/GitSolved/AgenticART.git
 cd AgenticART
 
-# Run setup (installs system tools + creates venv)
+# Setup
 ./scripts/setup.sh
-
-# Activate environment
 source activate.sh
-```
 
-### 2. Configure Environment
-
-```bash
-# Copy example configuration
+# Configure
 cp config/.env.example config/.env
 
-# Edit with your API keys
-nano config/.env
-```
-
-### 3. Verify Installation
-
-```bash
-# Check all tools are installed
-./scripts/check-tools.sh
-
-# Run the demo
-python demo.py
-```
-
-### 4. Run Web Application
-
-```bash
+# Run
 streamlit run webapp/app.py
 ```
 
-Open http://localhost:8501 in your browser.
+### Verify Installation
 
-## Usage
-
-### Interactive Chat
-
-Use the chat interface to get penetration testing guidance:
-
-```
-You: How do I extract the boot image from a Pixel 7 running Android 13?
-
-PentestGPT: To extract the boot image, follow these steps...
+```bash
+./scripts/check-tools.sh
+python demo.py
 ```
 
-### Script Generation
+---
 
-1. Describe the action in natural language
-2. Select script type (Python/Bash/ADB)
-3. Review generated script
-4. Execute in dry-run or live mode
+## Training Pipeline
 
-### Automated Chain
+The core innovation: **learn from real exploitation attempts**.
 
-Run the full exploitation chain:
+### How It Works
 
-1. Configure target device (IP, Android version)
-2. Set objective (e.g., "Achieve root access")
-3. Start chain execution
-4. Monitor progress through phases:
-   - Reconnaissance → Scanning → Exploitation → Privilege Escalation → Verification
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Run Chains  │────▶│ Capture Data │────▶│  Fine-tune   │
+│  (Emulator)  │     │ (Trajectories)│    │  Your Model  │
+└──────────────┘     └──────────────┘     └──────────────┘
+       ▲                                         │
+       └─────────────────────────────────────────┘
+                   Better exploits
+```
+
+### What Gets Captured
+
+| Data | Training Purpose |
+|------|------------------|
+| Generated scripts | Learn working exploit code |
+| Phase outcomes | Learn which approaches succeed |
+| Error messages | Learn failure patterns |
+| Device context | Match exploits to targets |
+
+### Generate Training Data
+
+```bash
+# Run exploitation chains (data auto-saved to output/attack_chains/)
+python exploit_demo.py
+
+# Export to Alpaca format for fine-tuning
+./scripts/export-training-data.py --format alpaca --output training.jsonl
+
+# Or ShareGPT format
+./scripts/export-training-data.py --format sharegpt --output training.jsonl
+```
+
+### Fine-tune Your Model
+
+Use your preferred training framework and model:
+
+```bash
+# Example with Axolotl
+axolotl train config.yaml
+
+# Example with Unsloth (faster, less VRAM)
+python train.py --model your-model --data training.jsonl
+```
+
+<details>
+<summary>Training Progression (click to expand)</summary>
+
+| Cycle | Model State | Exploit Quality |
+|-------|-------------|-----------------|
+| 0 | Base model | Template/generic exploits |
+| 1 | +100 trajectories | Learns basic patterns |
+| 2 | +500 trajectories | Context-aware exploitation |
+| 3+ | Ongoing data | Increasingly sophisticated |
+
+</details>
+
+---
+
+## Model Recommendations
+
+AgenticART works with any LLM. Choose based on your resources and needs:
+
+| Model | VRAM | Strengths |
+|-------|------|-----------|
+| Qwen2.5-Coder | 8-48GB | Strong code generation |
+| DeepSeek-Coder | 16-48GB | Security-aware coding |
+| CodeLlama | 16-48GB | Code understanding |
+| Llama 3.1 | 8-48GB | General reasoning |
+| Mistral | 8-24GB | Fast inference |
+
+**For fine-tuning:** Start with a 7B parameter model, generate data, train, and iterate. Larger models can be used once you have sufficient training data.
+
+**Local inference:** Use [Ollama](https://ollama.ai) to run models locally without API keys.
+
+---
+
+## Configuration
+
+<details>
+<summary>Environment Variables (click to expand)</summary>
+
+```bash
+# LLM Provider
+LLM_PROVIDER=ollama          # ollama, openai, anthropic
+OLLAMA_MODEL=codellama       # Model to use with Ollama
+
+# API Keys (if using cloud providers)
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Device
+TARGET_DEVICE=192.168.56.101:5555
+ANDROID_SDK=/path/to/android-sdk
+
+# Safety
+DRY_RUN=true                 # Don't execute, just generate
+REQUIRE_APPROVAL=true        # Human approval for dangerous commands
+```
+
+</details>
+
+---
 
 ## Project Structure
 
 ```
 AgenticART/
-├── config/                 # Configuration layer
-│   ├── .env.example       # Environment template
-│   ├── settings.yaml      # Application settings
-│   └── emulator/          # Genymotion profiles
-├── agent/                  # Agent layer (the "engine")
+├── agent/                  # Agent layer
 │   ├── llm_client.py      # Multi-provider LLM interface
-│   ├── planner.py         # Strategic planning (HackSynth-style)
+│   ├── planner.py         # Strategic planning
 │   ├── summarizer.py      # Result analysis
 │   ├── script_generator.py # Code generation
-│   ├── prompts/           # Phase-specific prompt templates
-│   ├── chains/            # Orchestration workflows
 │   └── memory/            # Working + vector memory
 ├── core/                   # Core modules
-│   ├── reconnaissance/    # Device enumeration via ADB
-│   ├── scanning/          # CVE matching against NVD
-│   ├── cve_demo/          # 1-day vulnerability demonstration
-│   ├── traffic/           # mitmproxy integration
-│   ├── governance.py      # Human-in-the-loop approval
-│   ├── kali_executor.py   # Multi-backend execution
-│   └── verification/      # Root verification
-├── webapp/                 # Streamlit application
-│   └── app.py             # Main web interface
-├── scripts/               # Generated scripts
-│   ├── generated/         # AI-generated automation
-│   └── manual/            # Reference scripts
-├── output/                # Results
-│   ├── logs/             # Execution logs
-│   └── reports/          # Assessment reports
+│   ├── reconnaissance/    # Device enumeration
+│   ├── scanning/          # CVE matching
+│   ├── exploitation/      # Exploit techniques
+│   └── governance.py      # Approval system
+├── webapp/                 # Streamlit UI
+├── scripts/               # Utilities
+│   └── export-training-data.py
+├── output/                # Results & training data
+│   └── attack_chains/     # Captured trajectories
 └── tests/                 # Test suite
 ```
 
-## Novel Contributions
-
-This project implements several key innovations:
-
-| Component | Innovation |
-|-----------|------------|
-| **Script Generator** | Converts natural language to validated, executable exploit code |
-| **CVE Pipeline** | Device fingerprint -> CVE matching -> Exploit selection |
-| **Attack Chain** | State machine with retry logic and phase transitions |
-| **Prompt Templates** | Android-specific prompts for each exploitation phase |
-| **Governance Layer** | Human-in-the-loop approval with risk-based triage |
-| **Training Pipeline** | Export attack logs to SFT training datasets |
+---
 
 ## Governance & Safety
 
-The framework includes a governance layer that classifies actions by risk level:
+Actions are classified by risk level:
 
 | Level | Example Commands | Approval |
 |-------|------------------|----------|
@@ -355,59 +294,32 @@ The framework includes a governance layer that classifies actions by risk level:
 
 All actions are logged for audit purposes.
 
-## Training Specialized Models
+---
 
-The framework can generate high-quality synthetic data for fine-tuning security-specialized LLMs.
+## Credits
 
-```bash
-# Export all attack logs to Alpaca format for fine-tuning
-./scripts/export-training-data.py --format alpaca --output training_set.json
-```
-
-This transforms step-by-step exploitation trajectories into training pairs, allowing models to learn the "Chain of Thought" required for complex Android penetration testing.
-
-## Model Recommendations
-
-Based on testing with the paper methodology:
-
-| Model | RAM | Exploit Generation | Notes |
-|-------|-----|-------------------|-------|
-| llama3.1:70b-instruct | 48GB+ | Excellent | Best results, recommended |
-| deepseek-coder:33b | 24GB+ | Good | Strong code generation |
-| codellama:34b | 24GB+ | Good | Security-aware |
-| llama3.1:8b | 8GB | Limited | Safety filters may block exploits |
-
-> **Note**: 8B models often refuse exploit generation due to RLHF safety training. Use 70B+ for full methodology.
-
-## Technology Stack
-
-- **LLM**: Ollama (local), OpenAI, Anthropic
-- **Framework**: Python 3.10+, Streamlit
-- **Android**: Genymotion (QEMU), ADB
-- **Storage**: ChromaDB (vectors)
-- **Container**: Docker, Docker Compose
-
-## Inspiration & Credits
-
-This project combines patterns from:
+Built on research and patterns from:
 
 | Project | Contribution |
 |---------|--------------|
-| [PentestGPT](https://github.com/GreyDGL/PentestGPT) | Core pentest methodology, prompt engineering |
-| [PentAGI](https://github.com/vxcontrol/pentagi) | Multi-agent architecture, memory system |
-| [HackSynth](https://github.com/aielte-research/HackSynth) | Planner/Summarizer dual-module pattern |
+| [PentestGPT](https://github.com/GreyDGL/PentestGPT) | Pentest methodology, prompts |
+| [PentAGI](https://github.com/vxcontrol/pentagi) | Multi-agent architecture |
+| [HackSynth](https://github.com/aielte-research/HackSynth) | Planner/Summarizer pattern |
 
-Research paper: ["Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"](https://arxiv.org/abs/2509.07933) by Perera et al.
+Paper: ["Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"](https://arxiv.org/abs/2509.07933)
 
-## Disclaimer
-
-This tool is for **authorized security testing only**. Usage guidelines:
-
-- Only test devices you own or have explicit permission to test
-- Comply with all applicable laws and regulations
-- Use the dry-run mode for learning and experimentation
-- Never use for malicious purposes
+---
 
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**For authorized security testing only.**
+
+Only test devices you own or have explicit permission to test.
+
+</div>
