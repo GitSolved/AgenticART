@@ -1,4 +1,4 @@
-name: AgenticART-CI
+name: AgenticART
 
 on:
   push:

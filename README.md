@@ -1,6 +1,6 @@
 # AgenticART - Mobile Security Automation
 
-![CI Status](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg?branch=main&event=push&label=AgenticART-CI)
+![CI Status](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg?branch=main&event=push&label=AgenticART)
 
 **LLM-Powered Android Penetration Testing & Data Generation Framework**
 
