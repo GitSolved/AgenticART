@@ -37,8 +37,8 @@ from core.traffic import MitmConfig, MitmController, MitmStatus
 
 # Page configuration
 st.set_page_config(
-    page_title="LLM-Pentest",
-    page_icon="",
+    page_title="AgenticART",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -1033,8 +1033,8 @@ def main():
         refresh_ollama_models()
 
     # Header
-    st.title("LLM-Pentest")
-    st.caption("LLM-Powered Android Penetration Testing Framework")
+    st.title("AgenticART")
+    st.caption("Autonomous Mobile Security Framework")
 
     # Render components
     render_sidebar()

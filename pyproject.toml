@@ -1,12 +1,12 @@
 [project]
-name = "llm-android-pentest"
+name = "agentic-art"
 version = "0.1.0"
-description = "LLM-Powered Android Penetration Testing Framework"
+description = "AgenticART - Mobile Security Automation Framework"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
-    { name = "LLM-Pentest Contributors" }
+    { name = "GitSolved" }
 ]
 keywords = ["penetration-testing", "android", "llm", "security", "automation"]
 classifiers = [
@@ -63,12 +63,12 @@ minimal = [
 ]
 
 [project.scripts]
-llm-android-pentest = "webapp.app:main"
+agentic-art = "webapp.app:main"
 
 [project.urls]
-Homepage = "https://github.com/your-username/llm-android-pentest"
-Documentation = "https://github.com/your-username/llm-android-pentest#readme"
-Repository = "https://github.com/your-username/llm-android-pentest"
+Homepage = "https://github.com/GitSolved/AgenticART"
+Documentation = "https://github.com/GitSolved/AgenticART#readme"
+Repository = "https://github.com/GitSolved/AgenticART"
 
 [build-system]
 requires = ["hatchling"]

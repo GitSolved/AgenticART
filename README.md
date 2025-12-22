@@ -1,8 +1,8 @@
-# LLM-AndroidPentest
+# AgenticART - Mobile Security Automation
 
-![CI Status](https://github.com/GitSolved/LLM-AndroidPentest/actions/workflows/ci.yml/badge.svg)
+![CI Status](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg?branch=main&event=push&label=AgenticART-CI)
 
-**LLM-Powered Android Penetration Testing Framework**
+**LLM-Powered Android Penetration Testing & Data Generation Framework**
 
 An automated Android exploitation framework that uses Large Language Models to generate and execute penetration testing scripts. Converts natural language commands into executable exploits.
 
@@ -226,8 +226,8 @@ The demo validates all six phases from the research paper methodology.
 
 ```bash
 # Clone the repository
-git clone https://github.com/GitSolved/LLM-AndroidPentest.git
-cd LLM-AndroidPentest
+git clone https://github.com/GitSolved/AgenticART.git
+cd AgenticART
 
 # Run setup (installs system tools + creates venv)
 ./scripts/setup.sh
