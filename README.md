@@ -100,7 +100,7 @@ python3 exploit_demo.py
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
-║         LLM-AndroidPentest: LIVE EXPLOITATION DEMO                   ║
+║         AgenticART: LIVE EXPLOITATION DEMO                           ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 ══════════════════════════════════════════════════════════════════════
@@ -145,8 +145,8 @@ python3 demo.py
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
-║          LLM-AndroidPentest Framework Demo                           ║
-║          Based on: 'Breaking Android with AI'                        ║
+║          AgenticART Framework Demo                                   ║
+║          The ART of Autonomous Mobile Security                       ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 ══════════════════════════════════════════════════════════════════════
@@ -296,7 +296,7 @@ Run the full exploitation chain:
 ## Project Structure
 
 ```
-LLM-AndroidPentest/
+AgenticART/
 ├── config/                 # Configuration layer
 │   ├── .env.example       # Environment template
 │   ├── settings.yaml      # Application settings
