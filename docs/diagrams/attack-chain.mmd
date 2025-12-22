@@ -1,0 +1,61 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#fff', 'primaryBorderColor': '#4a4a6a', 'lineColor': '#4a9eff'}}}%%
+
+stateDiagram-v2
+    [*] --> Reconnaissance
+
+    state Reconnaissance {
+        [*] --> Connect
+        Connect --> Enumerate: ADB Connected
+        Enumerate --> Fingerprint: Device Props
+        Fingerprint --> [*]: Security Posture
+    }
+
+    Reconnaissance --> Scanning: Device Info
+
+    state Scanning {
+        [*] --> CVEMatch
+        CVEMatch --> VulnScan: Matched CVEs
+        VulnScan --> RiskScore: Vulnerabilities
+        RiskScore --> [*]: Prioritized Targets
+    }
+
+    Scanning --> Planning: Vulnerabilities
+
+    state Planning {
+        [*] --> SelectPhase
+        SelectPhase --> LoadPrompt: Phase Selected
+        LoadPrompt --> QueryLLM: Prompt Ready
+        QueryLLM --> [*]: Attack Strategy
+    }
+
+    Planning --> Exploitation: Strategy
+
+    state Exploitation {
+        [*] --> GenerateScript
+        GenerateScript --> ValidateScript: Script Generated
+        ValidateScript --> ExecuteScript: Validation Passed
+        ExecuteScript --> CaptureOutput: Executed
+        CaptureOutput --> [*]: Result
+    }
+
+    Exploitation --> Decision
+
+    state Decision {
+        [*] --> AnalyzeResult
+        AnalyzeResult --> Success: Root Achieved
+        AnalyzeResult --> Failure: Exploit Failed
+        Failure --> Summarize
+        Summarize --> [*]: Next Action
+    }
+
+    Decision --> Verification: Success
+    Decision --> Planning: Failure (Retry)
+
+    state Verification {
+        [*] --> CheckRoot
+        CheckRoot --> TestCapabilities: UID=0
+        TestCapabilities --> GenerateReport: Caps Verified
+        GenerateReport --> [*]: Report
+    }
+
+    Verification --> [*]
