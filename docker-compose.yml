@@ -1,0 +1,183 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# LLM-AndroidPentest Docker Compose
+#
+# Usage:
+#   docker-compose up webapp                    # Web app (connects to host Ollama)
+#   docker-compose --profile ollama up          # Start with containerized Ollama
+#   docker-compose --profile dev up cli         # Development CLI
+#   docker-compose --profile full up            # Full stack with ADB bridge
+#   docker-compose logs -f webapp               # Follow webapp logs
+#
+# Ollama options:
+#   1. Run Ollama on host (recommended): brew install ollama && ollama serve
+#   2. Use containerized Ollama: docker-compose --profile ollama up
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ─── Main Web Application ──────────────────────────────────────────────────
+  webapp:
+    build:
+      context: .
+      target: production
+    image: llm-android-pentest:latest
+    container_name: llm-pentest-webapp
+    ports:
+      - "8501:8501"
+    volumes:
+      # Persist generated scripts and output
+      - ./output:/app/output
+      - ./scripts/generated:/app/scripts/generated
+      # Mount config for easy editing
+      - ./config:/app/config:ro
+      # Vector store persistence
+      - chromadb-data:/app/.chromadb
+    environment:
+      # Ollama configuration (default: connect to host Ollama)
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
+      - OLLAMA_TEMPERATURE=${OLLAMA_TEMPERATURE:-0.7}
+      - OLLAMA_CONTEXT_LENGTH=${OLLAMA_CONTEXT_LENGTH:-8192}
+      # Optional: OpenAI/Anthropic fallback
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Android emulator
+      - GENYMOTION_HOST=${GENYMOTION_HOST:-host.docker.internal}
+      - EMULATOR_IP=${EMULATOR_IP:-192.168.56.101}
+      - EMULATOR_PORT=${EMULATOR_PORT:-5555}
+    # Allow connecting to host network for ADB and Ollama
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── CLI Development Container ─────────────────────────────────────────────
+  cli:
+    build:
+      context: .
+      target: development
+    image: llm-android-pentest:dev
+    container_name: llm-pentest-cli
+    volumes:
+      # Mount source for live development
+      - .:/app
+      - ./output:/app/output
+      - chromadb-data:/app/.chromadb
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GENYMOTION_HOST=${GENYMOTION_HOST:-host.docker.internal}
+      - EMULATOR_IP=${EMULATOR_IP:-192.168.56.101}
+      - EMULATOR_PORT=${EMULATOR_PORT:-5555}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+    # Don't start by default
+    profiles:
+      - dev
+
+  # ─── Test Runner ───────────────────────────────────────────────────────────
+  test:
+    build:
+      context: .
+      target: development
+    image: llm-android-pentest:dev
+    container_name: llm-pentest-test
+    volumes:
+      - .:/app
+    command: pytest tests/ -v --cov=core --cov=agent --cov-report=term-missing
+    profiles:
+      - test
+
+  # ─── ADB Bridge (connects to host's Genymotion) ────────────────────────────
+  adb-bridge:
+    image: sorccu/adb:latest
+    container_name: llm-pentest-adb
+    privileged: true
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+      - adb-keys:/root/.android
+    ports:
+      - "5037:5037"
+    environment:
+      - ADB_SERVER_SOCKET=tcp:0.0.0.0:5037
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      sh -c "adb -a nodaemon server &
+             sleep 2 &&
+             adb connect ${EMULATOR_IP:-192.168.56.101}:${EMULATOR_PORT:-5555} &&
+             tail -f /dev/null"
+    restart: unless-stopped
+    profiles:
+      - full
+
+  # ─── Ollama LLM Server (Optional - use if not running on host) ────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: llm-pentest-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    # GPU support (uncomment if you have NVIDIA GPU with nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - ollama
+      - full
+
+  # ─── Ollama Model Puller (runs once to download models) ───────────────────
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: llm-pentest-ollama-pull
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo 'Pulling recommended models...' &&
+        ollama pull llama3.2 &&
+        echo 'Model ready!'
+      "
+    profiles:
+      - ollama-setup
+
+volumes:
+  chromadb-data:
+    name: llm-pentest-chromadb
+  adb-keys:
+    name: llm-pentest-adb-keys
+  ollama-models:
+    name: llm-pentest-ollama-models
+
+networks:
+  default:
+    name: llm-pentest-network
