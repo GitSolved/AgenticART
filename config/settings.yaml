@@ -1,0 +1,88 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# LLM-Pentest Settings
+# Inspired by: PentestGPT, PentAGI, HackSynth
+# ═══════════════════════════════════════════════════════════════════════════════
+
+project:
+  name: "LLM-Pentest"
+  version: "0.1.0"
+  description: "LLM-Powered Android Penetration Testing Framework"
+
+# ─── Agent Layer ─────────────────────────────────────────────────────────────
+agent:
+  # LLM Provider settings
+  llm:
+    provider: "ollama"  # ollama | openai | anthropic
+
+    # Ollama-specific settings
+    ollama:
+      host: "http://localhost:11434"
+      model: "llama3.1:8b"
+      temperature: 0.7
+      context_length: 8192
+      # Recommended models by task:
+      # - llama3.2: General tasks, fast
+      # - codellama: Script generation
+      # - deepseek-coder: Complex exploit code
+      # - mistral: Balanced performance
+
+  # HackSynth-inspired dual-module architecture
+  planner:
+    max_iterations: 10
+    strategy: "iterative"  # iterative | tree-of-thought | react
+
+  summarizer:
+    context_window: 8192
+    compression_ratio: 0.3
+
+  # PentAGI-inspired memory system
+  memory:
+    type: "hybrid"  # ephemeral | persistent | hybrid
+    vector_store: "chromadb"  # chromadb | pgvector | faiss
+    embedding_model: "nomic-embed-text"  # Ollama embedding model
+
+  # Chain configuration
+  chains:
+    android_root:
+      phases: ["recon", "scan", "exploit", "escalate", "verify"]
+      retry_on_failure: true
+      max_retries: 3
+
+# ─── Exploitation Modules ────────────────────────────────────────────────────
+exploitation:
+  techniques:
+    enabled:
+      - magisk
+      - kernel_exploit
+      - adb_root
+      - bootloader_unlock
+
+  payloads:
+    output_dir: "scripts/generated"
+    validate_before_execute: true
+
+# ─── Target Configuration ────────────────────────────────────────────────────
+targets:
+  default_platform: "android"
+  android:
+    min_api_level: 28
+    supported_architectures: ["arm64-v8a", "armeabi-v7a", "x86_64"]
+
+# ─── Output & Reporting ──────────────────────────────────────────────────────
+output:
+  logs:
+    format: "json"  # json | text
+    rotation: "daily"
+    retention_days: 30
+
+  reports:
+    format: "markdown"  # markdown | html | pdf
+    include_artifacts: true
+
+# ─── Safety Controls ─────────────────────────────────────────────────────────
+safety:
+  require_confirmation: true
+  allowed_targets: ["emulator", "authorized_device"]
+  blocked_commands:
+    - "rm -rf /"
+    - "dd if=/dev/zero"
