@@ -1,4 +1,4 @@
-# LLM-AndroidPentest Requirements
+# AgenticART Requirements
 # Install with: pip install -r requirements.txt
 # Tool verification: ./scripts/check-tools.sh
 # Full reference: TOOLS.md

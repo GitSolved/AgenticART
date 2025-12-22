@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# LLM-AndroidPentest Docker Compose
+# AgenticART Docker Compose
 #
 # Usage:
 #   docker-compose up webapp                    # Web app (connects to host Ollama)

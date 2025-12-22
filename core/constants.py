@@ -1,5 +1,6 @@
-""
-""
+"""
+Shared Constants and Regex Patterns
+"""
 
 import re
 
@@ -25,4 +26,3 @@ SENSITIVE_PATHS = [
     "databases/",
     "files/",
 ]
-

@@ -257,7 +257,7 @@ For each step provide:
 
         # If no ACTION field, try to extract first meaningful line
         if not action:
-            lines = [l.strip() for l in text.split('\n') if l.strip() and not l.startswith('#')]
+            lines = [line.strip() for line in text.split('\n') if line.strip() and not line.startswith('#')]
             # Skip numbered prefixes like "1." or "**"
             for line in lines[:3]:
                 cleaned = re.sub(r'^[\d\.\*\-\s]+', '', line).strip()

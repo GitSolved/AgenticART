@@ -15,22 +15,25 @@ This script validates that the framework implements the paper's methodology:
 
 import os
 import sys
+from dataclasses import dataclass
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Load environment variables from config/.env (or .env.example as fallback)
 from dotenv import load_dotenv
 
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from agent.chains.android_root_chain import AndroidRootChain, ChainState
+from agent.planner import PentestPhase, PlanStep
+from agent.script_generator import ScriptGenerator, ScriptType
+from core.governance import ApprovalWorkflow, TriageAssessor
+from core.scanning.cve_matcher import CVEMatcher
+
+# Load environment variables from config/.env (or .env.example as fallback)
 config_dir = os.path.join(os.path.dirname(__file__), "..", "config")
 env_file = os.path.join(config_dir, ".env")
 if not os.path.exists(env_file):
     env_file = os.path.join(config_dir, ".env.example")
 load_dotenv(env_file)
-
-from agent.chains.android_root_chain import AndroidRootChain, ChainState
-from agent.script_generator import ScriptGenerator, ScriptType
-from core.governance import ApprovalWorkflow, TriageAssessor
-from core.scanning.cve_matcher import CVEMatcher
 
 
 @dataclass
@@ -42,9 +45,9 @@ class ValidationResult:
 
 def validate_phase_1_reconnaissance():
     """Phase 1: Device Fingerprinting"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE 1: Reconnaissance & Device Fingerprinting")
-    print("="*60)
+    print("=" * 60)
 
     try:
         from core.reconnaissance.device_enum import ADBConnection, DeviceEnumerator
@@ -72,18 +75,16 @@ def validate_phase_1_reconnaissance():
 
 def validate_phase_2_cve_matching():
     """Phase 2: CVE Matching Against Device Profile"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE 2: CVE Matching")
-    print("="*60)
+    print("=" * 60)
 
     try:
         matcher = CVEMatcher()
 
         # Test matching against vulnerable device profile
         matches = matcher.match_device(
-            android_version="11",
-            api_level=30,
-            security_patch="2021-01-05"
+            android_version="11", api_level=30, security_patch="2021-01-05"
         )
 
         print("  ✓ CVEMatcher initialized")
@@ -95,9 +96,9 @@ def validate_phase_2_cve_matching():
         # Verify CVE structure
         if matches:
             cve = matches[0]
-            assert hasattr(cve, 'cve_id'), "CVE missing cve_id"
-            assert hasattr(cve, 'severity'), "CVE missing severity"
-            assert hasattr(cve, 'cvss_score'), "CVE missing cvss_score"
+            assert hasattr(cve, "cve_id"), "CVE missing cve_id"
+            assert hasattr(cve, "severity"), "CVE missing severity"
+            assert hasattr(cve, "cvss_score"), "CVE missing cvss_score"
             print("  ✓ CVE structure validated")
 
         return ValidationResult("cve_matching", True, f"{len(matches)} CVEs matched")
@@ -109,9 +110,9 @@ def validate_phase_2_cve_matching():
 
 def validate_phase_3_script_generation():
     """Phase 3: LLM-Driven Script Generation"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE 3: Script Generation")
-    print("="*60)
+    print("=" * 60)
 
     try:
         generator = ScriptGenerator()
@@ -121,7 +122,7 @@ def validate_phase_3_script_generation():
             action="Enumerate installed packages and check for root",
             command=None,
             rationale="Initial device assessment",
-            risk_level="low"
+            risk_level="low",
         )
 
         target = {"ip": "192.168.56.101", "android_version": "11"}
@@ -142,7 +143,9 @@ def validate_phase_3_script_generation():
         if metrics.hallucinated_paths:
             print(f"    ! Hallucinated paths detected: {metrics.hallucinated_paths}")
 
-        return ValidationResult("script_generation", True, f"{len(script.content.splitlines())} lines")
+        return ValidationResult(
+            "script_generation", True, f"{len(script.content.splitlines())} lines"
+        )
 
     except Exception as e:
         print(f"  ✗ Error: {e}")
@@ -151,9 +154,9 @@ def validate_phase_3_script_generation():
 
 def validate_phase_4_feedback_loop():
     """Phase 4: Iterative Feedback Loop"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE 4: Iterative Feedback Loop")
-    print("="*60)
+    print("=" * 60)
 
     try:
         generator = ScriptGenerator()
@@ -164,7 +167,7 @@ def validate_phase_4_feedback_loop():
             action="Connect to device and run exploit",
             command=None,
             rationale="Test exploit delivery",
-            risk_level="medium"
+            risk_level="medium",
         )
 
         target = {"ip": "192.168.56.101", "android_version": "11"}
@@ -185,7 +188,7 @@ def validate_phase_4_feedback_loop():
             failed_script=original,
             error_output=error,
             target_config=target,
-            attempt_number=1
+            attempt_number=1,
         )
 
         print(f"  ✓ Regenerated script: {len(regenerated.content.splitlines())} lines")
@@ -194,8 +197,9 @@ def validate_phase_4_feedback_loop():
         changed = original.content != regenerated.content
         print(f"  ✓ Script modified: {changed}")
 
-        return ValidationResult("feedback_loop", changed,
-                               f"Original → Regenerated ({context['error_type']})")
+        return ValidationResult(
+            "feedback_loop", changed, f"Original → Regenerated ({context['error_type']})"
+        )
 
     except Exception as e:
         print(f"  ✗ Error: {e}")
@@ -204,9 +208,9 @@ def validate_phase_4_feedback_loop():
 
 def validate_phase_5_governance():
     """Phase 5: Human-in-the-Loop Governance"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE 5: Governance & Approval Workflow")
-    print("="*60)
+    print("=" * 60)
 
     try:
         assessor = TriageAssessor()
@@ -223,9 +227,13 @@ def validate_phase_5_governance():
         print("  Triage Assessment:")
         for cmd, expected in test_commands:
             level, reason = assessor.assess([cmd])  # Pass as list
-            status = "✓" if (expected == "low" and level <= 2) or \
-                          (expected == "high" and level >= 3) or \
-                          (expected == "critical" and level >= 4) else "!"
+            status = (
+                "✓"
+                if (expected == "low" and level <= 2)
+                or (expected == "high" and level >= 3)
+                or (expected == "critical" and level >= 4)
+                else "!"
+            )
             print(f"    {status} '{cmd[:30]}...' → Level {level}")
 
         # Verify workflow exists
@@ -242,15 +250,13 @@ def validate_phase_5_governance():
 
 def validate_phase_6_chain_execution():
     """Phase 6: End-to-End Chain Execution"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE 6: Chain Execution (Dry Run)")
-    print("="*60)
+    print("=" * 60)
 
     try:
         chain = AndroidRootChain(
-            max_iterations=3,
-            max_retries_per_step=2,
-            require_confirmation=False
+            max_iterations=3, max_retries_per_step=2, require_confirmation=False
         )
 
         target = {
@@ -258,7 +264,7 @@ def validate_phase_6_chain_execution():
             "android_version": "11",
             "api_level": 30,
             "security_patch": "2021-01-05",
-            "device": "Genymotion Test"
+            "device": "Genymotion Test",
         }
 
         # Verify chain configuration
@@ -272,18 +278,15 @@ def validate_phase_6_chain_execution():
         print(f"  ✓ Chain states: {states}")
 
         # Dry run
-        result = chain.run(
-            target_config=target,
-            objective="Test chain execution",
-            executor=None  # Dry run
-        )
+        result = chain.run(target_config=target, objective="Test chain execution", executor=None)
 
         print("  ✓ Chain completed")
         print(f"  ✓ Scripts generated: {len(result.generated_scripts)}")
         print(f"  ✓ Retry tracking: total={result.total_retries}")
 
-        return ValidationResult("chain_execution", True,
-                               f"{len(result.generated_scripts)} scripts generated")
+        return ValidationResult(
+            "chain_execution", True, f"{len(result.generated_scripts)} scripts generated"
+        )
 
     except Exception as e:
         print(f"  ✗ Error: {e}")
@@ -291,10 +294,10 @@ def validate_phase_6_chain_execution():
 
 
 def main():
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("  VALIDATING FRAMEWORK AGAINST RESEARCH PAPER")
     print("  Paper: 'Breaking Android with AI' (arxiv 2509.07933)")
-    print("="*60)
+    print("=" * 60)
 
     results = []
 
@@ -307,9 +310,9 @@ def main():
     results.append(validate_phase_6_chain_execution())
 
     # Summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("  VALIDATION SUMMARY")
-    print("="*60)
+    print("=" * 60)
 
     passed = 0
     for r in results:
@@ -318,7 +321,7 @@ def main():
         if r.passed:
             passed += 1
 
-    print("\n" + "-"*60)
+    print("\n" + "-" * 60)
     print(f"  Result: {passed}/{len(results)} phases validated")
 
     if passed == len(results):
@@ -326,7 +329,7 @@ def main():
     else:
         print("\n  ! Some validations failed - review above")
 
-    print("="*60)
+    print("=" * 60)
 
     return 0 if passed == len(results) else 1
 

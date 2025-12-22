@@ -1,5 +1,5 @@
 """
-Core Utilities for LLM-AndroidPentest
+Core Utilities for AgenticART
 """
 
 from datetime import datetime, timezone

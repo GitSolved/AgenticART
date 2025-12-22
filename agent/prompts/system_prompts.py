@@ -1,5 +1,5 @@
 """
-Centralized System Prompts for LLM-AndroidPentest
+Centralized System Prompts for AgenticART
 
 This module contains all system prompts used across the framework.
 Prompts are designed for:

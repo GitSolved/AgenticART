@@ -1,4 +1,4 @@
-# LLM-AndroidPentest Architecture
+# AgenticART Architecture
 
 ## System Overview
 

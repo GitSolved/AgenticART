@@ -7,7 +7,8 @@ Maintains current session state for the Planner/Summarizer loop.
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
-from core.utils import get_utc_now, calculate_duration
+
+from core.utils import calculate_duration, get_utc_now
 
 
 @dataclass

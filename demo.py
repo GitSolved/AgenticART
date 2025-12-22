@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LLM-AndroidPentest Demo
+AgenticART Demo
 =======================
 
 This demo showcases the framework's capabilities:
@@ -293,7 +293,7 @@ def demo_governance():
     print_header("DEMO 5: Governance & Triage")
 
     assessor = TriageAssessor()
-    workflow = ApprovalWorkflow()
+    ApprovalWorkflow()
 
     # Test various commands (assessor expects a list)
     test_commands = [
@@ -401,8 +401,8 @@ def main():
 
     # Run all demos
     device_profile = demo_reconnaissance()
-    cve_matches = demo_cve_matching(device_profile)
-    script = demo_script_generation(device_profile)
+    demo_cve_matching(device_profile)
+    demo_script_generation(device_profile)
     demo_feedback_loop()
     demo_governance()
     demo_chain_execution()

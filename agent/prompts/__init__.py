@@ -1,5 +1,5 @@
 """
-Prompt Templates for LLM-AndroidPentest
+Prompt Templates for AgenticART
 
 This package contains all prompt engineering components:
 - system_prompts.py: Core system prompts with Genymotion context

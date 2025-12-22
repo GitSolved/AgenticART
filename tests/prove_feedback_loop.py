@@ -255,7 +255,7 @@ def prove_chain_retry_loop():
     print(f"  Successful Retries: {chain.successful_retries}")
     print(f"  Scripts Generated: {len(chain.generated_scripts)}")
 
-    chain.get_state()
+    state = chain.get_state()
     print("\n--- Final State ---")
     for key, value in state.items():
         print(f"  {key}: {value}")

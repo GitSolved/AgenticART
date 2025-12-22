@@ -1,4 +1,4 @@
-# LLM-AndroidPentest Setup Guide
+# AgenticART Setup Guide
 
 Complete guide for setting up the LLM-powered Android penetration testing environment.
 
@@ -39,7 +39,7 @@ Complete guide for setting up the LLM-powered Android penetration testing enviro
 ```bash
 # Clone repository
 git clone https://github.com/your-username/llm-android-pentest.git
-cd LLM-AndroidPentest
+cd AgenticART
 
 # Run setup script
 ./scripts/setup.sh
@@ -175,7 +175,7 @@ For development without Docker:
 ### Step 1: Create Virtual Environment
 
 ```bash
-cd LLM-AndroidPentest
+cd AgenticART
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```

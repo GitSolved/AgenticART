@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# LLM-AndroidPentest Dockerfile
+# AgenticART Dockerfile
 # Multi-stage build for optimized image size
 # ═══════════════════════════════════════════════════════════════════════════════
 

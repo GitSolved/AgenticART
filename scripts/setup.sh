@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# LLM-AndroidPentest Setup Script
+# AgenticART Setup Script
 # Automates environment setup for macOS, Linux, and WSL
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -26,7 +26,7 @@ log_error() { echo -e "${RED}[✗]${NC} $1"; }
 # Header
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════════╗"
-echo "║           LLM-AndroidPentest Setup Script                            ║"
+echo "║           AgenticART Setup Script                            ║"
 echo "║           Automated environment configuration                        ║"
 echo "╚══════════════════════════════════════════════════════════════════════╝"
 echo ""
@@ -175,7 +175,7 @@ create_activation_script() {
 
     cat > "${PROJECT_ROOT}/activate.sh" << 'ACTIVATE_EOF'
 #!/bin/bash
-# LLM-AndroidPentest Environment Activation
+# AgenticART Environment Activation
 # Usage: source activate.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -193,7 +193,7 @@ export LLM_PENTEST_ROOT="$SCRIPT_DIR"
 # Add scripts to PATH
 export PATH="$SCRIPT_DIR/scripts:$PATH"
 
-echo "✓ LLM-AndroidPentest environment activated"
+echo "✓ AgenticART environment activated"
 echo "  Python: $(which python3)"
 echo "  Project: $LLM_PENTEST_ROOT"
 echo ""

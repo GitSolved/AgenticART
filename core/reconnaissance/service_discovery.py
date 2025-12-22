@@ -208,7 +208,6 @@ class ServiceDiscovery:
         # Get running services
         output = self.adb.shell("dumpsys activity services | grep -E '(ServiceRecord|intent=)'")
 
-        current_service = None
         for line in output.split('\n'):
             if 'ServiceRecord' in line:
                 # Extract service info

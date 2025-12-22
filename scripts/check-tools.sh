@@ -51,7 +51,7 @@ check_python_pkg() {
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║              LLM-AndroidPentest Tool Check                   ║"
+echo "║              AgenticART Tool Check                   ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 

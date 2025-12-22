@@ -28,7 +28,7 @@ def main():
 
     device_id = f"{args.ip}:{args.port}"
     print(f"\n{'='*60}")
-    print("LLM-AndroidPentest Quick Scan")
+    print("AgenticART Quick Scan")
     print(f"Target: {device_id}")
     print(f"{'='*60}\n")
 
