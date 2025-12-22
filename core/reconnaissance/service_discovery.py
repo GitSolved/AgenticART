@@ -7,9 +7,9 @@ Identifies potential attack vectors through network and IPC enumeration.
 
 import logging
 import re
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from .device_enum import ADBConnection
 

@@ -4,16 +4,17 @@ Tests for the Scanning Module
 Run with: pytest tests/test_scanning.py -v
 """
 
-import pytest
-from unittest.mock import Mock, patch
-
-import sys
 import os
+import sys
+from unittest.mock import patch
+
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.scanning.vuln_scanner import VulnerabilityScanner, VulnSeverity, VulnCategory
 from core.scanning.cve_matcher import CVEMatcher, ExploitAvailability
-from core.scanning.permission_analyzer import PermissionAnalyzer, PermissionRisk
+from core.scanning.permission_analyzer import PermissionAnalyzer
+from core.scanning.vuln_scanner import VulnerabilityScanner, VulnSeverity
 
 
 class MockADB:
@@ -147,7 +148,6 @@ class TestVulnerabilityScanner:
 
     def test_security_patch_check(self, mock_device_info):
         """Test security patch level vulnerability detection."""
-        from core.scanning.vuln_scanner import VulnerabilityScanner
 
         # Create mock responses
         responses = {
@@ -175,7 +175,6 @@ class TestVulnerabilityScanner:
 
     def test_selinux_check(self, mock_device_info):
         """Test SELinux status checking."""
-        from core.scanning.vuln_scanner import VulnerabilityScanner
 
         # Test with permissive SELinux
         mock_device_info.selinux_status = "Permissive"

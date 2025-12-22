@@ -14,13 +14,11 @@ Architecture:
                                         └─────────────────┘
 """
 
-import os
 import subprocess
-import shlex
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Generator
 from enum import Enum
+from typing import Optional
 
 
 class ExecutorType(Enum):
@@ -354,7 +352,6 @@ class KaliExecutor:
 
         Writes script to temp file in container, then executes.
         """
-        import tempfile
         import base64
 
         # Encode script to avoid escaping issues

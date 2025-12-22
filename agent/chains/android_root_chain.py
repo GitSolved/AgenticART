@@ -7,13 +7,13 @@ Implements the paper's methodology: PentestGPT -> Script Generation -> Execution
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, Callable
 from enum import Enum
+from typing import Callable, Optional
 
-from ..planner import Planner, PentestPhase, PentestPlan, PlanStep
-from ..summarizer import Summarizer, ExecutionSummary, ActionResult
-from ..script_generator import ScriptGenerator, GeneratedScript, ScriptType
 from ..memory import WorkingMemory
+from ..planner import PentestPhase, Planner, PlanStep
+from ..script_generator import ScriptGenerator, ScriptType
+from ..summarizer import ActionResult, ExecutionSummary, Summarizer
 
 logger = logging.getLogger(__name__)
 

@@ -10,8 +10,8 @@ import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -347,9 +347,9 @@ class CVEMatcher:
             - Without API key: 5 requests per 30 seconds
             - With API key: 50 requests per 30 seconds
         """
-        import requests
         import time
-        import re
+
+        import requests
 
         # Check for cached data
         cache_file = os.path.join(os.path.dirname(__file__), "..", "..", "output", "nvd_cache.json")
@@ -459,7 +459,6 @@ class CVEMatcher:
 
     def _parse_nvd_cve(self, vuln: dict) -> Optional[CVEEntry]:
         """Parse a single CVE from NVD API response."""
-        import re
 
         cve_data = vuln.get("cve", {})
         cve_id = cve_data.get("id")

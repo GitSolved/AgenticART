@@ -25,7 +25,7 @@ else:
 
 from .llm_client import LLMClient
 from .planner import Planner
-from .summarizer import Summarizer
 from .script_generator import ScriptGenerator
+from .summarizer import Summarizer
 
 __all__ = ["LLMClient", "Planner", "Summarizer", "ScriptGenerator"]

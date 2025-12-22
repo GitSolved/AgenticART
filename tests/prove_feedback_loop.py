@@ -9,14 +9,14 @@ This script PROVES the feedback loop by:
 4. Demonstrating successful recovery after retries
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent.script_generator import ScriptGenerator, ScriptType, GeneratedScript
-from agent.planner import PlanStep, PentestPhase
-from agent.summarizer import Summarizer, ActionResult
-from agent.chains.android_root_chain import AndroidRootChain, ChainState
+from agent.chains.android_root_chain import AndroidRootChain
+from agent.planner import PentestPhase, PlanStep
+from agent.script_generator import ScriptGenerator, ScriptType
 
 # Simulated failure scenarios
 FAILURE_SCENARIOS = [
@@ -234,7 +234,7 @@ def prove_chain_retry_loop():
     print("  Attempt 3: SUCCEED")
 
     # Run chain with mock executor
-    result = chain.run(
+    chain.run(
         target_config=target_config,
         objective="Connect to device and verify access",
         executor=mock_executor.execute,
@@ -255,8 +255,8 @@ def prove_chain_retry_loop():
     print(f"  Successful Retries: {chain.successful_retries}")
     print(f"  Scripts Generated: {len(chain.generated_scripts)}")
 
-    state = chain.get_state()
-    print(f"\n--- Final State ---")
+    chain.get_state()
+    print("\n--- Final State ---")
     for key, value in state.items():
         print(f"  {key}: {value}")
 

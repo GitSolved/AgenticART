@@ -7,9 +7,9 @@ Provides:
 - 1-day vulnerability demonstrator
 """
 
-from .templates import ExploitTemplate, VulnerabilityClass, get_template
-from .poc_fetcher import PoCFetcher, PoCSource
 from .demonstrator import OneDayDemonstrator
+from .poc_fetcher import PoCFetcher, PoCSource
+from .templates import ExploitTemplate, VulnerabilityClass, get_template
 
 __all__ = [
     "ExploitTemplate",

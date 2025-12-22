@@ -8,8 +8,8 @@ to identify potential attack vectors.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 from ..reconnaissance import ADBConnection, DeviceEnumerator, DeviceInfo
 
@@ -274,7 +274,7 @@ class VulnerabilityScanner:
 
         # Parse patch date (format: YYYY-MM-DD)
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime
             patch_datetime = datetime.strptime(patch_date, "%Y-%m-%d")
             now = datetime.now()
             age_days = (now - patch_datetime).days

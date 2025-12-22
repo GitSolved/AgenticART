@@ -4,17 +4,18 @@ Tests for the Agent Layer
 Run with: pytest tests/test_agent.py -v
 """
 
-import pytest
+import os
+import sys
 from unittest.mock import Mock, patch
 
-import sys
-import os
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.llm_client import LLMClient, LLMProvider, LLMResponse
-from agent.planner import Planner, PentestPhase, PlanStep
-from agent.summarizer import Summarizer, ActionResult
+from agent.planner import PentestPhase, Planner, PlanStep
 from agent.script_generator import ScriptGenerator, ScriptType
+from agent.summarizer import ActionResult, Summarizer
 
 
 class TestLLMClient:

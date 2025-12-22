@@ -14,22 +14,19 @@ This demo showcases the framework's capabilities:
 Run: python demo.py
 """
 
-import sys
 import os
+import sys
 import time
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from dataclasses import dataclass
-from typing import Optional
 
 # Framework imports
-from agent.script_generator import ScriptGenerator, ScriptType, GeneratedScript
-from agent.planner import Planner, PlanStep, PentestPhase
-from agent.summarizer import Summarizer, ActionResult
-from core.scanning.cve_matcher import CVEMatcher
+from agent.planner import PentestPhase, PlanStep
+from agent.script_generator import GeneratedScript, ScriptGenerator, ScriptType
 from core.governance import ApprovalWorkflow, TriageAssessor
+from core.scanning.cve_matcher import CVEMatcher
 
 
 def print_header(title: str):
@@ -63,15 +60,15 @@ def demo_reconnaissance():
             enum = DeviceEnumerator(adb)
             info = enum.enumerate()
 
-            print(f"\n  ┌─────────────────────────────────────────┐")
-            print(f"  │  Device Information                     │")
-            print(f"  ├─────────────────────────────────────────┤")
+            print("\n  ┌─────────────────────────────────────────┐")
+            print("  │  Device Information                     │")
+            print("  ├─────────────────────────────────────────┤")
             print(f"  │  Model:          {info.model:<22} │")
             print(f"  │  Android:        {info.android_version:<22} │")
             print(f"  │  API Level:      {info.api_level:<22} │")
             print(f"  │  Security Patch: {info.security_patch:<22} │")
             print(f"  │  Build:          {info.build_id[:22]:<22} │")
-            print(f"  └─────────────────────────────────────────┘")
+            print("  └─────────────────────────────────────────┘")
 
             return {
                 "model": info.model,
@@ -94,14 +91,14 @@ def demo_reconnaissance():
             "build_id": "RQ1A.210105.003"
         }
 
-        print(f"\n  ┌─────────────────────────────────────────┐")
-        print(f"  │  Demo Device Profile                    │")
-        print(f"  ├─────────────────────────────────────────┤")
+        print("\n  ┌─────────────────────────────────────────┐")
+        print("  │  Demo Device Profile                    │")
+        print("  ├─────────────────────────────────────────┤")
         print(f"  │  Model:          {mock_device['model']:<22} │")
         print(f"  │  Android:        {mock_device['android_version']:<22} │")
         print(f"  │  API Level:      {mock_device['api_level']:<22} │")
         print(f"  │  Security Patch: {mock_device['security_patch']:<22} │")
-        print(f"  └─────────────────────────────────────────┘")
+        print("  └─────────────────────────────────────────┘")
 
         return mock_device
 
@@ -249,7 +246,7 @@ if __name__ == "__main__":
 
     # Quality check
     metrics = generator.check_quality(script, target)
-    print(f"  Quality Check:")
+    print("  Quality Check:")
     print(f"    - Hallucinated tools: {len(metrics.hallucinated_tools or [])}")
     print(f"    - Hallucinated paths: {len(metrics.hallucinated_paths or [])}")
     print(f"    - Intrusive commands: {len(metrics.intrusive_commands or [])}")
@@ -271,24 +268,24 @@ def demo_feedback_loop():
 
     # Extract error context - this works without LLM
     context = generator.extract_error_context(error)
-    print(f"\n  Error Analysis:")
+    print("\n  Error Analysis:")
     print(f"    Type: {context['error_type']}")
-    print(f"    Suggestions:")
+    print("    Suggestions:")
     for suggestion in context['suggestions'][:3]:
         print(f"      • {suggestion}")
 
     # Show what the feedback loop does
-    print(f"\n  Feedback Loop Process:")
-    print(f"    1. Capture error output from failed script")
-    print(f"    2. Classify error type (connection, permission, syntax, etc.)")
-    print(f"    3. Generate fix suggestions based on error pattern")
-    print(f"    4. Re-prompt LLM with error context")
-    print(f"    5. Generate new script incorporating fixes")
-    print(f"    6. Retry execution (up to max_retries)")
+    print("\n  Feedback Loop Process:")
+    print("    1. Capture error output from failed script")
+    print("    2. Classify error type (connection, permission, syntax, etc.)")
+    print("    3. Generate fix suggestions based on error pattern")
+    print("    4. Re-prompt LLM with error context")
+    print("    5. Generate new script incorporating fixes")
+    print("    6. Retry execution (up to max_retries)")
 
-    print(f"\n  ✓ Error classification: Working")
-    print(f"  ✓ Suggestion generation: Working")
-    print(f"  ✓ Feedback loop architecture: Validated")
+    print("\n  ✓ Error classification: Working")
+    print("  ✓ Suggestion generation: Working")
+    print("  ✓ Feedback loop architecture: Validated")
 
 
 def demo_governance():
@@ -333,10 +330,10 @@ def demo_governance():
         cmd_display = cmd[:47] + "..." if len(cmd) > 50 else cmd
         print(f"  {cmd_display:<50} {color}{level.value:>6}{reset}  {action:<15}")
 
-    print(f"\n  Governance Rules:")
-    print(f"    • Level 1-2: Auto-approved (low risk)")
-    print(f"    • Level 3:   Requires human review")
-    print(f"    • Level 4-5: Blocked without explicit override")
+    print("\n  Governance Rules:")
+    print("    • Level 1-2: Auto-approved (low risk)")
+    print("    • Level 3:   Requires human review")
+    print("    • Level 4-5: Blocked without explicit override")
 
 
 def demo_chain_execution():
@@ -367,7 +364,7 @@ def demo_chain_execution():
 
         print(f"\n  Chain States: {[s.value for s in ChainState]}")
 
-        print(f"\n  Executing dry run...")
+        print("\n  Executing dry run...")
         time.sleep(0.5)
 
         result = chain.run(
@@ -376,13 +373,13 @@ def demo_chain_execution():
             executor=None  # Dry run - no actual execution
         )
 
-        print(f"\n  Chain Result:")
+        print("\n  Chain Result:")
         print(f"    • Scripts generated: {len(result.generated_scripts)}")
         print(f"    • Total retries: {result.total_retries}")
         print(f"    • Final state: {result.final_state}")
 
         if result.generated_scripts:
-            print(f"\n  Generated Scripts:")
+            print("\n  Generated Scripts:")
             for i, script in enumerate(result.generated_scripts[:3], 1):
                 print(f"    {i}. {script.name}")
 

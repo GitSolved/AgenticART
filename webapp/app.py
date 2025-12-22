@@ -8,32 +8,32 @@ PentestGPT intelligence with executable script generation.
 Run with: streamlit run webapp/app.py
 """
 
-import streamlit as st
+import json
 import os
 import sys
-import json
 from datetime import datetime
 from pathlib import Path
+
+import streamlit as st
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import LLMClient, Planner, Summarizer, ScriptGenerator
-from agent.planner import PentestPhase
-from agent.script_generator import ScriptType
+from agent import LLMClient, ScriptGenerator
 from agent.chains import AndroidRootChain
-from core.reconnaissance import ADBConnection, DeviceEnumerator
+from agent.script_generator import ScriptType
 from core.exploitation import ExploitRunner
 from core.exploitation.exploit_runner import ExecutionMode
 from core.governance import (
-    ApprovalWorkflow,
     ApprovalRequest,
-    TriageLevel,
+    ApprovalWorkflow,
     GovernanceConfig,
+    TriageLevel,
     assess_triage,
     check_governance,
 )
-from core.traffic import MitmController, MitmConfig, MitmStatus
+from core.reconnaissance import ADBConnection
+from core.traffic import MitmConfig, MitmController, MitmStatus
 
 # Page configuration
 st.set_page_config(
@@ -122,7 +122,7 @@ def refresh_ollama_models():
         else:
             st.session_state.ollama_available = False
             st.session_state.ollama_models = []
-    except Exception as e:
+    except Exception:
         st.session_state.ollama_available = False
         st.session_state.ollama_models = []
 
@@ -163,7 +163,7 @@ def render_sidebar():
 
         # Show status
         if st.session_state.ollama_available:
-            st.sidebar.success(f"Ollama connected")
+            st.sidebar.success("Ollama connected")
         else:
             st.sidebar.warning("Ollama not detected")
             if st.sidebar.button("Check Connection"):

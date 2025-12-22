@@ -5,9 +5,9 @@ Gathers comprehensive information about target Android devices.
 Used in the reconnaissance phase of the pentest chain.
 """
 
-import subprocess
-import re
 import logging
+import re
+import subprocess
 from dataclasses import dataclass
 from typing import Optional
 

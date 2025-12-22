@@ -19,14 +19,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from .poc_fetcher import PoCFetcher, get_poc_code
 from .templates import (
-    ExploitTemplate,
-    VulnerabilityClass,
-    get_template,
     CVE_TO_TEMPLATE,
-    EXPLOIT_TEMPLATES,
+    ExploitTemplate,
+    get_template,
 )
-from .poc_fetcher import PoCFetcher, PoCEntry, get_poc_code
 
 logger = logging.getLogger(__name__)
 

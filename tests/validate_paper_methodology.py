@@ -13,28 +13,24 @@ This script validates that the framework implements the paper's methodology:
 6. End-to-end chain execution
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables from config/.env (or .env.example as fallback)
 from dotenv import load_dotenv
+
 config_dir = os.path.join(os.path.dirname(__file__), "..", "config")
 env_file = os.path.join(config_dir, ".env")
 if not os.path.exists(env_file):
     env_file = os.path.join(config_dir, ".env.example")
 load_dotenv(env_file)
 
-from dataclasses import dataclass
-from typing import Optional
-
-# Framework imports
-from agent.script_generator import ScriptGenerator, ScriptType, GeneratedScript
-from agent.planner import Planner, PlanStep, PentestPhase
 from agent.chains.android_root_chain import AndroidRootChain, ChainState
-from agent.summarizer import Summarizer, ActionResult
-from core.scanning.cve_matcher import CVEMatcher
+from agent.script_generator import ScriptGenerator, ScriptType
 from core.governance import ApprovalWorkflow, TriageAssessor
+from core.scanning.cve_matcher import CVEMatcher
 
 
 @dataclass
@@ -90,7 +86,7 @@ def validate_phase_2_cve_matching():
             security_patch="2021-01-05"
         )
 
-        print(f"  ✓ CVEMatcher initialized")
+        print("  ✓ CVEMatcher initialized")
         print(f"  ✓ Matched {len(matches)} CVEs for Android 11")
 
         if matches:
@@ -102,7 +98,7 @@ def validate_phase_2_cve_matching():
             assert hasattr(cve, 'cve_id'), "CVE missing cve_id"
             assert hasattr(cve, 'severity'), "CVE missing severity"
             assert hasattr(cve, 'cvss_score'), "CVE missing cvss_score"
-            print(f"  ✓ CVE structure validated")
+            print("  ✓ CVE structure validated")
 
         return ValidationResult("cve_matching", True, f"{len(matches)} CVEs matched")
 
@@ -214,7 +210,7 @@ def validate_phase_5_governance():
 
     try:
         assessor = TriageAssessor()
-        workflow = ApprovalWorkflow()
+        ApprovalWorkflow()
 
         # Test triage levels
         test_commands = [
@@ -233,9 +229,9 @@ def validate_phase_5_governance():
             print(f"    {status} '{cmd[:30]}...' → Level {level}")
 
         # Verify workflow exists
-        print(f"  ✓ ApprovalWorkflow initialized")
-        print(f"  ✓ Auto-approve threshold: Level <= 2")
-        print(f"  ✓ Requires human review: Level >= 3")
+        print("  ✓ ApprovalWorkflow initialized")
+        print("  ✓ Auto-approve threshold: Level <= 2")
+        print("  ✓ Requires human review: Level >= 3")
 
         return ValidationResult("governance", True, "Triage levels validated")
 
@@ -266,7 +262,7 @@ def validate_phase_6_chain_execution():
         }
 
         # Verify chain configuration
-        print(f"  ✓ Chain initialized")
+        print("  ✓ Chain initialized")
         print(f"  ✓ Max iterations: {chain.max_iterations}")
         print(f"  ✓ Max retries per step: {chain.max_retries_per_step}")
 
@@ -282,7 +278,7 @@ def validate_phase_6_chain_execution():
             executor=None  # Dry run
         )
 
-        print(f"  ✓ Chain completed")
+        print("  ✓ Chain completed")
         print(f"  ✓ Scripts generated: {len(result.generated_scripts)}")
         print(f"  ✓ Retry tracking: total={result.total_retries}")
 

@@ -7,8 +7,8 @@ and potential attack vectors.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 from ..reconnaissance import ADBConnection
 

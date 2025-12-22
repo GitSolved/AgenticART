@@ -50,10 +50,8 @@ config/.env
 
 # Generated content
 scripts/generated/
-output/logs/
-output/reports/
-output/artifacts/
-output/demonstrations/
+output/
+vulnerable_apps/
 
 # Vector store
 .chromadb/

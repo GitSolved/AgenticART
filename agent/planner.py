@@ -13,10 +13,10 @@ The Planner is the "strategic brain" that decides WHAT to do next.
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
-from .llm_client import LLMClient, BaseLLMClient
+from .llm_client import BaseLLMClient, LLMClient
 
 
 class PentestPhase(Enum):

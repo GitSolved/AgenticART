@@ -9,16 +9,16 @@ This script tests the paper's methodology:
 4. Verify retry logic works correctly
 """
 
-import sys
-import os
 import logging
+import os
+import sys
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent.script_generator import ScriptGenerator, ScriptType, GeneratedScript
-from agent.planner import PlanStep, PentestPhase
 from agent.chains.android_root_chain import AndroidRootChain, ChainState
+from agent.planner import PentestPhase, PlanStep
+from agent.script_generator import ScriptGenerator, ScriptType
 from core.scanning.cve_matcher import CVEMatcher
 
 # Configure logging
@@ -153,7 +153,7 @@ def test_chain_retry_configuration():
 
     # Test default configuration
     chain = AndroidRootChain()
-    print(f"\nDefault Configuration:")
+    print("\nDefault Configuration:")
     print(f"  max_retries_per_step: {chain.max_retries_per_step}")
     print(f"  retry_delay: {chain.retry_delay}s")
 
@@ -162,7 +162,7 @@ def test_chain_retry_configuration():
         max_retries_per_step=5,
         retry_delay=2.0,
     )
-    print(f"\nCustom Configuration:")
+    print("\nCustom Configuration:")
     print(f"  max_retries_per_step: {custom_chain.max_retries_per_step}")
     print(f"  retry_delay: {custom_chain.retry_delay}s")
 
@@ -185,7 +185,7 @@ def test_chain_state_tracking():
 
     # Get initial state
     state = chain.get_state()
-    print(f"\nInitial State:")
+    print("\nInitial State:")
     for key, value in state.items():
         print(f"  {key}: {value}")
 
@@ -220,7 +220,7 @@ def test_full_chain_dry_run():
         executor=None,  # Dry run
     )
 
-    print(f"\n--- Chain Result ---")
+    print("\n--- Chain Result ---")
     print(f"Success: {result.success}")
     print(f"Root Achieved: {result.root_achieved}")
     print(f"Total Steps: {result.total_steps}")
@@ -246,19 +246,19 @@ def main():
 
     try:
         # Test 1: CVE Matching
-        matches = test_cve_matching()
+        test_cve_matching()
 
         # Test 2: Script Regeneration
-        original, regenerated = test_script_regeneration()
+        test_script_regeneration()
 
         # Test 3: Chain Configuration
-        chain = test_chain_retry_configuration()
+        test_chain_retry_configuration()
 
         # Test 4: State Tracking
-        state = test_chain_state_tracking()
+        test_chain_state_tracking()
 
         # Test 5: Full Chain (Dry Run)
-        result = test_full_chain_dry_run()
+        test_full_chain_dry_run()
 
         print("\n" + "="*60)
         print(" ALL TESTS PASSED ")

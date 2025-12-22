@@ -12,8 +12,8 @@ Inspired by PentestGPT's multi-provider support in legacy/
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Generator
 from enum import Enum
+from typing import Generator, Optional
 
 
 class LLMProvider(Enum):
@@ -250,8 +250,9 @@ class OllamaClient(BaseLLMClient):
         )
 
     def stream(self, prompt: str, system: Optional[str] = None) -> Generator[str, None, None]:
-        import requests
         import json
+
+        import requests
 
         messages = []
         if system:

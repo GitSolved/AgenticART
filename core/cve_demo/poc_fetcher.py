@@ -10,11 +10,9 @@ Sources:
 For authorized security testing only.
 """
 
-import json
 import logging
 import os
-import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Optional

@@ -5,7 +5,6 @@ Semantic memory using vector embeddings for similarity search.
 Supports ChromaDB (default), with extensibility for pgvector/FAISS.
 """
 
-import os
 from dataclasses import dataclass
 from typing import Optional
 

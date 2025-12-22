@@ -8,24 +8,23 @@ This is the key innovation from the "Breaking Android with AI" paper:
 PentestGPT guidance -> Script Generator -> Executable Scripts
 """
 
+import hashlib
 import os
 import re
-import hashlib
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
-from .llm_client import LLMClient, BaseLLMClient
+from .llm_client import BaseLLMClient, LLMClient
 from .planner import PlanStep
 from .prompts.system_prompts import (
     EnvironmentContext,
-    get_core_system_prompt,
-    get_script_prompt,
-    get_error_feedback_prompts,
     build_generation_prompt,
+    get_core_system_prompt,
+    get_error_feedback_prompts,
+    get_script_prompt,
 )
-
 
 # Known valid tools for Android pentesting
 # Reference: TOOLS.md
@@ -226,7 +225,7 @@ class ScriptGenerator:
         # Try to find fenced code block
         patterns = [
             rf"```{script_type.value}\n(.*?)```",
-            rf"```\n(.*?)```",
+            r"```\n(.*?)```",
             r"```python\n(.*?)```",
             r"```bash\n(.*?)```",
         ]

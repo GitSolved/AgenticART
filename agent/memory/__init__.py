@@ -7,7 +7,7 @@ Inspired by PentAGI's sophisticated memory architecture:
 - Semantic Memory: Vector-stored knowledge base
 """
 
-from .working_memory import WorkingMemory
 from .vector_store import VectorStore
+from .working_memory import WorkingMemory
 
 __all__ = ["WorkingMemory", "VectorStore"]

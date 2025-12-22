@@ -8,14 +8,14 @@ Usage: python scripts/run-scan.py [--ip IP] [--port PORT] [--output FILE]
 
 import argparse
 import json
-import sys
 import os
+import sys
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.reconnaissance import ADBConnection, DeviceEnumerator, ServiceDiscovery
-from core.scanning import VulnerabilityScanner, CVEMatcher, PermissionAnalyzer
+from core.scanning import CVEMatcher, VulnerabilityScanner
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
 
     device_id = f"{args.ip}:{args.port}"
     print(f"\n{'='*60}")
-    print(f"LLM-AndroidPentest Quick Scan")
+    print("LLM-AndroidPentest Quick Scan")
     print(f"Target: {device_id}")
     print(f"{'='*60}\n")
 

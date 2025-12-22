@@ -10,10 +10,10 @@ and extracts actionable insights.
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
-from .llm_client import LLMClient, BaseLLMClient
+from .llm_client import BaseLLMClient, LLMClient
 
 
 class ActionResult(Enum):

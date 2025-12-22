@@ -4,15 +4,15 @@ Tests for the Reconnaissance Module
 Run with: pytest tests/test_reconnaissance.py -v
 """
 
-import pytest
-from unittest.mock import Mock, patch
-
-import sys
 import os
+import sys
+
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.reconnaissance.device_enum import ADBConnection, DeviceEnumerator, DeviceInfo
-from core.reconnaissance.service_discovery import ServiceDiscovery, RiskLevel, ServiceType
+from core.reconnaissance.device_enum import DeviceEnumerator
+from core.reconnaissance.service_discovery import RiskLevel, ServiceDiscovery
 
 
 class MockADB:

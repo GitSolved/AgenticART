@@ -8,15 +8,14 @@ Implements the safety controls defined in GOVERNANCE.md:
 - Audit logging
 """
 
-import os
-import re
-import json
 import ipaddress
-from enum import IntEnum
+import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Callable
+from enum import IntEnum
 from pathlib import Path
+from typing import Callable, Optional
 
 
 class TriageLevel(IntEnum):

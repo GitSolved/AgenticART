@@ -7,7 +7,7 @@ rather than generating exploits from scratch (which often fails).
 Based on real-world Android CVEs and exploitation techniques.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 

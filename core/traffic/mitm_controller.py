@@ -12,15 +12,15 @@ Supports:
 Reference: agent/prompts/mitm_setup.md
 """
 
-import os
-import subprocess
-import signal
-import time
 import logging
+import os
+import signal
+import subprocess
+import time
 from dataclasses import dataclass, field
-from typing import Optional
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -398,7 +398,7 @@ class MitmController:
                 # Use mitmdump to read flows
                 cmd = [
                     "mitmdump", "-n", "-r", self.config.flow_file,
-                    "--set", f"flow_detail=1"
+                    "--set", "flow_detail=1"
                 ]
                 result = subprocess.run(
                     cmd,
