@@ -42,6 +42,14 @@ ENV/
 config/.env
 *.local.yaml
 
+# Dojo output (training data, models, progress)
+dojo_output/
+
+# Large model files
+*.gguf
+*.bin
+*.safetensors
+
 # Claude Code local settings
 .claude/
 

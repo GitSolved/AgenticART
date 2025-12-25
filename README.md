@@ -2,322 +2,314 @@
 
 # AgenticART
 
-**Agentic Android Red Team**
+### The Android Security Dojo
 
-*Train LLMs to Master Android Exploitation*
+*Train LLMs to generate exploits that actually work*
 
-[![CI Status](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg)](https://github.com/GitSolved/AgenticART/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy-lang.org/)
-[![Docker](https://img.shields.io/badge/docker-supported-blue.svg)](https://www.docker.com/)
 [![arXiv](https://img.shields.io/badge/arXiv-2509.07933-b31b1b.svg)](https://arxiv.org/abs/2509.07933)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/GitSolved/AgenticART/pulls)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg)](https://github.com/GitSolved/AgenticART/actions)
 
-[Issues](https://github.com/GitSolved/AgenticART/issues)
+[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Belt System](#belt-progression) · [Documentation](docs/)
 
 </div>
 
 ---
 
-## Table of Contents
+## The Problem
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-- [Training Pipeline](#training-pipeline)
-- [Model Recommendations](#model-recommendations)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Governance & Safety](#governance--safety)
-- [Credits](#credits)
-- [License](#license)
+You ask an LLM to generate Android exploit code. It produces something that **looks correct** — proper structure, confident comments, plausible function names.
+
+Then you run it. Nothing works.
+
+```
+❌  Uses APIs that don't exist         →  frida.hooks.Hook (fabricated)
+❌  Wrong vulnerability details        →  "audio driver" for a cmdq exploit
+❌  Invented kernel structures         →  Fake ioctl codes and syscalls
+❌  No execution feedback              →  Model never learns what actually runs
+```
+
+The root cause: **LLMs have seen exploit code in training, but never received feedback on whether it executed successfully.** They pattern-match syntax without understanding ground truth.
 
 ---
 
-## Overview
+## The Solution
 
-AgenticART is an automated Android exploitation framework that:
+AgenticART creates a **feedback loop** between the model and a real Android device. Generated code is executed, failures are captured with context, and the model regenerates until it works.
 
-1. **Generates** exploits using LLMs
-2. **Executes** against real/emulated devices
-3. **Captures** rich training data (scripts, reasoning, errors)
-4. **Fine-tunes** your chosen model to improve over time
-
-> **The Loop:** Template exploits → Execute → Capture → Train → Advanced exploits
-
-Based on the research paper: ["Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"](https://arxiv.org/abs/2509.07933)
-
----
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| **Model Training** | Fine-tune any LLM on real exploitation trajectories |
-| **Data Capture** | Log scripts, reasoning, errors, and recovery actions |
-| **NL to Code** | Convert natural language objectives to executable scripts |
-| **CVE Matching** | Match device fingerprint to applicable vulnerabilities |
-| **Attack Chains** | Orchestrated Recon → Scan → Exploit → Verify workflow |
-| **Governance** | Human-in-the-loop approval with risk-based triage |
-
----
-
-## Architecture
-
-<details>
-<summary>System Overview (click to expand)</summary>
+Everything — successes, failures, and corrections — becomes training data.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Web Application                          │
-│                    (Streamlit Interface)                        │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                       Agent Layer                               │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────┐    │
-│  │   Planner   │◄─┤  Summarizer  │◄─┤  Script Generator   │    │
-│  └─────────────┘  └──────────────┘  └─────────────────────┘    │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────┐      │
-│  │                    Memory System                       │      │
-│  │              (Working + Vector Store)                  │      │
-│  └───────────────────────────────────────────────────────┘      │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                      Core Modules                               │
-│  ┌──────────────┐  ┌─────────────┐  ┌────────────────────┐     │
-│  │Reconnaissance│  │  Scanning   │  │   Exploitation     │     │
-│  │ (Device Enum)│  │ (CVE Match) │  │ (Magisk, Kernel)   │     │
-│  └──────────────┘  └─────────────┘  └────────────────────┘     │
-└─────────────────────────────────────────────────────────────────┘
+                                     FEEDBACK LOOP
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                │
+│  ┌───────────┐     ┌───────────┐     ┌───────────┐     ┌─────────────┐        │
+│  │           │     │           │     │           │     │             │        │
+│  │ CHALLENGE │────▶│ GENERATE  │────▶│  EXECUTE  │────▶│  SUCCESS ?  │        │
+│  │           │     │   (LLM)   │     │   (AVD)   │     │             │        │
+│  └───────────┘     └─────▲─────┘     └───────────┘     └──────┬──────┘        │
+│                          │                                    │               │
+│                          │                             YES ───┴─── NO         │
+│                          │                              │          │          │
+│                          │                              │          ▼          │
+│                          │                              │   ┌────────────┐    │
+│                          │                              │   │  EXTRACT   │    │
+│                          │                              │   │   ERROR    │    │
+│                          │                              │   │            │    │
+│                          │                              │   │  • What    │    │
+│                          │                              │   │  • Why     │    │
+│                          │                              │   │  • Context │    │
+│                          │                              │   └─────┬──────┘    │
+│                          │                              │         │           │
+│                          │                              │         ▼           │
+│                          │                              │   ┌────────────┐    │
+│                          │        RETRY WITH CONTEXT    │   │   INJECT   │    │
+│                          └──────────────────────────────────│   CONTEXT  │    │
+│                                                         │   │            │    │
+│                            "Your script failed because  │   │ "Try this  │    │
+│                             [error]. Regenerate with    │   │  instead"  │    │
+│                             this fix: [suggestion]"     │   └────────────┘    │
+│                                                         │                     │
+└─────────────────────────────────────────────────────────┴─────────────────────┘
+                                                          │
+                                                          ▼
+                                               ┌─────────────────────┐
+                                               │    TRAINING DATA    │
+                                               │                     │
+                                               │  ✓ Working scripts  │
+                                               │  ✓ Error → Fix pairs│
+                                               └──────────┬──────────┘
+                                                          │
+                                                          ▼
+                                               ┌─────────────────────┐
+                                               │      FINE-TUNE      │
+                                               └──────────┬──────────┘
+                                                          │
+                                                          ▼
+                                               ┌─────────────────────┐
+                                               │   IMPROVED MODEL    │
+                                               └─────────────────────┘
 ```
 
-</details>
-
-<details>
-<summary>Training Loop (click to expand)</summary>
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Run Exploit │────▶│ Capture Data │────▶│  Fine-tune   │
-│    Chains    │     │   (JSON)     │     │  Your Model  │
-└──────────────┘     └──────────────┘     └──────────────┘
-       ▲                                         │
-       └─────────────────────────────────────────┘
-              Model produces better exploits
-```
-
-</details>
+**This is the core insight:** failures are training data. When a script crashes, we capture exactly what went wrong and how to fix it. The model learns both what works and how to recover from what doesn't.
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.10+
-- Docker (optional)
-- Genymotion or Android Emulator
-
-### Installation
-
 ```bash
-# Clone
+# Clone and setup
 git clone https://github.com/GitSolved/AgenticART.git
-cd AgenticART
+cd AgenticART && pip install -r dojo/requirements.txt
 
-# Setup
-./scripts/setup.sh
-source activate.sh
+# Pull a base model
+ollama pull hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M
 
-# Configure
-cp config/.env.example config/.env
+# Start Android emulator
+emulator -avd <your_avd_name>
 
-# Run
-streamlit run webapp/app.py
-```
+# Run challenges (collects training data)
+python -m dojo.test_end_to_end --mode live --belt white
 
-### Verify Installation
-
-```bash
-./scripts/check-tools.sh
-python demo.py
+# Package for fine-tuning (transfer to GPU machine)
+python -c "
+from dojo.finetune import TrainingPackager
+from pathlib import Path
+packager = TrainingPackager()
+data = Path('dojo_output/training_data/combined/combined_all_*_alpaca.json')
+packager.create_package(list(data.parent.glob(data.name))[0])
+"
 ```
 
 ---
 
-## Training Pipeline
+## How It Works
 
-The core innovation: **learn from real exploitation attempts**.
-
-### How It Works
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Run Chains  │────▶│ Capture Data │────▶│  Fine-tune   │
-│  (Emulator)  │     │ (Trajectories)│    │  Your Model  │
-└──────────────┘     └──────────────┘     └──────────────┘
-       ▲                                         │
-       └─────────────────────────────────────────┘
-                   Better exploits
-```
-
-### What Gets Captured
-
-| Data | Training Purpose |
-|------|------------------|
-| Generated scripts | Learn working exploit code |
-| Phase outcomes | Learn which approaches succeed |
-| Error messages | Learn failure patterns |
-| Device context | Match exploits to targets |
-
-### Generate Training Data
+### 1. Challenge the Model
 
 ```bash
-# Run exploitation chains (data auto-saved to output/attack_chains/)
-python exploit_demo.py
-
-# Export to Alpaca format for fine-tuning
-./scripts/export-training-data.py --format alpaca --output training.jsonl
-
-# Or ShareGPT format
-./scripts/export-training-data.py --format sharegpt --output training.jsonl
+python -m dojo.test_end_to_end --mode live --belt white
+python -m dojo.test_end_to_end --mode live --belt yellow
+python -m dojo.test_end_to_end --mode live --belt orange
 ```
 
-### Fine-tune Your Model
+The model receives structured challenges with device context and constraints. Progress through belts as the model improves.
 
-Use your preferred training framework and model:
+### 2. Execute on Real Device
+
+Generated code runs against an Android emulator. No simulations — real ADB, real Frida, real failures.
+
+### 3. Grade and Correct
+
+The **Sensei** evaluates output:
+
+```
+Challenge: green_001_frida_hook
+Score: 68/100
+Grade: C
+
+Issues Found:
+  ✗ Used frida.hooks.Hook (does not exist)
+  ✗ Missing Java.perform() wrapper
+
+Correction Generated:
+  → Replaced with valid Java.use() pattern
+  → Added proper Frida boilerplate
+```
+
+### 4. Capture Everything
+
+| What's Captured | Training Purpose |
+|-----------------|------------------|
+| Working scripts | Positive examples — "do this" |
+| Failed + corrected | Error recovery — "when X fails, fix with Y" |
+| Retry sequences | Iterative improvement patterns |
+
+### 5. Fine-Tune
+
+Fine-tuning requires a GPU. The Dojo packages everything for transfer to a GPU machine:
 
 ```bash
-# Example with Axolotl
-axolotl train config.yaml
+# Training data is auto-saved to: dojo_output/training_data/
+# Package is created at: dojo_output/finetune_package_*/
 
-# Example with Unsloth (faster, less VRAM)
-python train.py --model your-model --data training.jsonl
+# On GPU machine:
+cd finetune_package_*/
+pip install -r requirements.txt
+python train.py --epochs 3
+
+# Or use Google Colab (free T4 GPU):
+# Upload finetune_colab.ipynb and training_data.json
 ```
 
-<details>
-<summary>Training Progression (click to expand)</summary>
+**Note:** Data collection (Phases 1-3) uses Ollama and runs on any machine. Fine-tuning (Phase 4) uses PyTorch and requires a GPU.
 
-| Cycle | Model State | Exploit Quality |
-|-------|-------------|-----------------|
-| 0 | Base model | Template/generic exploits |
-| 1 | +100 trajectories | Learns basic patterns |
-| 2 | +500 trajectories | Context-aware exploitation |
-| 3+ | Ongoing data | Increasingly sophisticated |
+### 6. Improved Model
 
-</details>
+After training, import the fine-tuned model back to Ollama:
+
+```bash
+ollama create whiterabbit-adb-dojo -f Modelfile
+python -m dojo.test_end_to_end --mode live --belt white  # Re-test
+```
+
+The model now generates correct ADB commands because it learned from execution feedback, not just text patterns.
 
 ---
 
-## Model Recommendations
+## Belt Progression
 
-AgenticART works with any LLM. Choose based on your resources and needs:
+Models advance through structured difficulty levels:
 
-| Model | VRAM | Strengths |
-|-------|------|-----------|
-| Qwen2.5-Coder | 8-48GB | Strong code generation |
-| DeepSeek-Coder | 16-48GB | Security-aware coding |
-| CodeLlama | 16-48GB | Code understanding |
-| Llama 3.1 | 8-48GB | General reasoning |
-| Mistral | 8-24GB | Fast inference |
+| | Belt | Focus | Challenges |
+|-|------|-------|------------|
+| ⬜ | **White** | Fundamentals | ADB commands, device enumeration |
+| 🟨 | **Yellow** | Reconnaissance | App analysis, permission mapping |
+| 🟧 | **Orange** | Vulnerability | CVE matching, version fingerprinting |
+| 🟩 | **Green** | Scripting | Frida hooks, Python exploit scaffolds |
+| 🟦 | **Blue** | Exploitation | Known CVE reproduction |
+| 🟪 | **Purple** | Evasion | SELinux bypass, detection avoidance |
+| 🟫 | **Brown** | Chaining | Multi-phase attack orchestration |
+| ⬛ | **Black** | Novel | Zero-day pattern generation |
 
-**For fine-tuning:** Start with a 7B parameter model, generate data, train, and iterate. Larger models can be used once you have sufficient training data.
-
-**Local inference:** Use [Ollama](https://ollama.ai) to run models locally without API keys.
-
----
-
-## Configuration
-
-<details>
-<summary>Environment Variables (click to expand)</summary>
-
-```bash
-# LLM Provider
-LLM_PROVIDER=ollama          # ollama, openai, anthropic
-OLLAMA_MODEL=codellama       # Model to use with Ollama
-
-# API Keys (if using cloud providers)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Device
-TARGET_DEVICE=192.168.56.101:5555
-ANDROID_SDK=/path/to/android-sdk
-
-# Safety
-DRY_RUN=true                 # Don't execute, just generate
-REQUIRE_APPROVAL=true        # Human approval for dangerous commands
-```
-
-</details>
+Promotion requires passing challenges at 80%+ accuracy. Each belt unlocks harder challenges and captures more sophisticated training data.
 
 ---
 
-## Project Structure
+## Validated Results
+
+Tested against Android 7.0 (API 24) emulator:
+
+| Capability | Status |
+|------------|--------|
+| CVE Detection | ✓ CVE-2020-0069 identified (CVSS 9.8) |
+| Device Fingerprinting | ✓ Full profile via ADB |
+| NVD Integration | ✓ 205 CVEs matched |
+| Feedback Loop | ✓ Error extraction and retry working |
+| Governance | ✓ 5-tier approval system |
+
+---
+
+## Architecture
 
 ```
 AgenticART/
-├── agent/                  # Agent layer
-│   ├── llm_client.py      # Multi-provider LLM interface
-│   ├── planner.py         # Strategic planning
-│   ├── summarizer.py      # Result analysis
+├── dojo/                   # Training framework
+│   ├── models.py           # Core data models (Belt, Challenge, Assessment)
+│   ├── config.py           # Configuration management
+│   ├── curriculum/         # Phase 2: Challenge execution, retry logic
+│   ├── sensei/             # Phase 3: Grading, training data export
+│   └── finetune/           # Phase 4: Package for GPU training
+├── agent/                  # LLM interface
+│   ├── llm_client.py       # Multi-provider support
 │   ├── script_generator.py # Code generation
-│   └── memory/            # Working + vector memory
-├── core/                   # Core modules
-│   ├── reconnaissance/    # Device enumeration
-│   ├── scanning/          # CVE matching
-│   ├── exploitation/      # Exploit techniques
-│   └── governance.py      # Approval system
-├── webapp/                 # Streamlit UI
-├── scripts/               # Utilities
-│   └── export-training-data.py
-├── output/                # Results & training data
-│   └── attack_chains/     # Captured trajectories
-└── tests/                 # Test suite
+│   └── prompts/            # System prompts
+├── core/                   # Exploitation modules
+│   ├── reconnaissance/     # Device enumeration
+│   ├── scanning/           # CVE matching
+│   └── exploitation/       # Attack techniques
+└── dojo_output/            # Generated outputs
+    ├── training_data/      # Alpaca, ShareGPT, DPO formats
+    ├── progress/           # Model progress tracking
+    └── finetune_package_*/ # Portable training packages
 ```
 
 ---
 
-## Governance & Safety
+## Export Formats
 
-Actions are classified by risk level:
-
-| Level | Example Commands | Approval |
-|-------|------------------|----------|
-| INFO | `getprop ro.build.version.release` | Auto-approved |
-| LOW | `pm list packages` | Auto-approved |
-| MEDIUM | `cat /data/local/tmp/file` | Prompted |
-| HIGH | `su -c 'id'`, `frida -U` | Required |
-| CRITICAL | Exploit execution, `rm -rf` | Required + confirmation |
-
-All actions are logged for audit purposes.
+| Format | Use Case | Command |
+|--------|----------|---------|
+| Alpaca | LLaMA-Factory, Axolotl | `--format alpaca` |
+| ShareGPT | OpenAI-style | `--format sharegpt` |
+| DPO | Preference tuning | `--format dpo` |
+| MLX | Apple Silicon | `--format mlx` |
 
 ---
 
-## Credits
+## Governance
 
-Built on research and patterns from:
+All actions are risk-classified and require appropriate approval:
 
-| Project | Contribution |
-|---------|--------------|
-| [PentestGPT](https://github.com/GreyDGL/PentestGPT) | Pentest methodology, prompts |
-| [PentAGI](https://github.com/vxcontrol/pentagi) | Multi-agent architecture |
-| [HackSynth](https://github.com/aielte-research/HackSynth) | Planner/Summarizer pattern |
+| Level | Example | Approval |
+|-------|---------|----------|
+| INFO | `getprop ro.build.version` | Auto |
+| LOW | `pm list packages` | Auto |
+| MEDIUM | File reads | Prompt |
+| HIGH | `su -c 'id'` | Required |
+| CRITICAL | Exploit execution | Required |
 
-Paper: ["Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"](https://arxiv.org/abs/2509.07933)
+---
+
+## Requirements
+
+### Data Collection (Phases 1-3) — Any Machine
+- Python 3.10+
+- Android emulator (AVD or Genymotion)
+- [Ollama](https://ollama.ai) for local inference
+- 16GB+ RAM recommended
+- **No GPU required** — Ollama handles inference
+
+### Fine-Tuning (Phase 4) — GPU Machine
+- NVIDIA GPU with 16GB+ VRAM (or 8GB with QLoRA)
+- PyTorch 2.0+ with CUDA
+- Unsloth, TRL, PEFT libraries
+- **Or use Google Colab** (free T4 GPU) with the included notebook
+
+---
+
+## Research
+
+Based on: [**"Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation"**](https://arxiv.org/abs/2509.07933)
+
+The paper introduces the feedback loop methodology that AgenticART implements.
 
 ---
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT — See [LICENSE](LICENSE)
 
 ---
 
@@ -325,6 +317,8 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **For authorized security testing only.**
 
-Only test devices you own or have explicit permission to test.
+*The dojo is open. Train your model.*
+
+⬜ → 🟨 → 🟧 → 🟩 → 🟦 → 🟪 → 🟫 → ⬛
 
 </div>
