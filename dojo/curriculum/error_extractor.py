@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dojo.curriculum.executor import ExecutionResult
+from dojo.curriculum.executor import ExecutionResult, Executor
 
 
 @dataclass

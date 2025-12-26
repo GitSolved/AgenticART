@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 import tempfile
 import time
@@ -23,26 +22,25 @@ from typing import Optional
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from dojo import (
+from dojo import (  # noqa: E402
+    AttemptRecord,
     Belt,
-    Grade,
     Challenge,
     ChallengeInput,
-    ExpectedOutput,
-    ScriptType,
-    ScoringRubric,
     ChallengeSession,
-    AttemptRecord,
-    ExecutionResult,
     ErrorContext,
-    Sensei,
-    Grader,
-    TrainingExtractor,
-    TrainingDataExporter,
+    ExecutionResult,
+    ExpectedOutput,
     ExportFormat,
+    Grade,
+    Grader,
     ProgressTracker,
+    ScoringRubric,
+    ScriptType,
+    Sensei,
+    TrainingDataExporter,
+    TrainingExtractor,
 )
-
 
 # ============================================================================
 # Test Results Tracking
@@ -427,10 +425,9 @@ def test_exporter(runner: TestRunner) -> bool:
 
             # Test DPO export
             try:
-                path = exporter.export(all_examples, ExportFormat.DPO, "test")
-                dpo_created = path.exists()
+                exporter.export(all_examples, ExportFormat.DPO, "test")
             except Exception:
-                dpo_created = False
+                pass
 
             # Get stats
             stats = exporter.get_export_stats(all_examples)
@@ -510,8 +507,9 @@ def test_progress_tracker(runner: TestRunner) -> bool:
                 return False
 
             # Test persistence
-            progress = tracker.load_progress(model_id)
-            if progress.current_belt != Belt.YELLOW:
+            loaded_progress = tracker.load_progress(model_id)
+            assert loaded_progress is not None
+            if loaded_progress.current_belt != Belt.YELLOW:
                 runner.record(
                     "Progress - Persistence",
                     False,
@@ -523,7 +521,7 @@ def test_progress_tracker(runner: TestRunner) -> bool:
             runner.record(
                 "Progress Tracker",
                 True,
-                f"Progress tracked and persisted (belt: {progress.current_belt.display})",
+                f"Progress tracked and persisted (belt: {loaded_progress.current_belt.display})",
                 time.time() - start,
             )
             return True

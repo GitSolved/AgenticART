@@ -6,12 +6,11 @@ import os
 import re
 import subprocess
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Optional
 
-from dojo.models import Challenge, ScriptType
 from dojo.exceptions import ExecutionError
+from dojo.models import Challenge, ScriptType
 
 
 @dataclass
@@ -136,6 +135,8 @@ class Executor:
             command = command[4:].strip()
 
         # Build command with device specifier
+        assert self.adb_path is not None
+        assert self.device_id is not None
         cmd_parts = [self.adb_path, "-s", self.device_id]
 
         # Handle shell commands specially to preserve quoting

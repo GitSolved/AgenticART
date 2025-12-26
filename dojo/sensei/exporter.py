@@ -10,8 +10,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from dojo.models import Grade, TrainingExample
 from dojo.exceptions import ExportError
+from dojo.models import Grade, TrainingExample
 
 
 class ExportFormat(Enum):
@@ -339,7 +339,7 @@ class TrainingDataExporter:
         if "## Failed Attempt" in recovery_input:
             lines = recovery_input.split("\n")
             in_failed = False
-            failed_lines = []
+            failed_lines: list[str] = []
 
             for line in lines:
                 if "## Failed Attempt" in line:
@@ -369,9 +369,9 @@ class TrainingDataExporter:
         Returns:
             Statistics dictionary.
         """
-        by_type = defaultdict(int)
-        by_belt = defaultdict(int)
-        by_grade = defaultdict(int)
+        by_type: dict[str, int] = defaultdict(int)
+        by_belt: dict[str, int] = defaultdict(int)
+        by_grade: dict[str, int] = defaultdict(int)
 
         for example in examples:
             by_type[example.example_type] += 1

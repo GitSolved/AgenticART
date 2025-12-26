@@ -7,12 +7,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from dojo.models import Belt, ModelProgress, SenseiAssessment, TrainingExample
 from dojo.curriculum import ChallengeSession
+from dojo.models import Belt, Grade, ModelProgress, SenseiAssessment, TrainingExample
+from dojo.sensei.exporter import ExportFormat, TrainingDataExporter
 from dojo.sensei.grader import Grader
-from dojo.sensei.training_extractor import TrainingExtractor, ExtractionConfig
-from dojo.sensei.exporter import TrainingDataExporter, ExportFormat
 from dojo.sensei.progress_tracker import ProgressTracker
+from dojo.sensei.training_extractor import TrainingExtractor
 
 
 @dataclass
@@ -228,7 +228,7 @@ class Sensei:
         lines = [
             f"Challenge: {session.challenge.name} ({session.challenge.id})",
             f"Belt: {session.challenge.belt.display}",
-            f"",
+            "",
             f"Grade: {assessment.grade.value}",
             f"Score: {assessment.score}/100",
             f"Attempts: {session.total_attempts}",
@@ -332,5 +332,3 @@ class Sensei:
         return "\n".join(lines)
 
 
-# Import Grade for the feedback method
-from dojo.models import Grade

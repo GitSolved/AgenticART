@@ -4,11 +4,11 @@ Dojo Curriculum Module
 Handles challenge loading, execution, error extraction, and the feedback loop.
 """
 
-from dojo.curriculum.loader import ChallengeLoader
-from dojo.curriculum.executor import Executor, ExecutionResult
-from dojo.curriculum.error_extractor import ErrorExtractor, ErrorContext
+from dojo.curriculum.challenger import AttemptRecord, Challenger, ChallengeSession
 from dojo.curriculum.context_injector import ContextInjector
-from dojo.curriculum.challenger import Challenger, AttemptRecord, ChallengeSession
+from dojo.curriculum.error_extractor import ErrorContext, ErrorExtractor
+from dojo.curriculum.executor import ExecutionResult, Executor
+from dojo.curriculum.loader import ChallengeLoader
 
 __all__ = [
     # Loader
