@@ -11,31 +11,29 @@ from __future__ import annotations
 
 import argparse
 import os
-import sys
 import shutil
-import time
+import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from dojo import (
+from dojo import (  # noqa: E402
     # Phase 2
     Belt,
     ChallengeLoader,
-    Executor,
-    ErrorExtractor,
-    ContextInjector,
     Challenger,
     ChallengeSession,
+    ContextInjector,
+    ErrorExtractor,
+    Executor,
+    ExportFormat,
     # Phase 3
     Sensei,
-    ExportFormat,
 )
-
 
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)
@@ -245,6 +243,7 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     print(f"ADB: {adb_path}")
 
     # Create LLM client
+    llm: Any
     if mode == "mock":
         llm = MockLLMClient()
         print("LLM: Mock (returns expected answers)")
@@ -360,7 +359,7 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     # Print extraction summary
     print("Training Examples Extracted:")
     print("-" * 40)
-    by_type = {}
+    by_type: dict[str, int] = {}
     for ex in result.examples:
         by_type[ex.example_type] = by_type.get(ex.example_type, 0) + 1
     for ex_type, count in sorted(by_type.items()):

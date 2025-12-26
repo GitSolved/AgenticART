@@ -5,17 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-import yaml
+import yaml  # type: ignore
 
+from dojo.exceptions import ChallengeNotFoundError, CurriculumError
 from dojo.models import (
     Belt,
     Challenge,
     ChallengeInput,
     ExpectedOutput,
-    ScriptType,
     ScoringRubric,
+    ScriptType,
 )
-from dojo.exceptions import ChallengeNotFoundError, CurriculumError, InvalidBeltError
 
 
 class ChallengeLoader:
@@ -189,7 +189,7 @@ class ChallengeLoader:
             return [c.id for c in challenges]
 
         # Load all belts
-        all_ids = []
+        all_ids: list[str] = []
         for b in Belt:
             challenges = self.load_belt(b)
             all_ids.extend(c.id for c in challenges)
