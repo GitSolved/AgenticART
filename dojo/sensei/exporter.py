@@ -25,11 +25,13 @@ class ExportFormat(Enum):
 
 @dataclass
 class DPOPair:
-    """A chosen/rejected pair for DPO training."""
+    """A chosen/rejected pair for DPO training with analytical metadata."""
 
     prompt: str
     chosen: str
     rejected: str
+    margin: float = 1.0  # Quality gap between chosen and rejected (0.0 to 1.0)
+    signal_source: str = "curation" # e.g., "regression_prevention", "syntax_correction"
     metadata: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -38,6 +40,9 @@ class DPOPair:
             "prompt": self.prompt,
             "chosen": self.chosen,
             "rejected": self.rejected,
+            "margin": self.margin,
+            "signal_source": self.signal_source,
+            "metadata": self.metadata,
         }
 
     def to_dict_with_metadata(self) -> dict:
@@ -316,39 +321,35 @@ class TrainingDataExporter:
             best_chosen = kata[0] if kata else (positive[0] if positive else None)
 
             if best_chosen:
-                # Pair the best answer against every failure found for this challenge
                 for neg in negative:
                     rejected_output = self._extract_failed_output(neg.output_text)
                     if rejected_output:
-                        pairs.append(
-                            DPOPair(
-                                prompt=f"{best_chosen.instruction}\n\n{best_chosen.input_text}".strip(),
-                                chosen=best_chosen.output_text,
-                                rejected=rejected_output,
-                                metadata={
-                                    "challenge_id": challenge_id,
-                                    "source": "kata_vs_negative" if kata else "positive_vs_negative",
-                                },
-                            )
-                        )
+                        # Determine margin based on the grade gap
+                        # Grade A vs Grade F = High margin (0.95)
+                        # Grade B vs Grade D = Lower margin (0.75)
+                        margin = 0.95 if neg.grade == Grade.F else 0.75
+                        source = "expert_alignment" if kata else "regression_prevention"
+                        
+                        pairs.append(DPOPair(
+                            prompt=f"{best_chosen.instruction}\n\n{best_chosen.input_text}".strip(),
+                            chosen=best_chosen.output_text,
+                            rejected=rejected_output,
+                            margin=margin,
+                            signal_source=source,
+                            metadata={"challenge_id": challenge_id}
+                        ))
 
-            # 3. Handle error recovery sequences (Multi-turn preference)
-            # This teaches the model that the 'fix' is better than the 'fail'
             for er in error_recovery:
                 failed_output = self._extract_failed_from_recovery(er.input_text)
                 if failed_output:
-                    # For error recovery, the prompt is the recovery instruction
-                    pairs.append(
-                        DPOPair(
-                            prompt=er.instruction,
-                            chosen=er.output_text,
-                            rejected=failed_output,
-                            metadata={
-                                "challenge_id": challenge_id,
-                                "source": "error_recovery_fix",
-                            },
-                        )
-                    )
+                    pairs.append(DPOPair(
+                        prompt=er.instruction,
+                        chosen=er.output_text,
+                        rejected=failed_output,
+                        margin=0.85,
+                        signal_source="error_recovery_fix",
+                        metadata={"challenge_id": challenge_id}
+                    ))
 
         return pairs
 

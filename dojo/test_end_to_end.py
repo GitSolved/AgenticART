@@ -330,7 +330,9 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     output_dir = Path("./dojo_output")
     sensei = Sensei(output_dir=output_dir)
 
-    model_id = f"test-{mode}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    # Sanitize model name for ID
+    safe_model_name = model.split("/")[-1].replace(":", "-") if model else mode
+    model_id = f"{safe_model_name}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     # Run training cycle
     print(f"Model ID: {model_id}")

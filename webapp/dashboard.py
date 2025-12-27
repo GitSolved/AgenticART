@@ -6,9 +6,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
+import altair as alt
 import streamlit as st
-
-# Move import to top to satisfy E402
 from streamlit_autorefresh import st_autorefresh
 
 # --- CONFIGURATION ---
@@ -31,147 +30,94 @@ st.set_page_config(
 # --- ENGINE STATE UTILS ---
 def get_engine_state():
     if not ENGINE_STATE_PATH.exists():
-        return {"status": "idle"}
+        return {"status": "idle", "accumulated_seconds": 0, "start_time": None}
     try:
         with open(ENGINE_STATE_PATH, "r") as f:
             return json.load(f)
     except Exception:
-        return {"status": "unknown"}
+        return {"status": "unknown", "accumulated_seconds": 0, "start_time": None}
 
 def set_engine_state(status):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    current = get_engine_state()
+    accumulated = current.get("accumulated_seconds", 0)
+    start_time_str = current.get("start_time")
+    now = datetime.now()
+    
+    if status == "running":
+        if current.get("status") != "running":
+            start_time_str = now.isoformat()
+    elif status in ("paused", "stopped", "idle"):
+        if current.get("status") == "running" and start_time_str:
+            try:
+                start_time = datetime.fromisoformat(start_time_str)
+                accumulated += (now - start_time).total_seconds()
+            except: pass
+        start_time_str = None
+        if status == "idle": accumulated = 0
+
     with open(ENGINE_STATE_PATH, "w") as f:
-        json.dump({"status": status, "timestamp": datetime.now().isoformat()}, f)
+        json.dump({
+            "status": status, "start_time": start_time_str,
+            "accumulated_seconds": accumulated, "last_update": now.isoformat()
+        }, f)
 
 # --- STYLING ---
 st.markdown("""
     <style>
     .main { background-color: #0d1117; color: #c9d1d9; }
     .stMetric { background-color: #161b22; padding: 15px; border-radius: 6px; border: 1px solid #30363d; }
-
-    /* Session Header */
-    .session-info {
-        background-color: #161b22;
-        padding: 10px 20px;
-        border-radius: 8px;
-        border: 1px solid #30363d;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-family: monospace;
-        font-size: 13px;
-    }
+    .session-info { background-color: #161b22; padding: 10px 20px; border-radius: 8px; border: 1px solid #30363d; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px; }
     .info-label { color: #8b949e; margin-right: 5px; }
     .info-value { color: #58a6ff; font-weight: bold; }
-
-    /* Device Health Colors */
-    .health-connected { color: #238636; font-weight: bold; }
-    .health-disconnected { color: #da3633; font-weight: bold; }
-    .health-unstable { color: #d29922; font-weight: bold; }
-
-    /* Trajectory Feed Styling */
-    .feed-entry {
-        padding: 10px;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        border-left: 4px solid #30363d;
-        background-color: #161b22;
-    }
-    .feed-refined { border-left-color: #238636; background-color: #1a271d; }
-    .feed-negative { border-left-color: #da3633; background-color: #2d1a1a; }
-    .feed-recovery { border-left-color: #d29922; background-color: #2d241a; }
-    .feed-exploration { border-left-color: #1f6feb; background-color: #161b22; }
-
-    .indent-1 { margin-left: 20px; border-left-style: dashed; }
-
-    .icon-label { font-size: 14px; font-weight: bold; vertical-align: middle; }
-
+    .belt-badge { padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 10px; border: 2px solid #30363d; }
     .status-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-family: monospace; font-weight: bold; }
     .badge-success { background-color: #238636; color: white; }
     .badge-fail { background-color: #da3633; color: white; }
     .badge-recovery { background-color: #d29922; color: black; }
+    .feed-entry { padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #30363d; background-color: #161b22; }
+    .feed-refined { border-left-color: #238636; background-color: #1a271d; }
+    .feed-negative { border-left-color: #da3633; background-color: #2d1a1a; }
+    .feed-recovery { border-left-color: #d29922; background-color: #2d241a; }
+    .feed-exploration { border-left-color: #1f6feb; background-color: #161b22; }
+    .indent-1 { margin-left: 20px; border-left-style: dashed; }
+    .pulse { animation: pulse-animation 2s infinite; }
+    @keyframes pulse-animation { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # --- DATA UTILS ---
 def load_json(path):
-    if not path.exists():
-        return []
+    if not path.exists(): return []
     try:
-        with open(path, "r") as f:
-            return json.load(f)
-    except Exception:
-        return []
+        with open(path, "r") as f: return json.load(f)
+    except: return []
 
 def load_jsonl(path, limit=None):
-    if not path.exists():
-        return []
+    if not path.exists(): return []
     data = []
     try:
         with open(path, "r") as f:
             lines = f.readlines()
-            if limit:
-                lines = lines[-limit:]
+            if limit: lines = lines[-limit:]
             for line in lines:
-                if line.strip():
-                    data.append(json.loads(line))
-    except Exception:
-        pass
+                if line.strip(): data.append(json.loads(line))
+    except: pass
     return data
 
 def get_model_progress():
-    if not PROGRESS_DIR.exists():
-        return []
+    if not PROGRESS_DIR.exists(): return []
     models_data = []
     for p in PROGRESS_DIR.glob("*_progress.json"):
-        with open(p, "r") as f:
-            models_data.append(json.load(f))
+        with open(p, "r") as f: models_data.append(json.load(f))
     return models_data
 
-def get_adb_status(target_serial="127.0.0.1:6562"):
+def get_adb_status():
     try:
         result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=2)
-        if target_serial in result.stdout:
-            if "offline" in result.stdout or "unauthorized" in result.stdout:
-                return "UNSTABLE", "health-unstable"
-            return "CONNECTED", "health-connected"
+        if "127.0.0.1:6562" in result.stdout: return "CONNECTED", "health-connected"
         return "DISCONNECTED", "health-disconnected"
-    except Exception:
-        return "ERROR", "health-disconnected"
-
-# --- SIDEBAR: TARGET & SAFETY ---
-with st.sidebar:
-    st.image("https://img.icons8.com/color/100/security-configuration.png")
-    st.title("AVR Control")
-
-    st.markdown("### 📱 Device Health")
-    status, color_class = get_adb_status()
-    st.markdown(f"**ADB Status:** <span class='{color_class}'>{status}</span>", unsafe_allow_html=True)
-
-    discovery_data = load_jsonl(DISCOVERY_PATH)
-    if discovery_data:
-        last_event = discovery_data[-1]
-        last_ts = datetime.fromisoformat(last_event['metadata']['timestamp'])
-        st.markdown(f"**Last Probe:** `{last_ts.strftime('%H:%M:%S')}`")
-
-    st.divider()
-    st.markdown("### 🛡️ Safety Rails")
-    st.markdown("<span class='safety-badge'>LAB: AUTHORIZED</span><span class='safety-badge'>SELINUX: ENFORCING</span>", unsafe_allow_html=True)
-
-    st.divider()
-    selected_stage = st.radio(
-        "🕹️ Select Operating Stage",
-        ["STAGE 1: THE MINE", "STAGE 2: THE REFINERY", "STAGE 3: THE WAREHOUSE", "STAGE 4: THE INTELLIGENCE"],
-        index=0
-    )
-
-    if st.button("🗑 Reset Engine Data", type="primary"):
-        if MASTER_DIR.exists():
-            shutil.rmtree(MASTER_DIR)
-        if OUTPUT_DIR.exists():
-            shutil.rmtree(OUTPUT_DIR)
-        st.rerun()
+    except: return "ERROR", "health-disconnected"
 
 # --- AUTO REFRESH ---
 st_autorefresh(interval=5000, key="global_refresh")
@@ -179,166 +125,201 @@ st_autorefresh(interval=5000, key="global_refresh")
 # --- DATA LOADING ---
 alpaca_data = load_json(ALPACA_PATH)
 dpo_data = load_jsonl(DPO_PATH)
+discovery_data = load_jsonl(DISCOVERY_PATH)
 
-# --- HEADER & SESSION INFO ---
-st.title("🥋 AgenticART: Mission Control")
+# --- SIDEBAR ---
+with st.sidebar:
+    st.image("https://img.icons8.com/color/100/security-configuration.png")
+    st.title("AVR Control")
 
-# Extract Session Metadata from latest log
-latest_model = "UNKNOWN"
-latest_session = "IDLE"
-session_duration = "00:00:00"
+    # 1. Session Metadata
+    engine_state = get_engine_state()
+    current_status = engine_state.get("status", "idle")
+    start_ts_str = engine_state.get("start_time")
+    active_sec = engine_state.get("accumulated_seconds", 0)
+    if current_status == "running" and start_ts_str:
+        active_sec += (datetime.now() - datetime.fromisoformat(start_ts_str)).total_seconds()
+    
+    latest_model = "UNKNOWN"
+    latest_session = "IDLE"
+    log_files = list(Path(OUTPUT_DIR / "training_data").glob("*_jsonl.jsonl"))
+    if log_files:
+        latest_log = max(log_files, key=os.path.getmtime)
+        latest_session = latest_log.name.split('_')[0]
+        raw_events = load_jsonl(latest_log)
+        if raw_events: latest_model = raw_events[0]['metadata'].get('model_id', 'UNKNOWN').split('-202')[0]
 
-log_files = list(Path(OUTPUT_DIR / "training_data").glob("*_jsonl.jsonl"))
-if log_files:
-    latest_log = max(log_files, key=os.path.getmtime)
-    latest_session = latest_log.name.split('_')[0]
-    raw_events = load_jsonl(latest_log)
-    if raw_events:
-        latest_model = raw_events[0]['metadata'].get('model_id', 'qwen2.5-coder:32b')
-        start_ts = datetime.fromisoformat(raw_events[0]['metadata']['timestamp'])
-        last_ts = datetime.fromisoformat(raw_events[-1]['metadata']['timestamp'])
-        duration = last_ts - start_ts
-        session_duration = str(duration).split('.')[0]
+    with st.expander("ℹ️ Session Intelligence", expanded=True):
+        st.write(f"**Model:** `{latest_model}`")
+        st.write(f"**ID:** `{latest_session}`")
+        st.write(f"**Uptime:** `{str(timedelta(seconds=int(active_sec)))}`")
 
-st.markdown(f"""
-<div class='session-info'>
-    <div><span class='info-label'>LLM MODEL:</span><span class='info-value'>{latest_model}</span></div>
-    <div><span class='info-label'>SESSION ID:</span><span class='info-value'>{latest_session}</span></div>
-    <div><span class='info-label'>UPTIME:</span><span class='info-value'>{session_duration}</span></div>
-</div>
-""", unsafe_allow_html=True)
+    # 2. Progression
+    st.divider()
+    st.markdown("### 🏆 Rank & Progression")
+    count = len(alpaca_data)
+    if count >= 40: rank, progress = "🟧 ORANGE", 0.8
+    elif count >= 20: rank, progress = "🟨 YELLOW", 0.5
+    elif count >= 10: rank, progress = "⬜ WHITE", 0.3
+    else: rank, progress = "🥚 NOVICE", 0.1
+    st.markdown(f"<div class='belt-badge'>{rank}</div>", unsafe_allow_html=True)
+    st.progress(progress)
+    with st.expander("🎯 Milestones", expanded=True):
+        st.write(f"Warehouse: {count}/50"); st.progress(min(count/50, 1.0))
+        if st.button("🔍 View Discovery Archive", use_container_width=True):
+            st.session_state.operating_stage_index = 2
+            st.rerun()
 
-# --- GLOBAL METRICS ---
+    # 3. Controls
+    st.divider()
+    st.markdown("### ⚙️ Engine Control")
+    if current_status == "running": st.success("● ACTIVE PROBING")
+    elif current_status == "paused": st.warning("● ENGINE PAUSED")
+    else: st.info("● IDLE")
+    
+    c1, c2 = st.columns(2)
+    if current_status == "paused":
+        if c1.button("▶️ Resume"): set_engine_state("running"); st.rerun()
+    else:
+        if c1.button("⏸️ Pause"): set_engine_state("paused"); st.rerun()
+    if c2.button("🛑 Stop", type="primary"): st.session_state.confirm_stop = True
+    
+    if st.session_state.get("confirm_stop"):
+        st.error("Confirm Termination?")
+        if st.button("Yes, Stop"): set_engine_state("stopped"); st.session_state.confirm_stop = False; st.rerun()
+        if st.button("No, Cancel"): st.session_state.confirm_stop = False; st.rerun()
+
+    st.divider()
+    selected_stage = st.radio("🕹️ Stage", ["MINE", "REFINERY", "WAREHOUSE", "INTELLIGENCE", "ANALYTICS"], index=st.session_state.get("operating_stage_index", 0))
+
+# --- HEADER ---
+c_title, c_update = st.columns([3, 1])
+with c_title: st.title("🥋 AgenticART: Mission Control")
+with c_update: st.markdown(f"<div style='text-align:right;padding-top:20px;color:#8b949e;font-size:12px;'><span class='pulse'>📡</span> <b>LIVE FEED</b> | {datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
+
+# --- METRICS ---
 now = datetime.now()
-hour_ago = now - timedelta(hours=1)
-recent_discovery = [d for d in discovery_data if datetime.fromisoformat(d['metadata']['timestamp']) > hour_ago]
-
-# Determine status_val for metric m4
-engine_state = get_engine_state()
-status_val = engine_state.get("status", "idle")
-
+recent = [d for d in discovery_data if datetime.fromisoformat(d['metadata']['timestamp']) > (now - timedelta(hours=1))]
 m1, m2, m3, m4 = st.columns(4)
-m1.metric("Warehouse Yield", len(alpaca_data), help="Total successes stored in the Gold Warehouse (Lifetime)")
-m2.metric("Discovery Archive", len(discovery_data), f"+{len(recent_discovery)}" if recent_discovery else None, help="Total probes recorded in the AVR log (Lifetime). Delta shows activity in the last hour.")
-m3.metric("Boundary Intelligence", len(dpo_data), help="Total DPO preference pairs generated (Lifetime)")
-m4.metric("Engine Status", status_val.upper(), help="Current state of the recursive loopback engine")
-
+m1.metric("Warehouse Yield", len(alpaca_data), help="Lifetime Successes")
+m2.metric("Discovery Archive", len(discovery_data), f"+{len(recent)}" if recent else None, help="Lifetime Probes")
+m3.metric("Boundary Intel", len(dpo_data), help="Lifetime DPO Pairs")
+m4.metric("Engine Status", current_status.upper())
 st.divider()
 
-# --- DISPLAY LOGIC BASED ON SELECTED STAGE ---
-stage = selected_stage
+# --- DISPLAY LOGIC ---
+if selected_stage == "MINE":
+    st.subheader("📡 Trajectory Feed")
+    st.markdown("<div style='font-size:11px;color:#8b949e;margin-bottom:15px;'><span class='status-badge badge-success'>✅ KATA</span> Training Quality | <span class='status-badge badge-success'>✨ REFINED</span> Improved | <span class='status-badge badge-fail'>❌ NEGATIVE</span> Rejected | <span class='status-badge badge-recovery'>⚠️ RECOVERY</span> Self-Heal</div>", unsafe_allow_html=True)
+    if log_files:
+        curr_id = None
+        for e in reversed(load_jsonl(latest_log, limit=30)):
+            meta = e['metadata']; cid = meta.get('source_challenge_id', 'unknown'); etype = meta.get('example_type', 'unknown')
+            style = {"positive": "feed-refined", "kata": "feed-refined", "negative": "feed-negative", "error_recovery": "feed-recovery"}.get(etype, "feed-exploration")
+            indent = "indent-1" if cid == curr_id else ""; curr_id = cid
+            st.markdown(f"<div class='feed-entry {style} {indent}'><b>{cid}</b> | {etype.upper()}<br><code>{e['output']}</code></div>", unsafe_allow_html=True)
 
-if stage == "STAGE 1: THE MINE":
-    st.subheader("📡 Hierarchical Trajectory Feed")
+elif selected_stage == "REFINERY":
+    st.subheader("🧪 Quality Curation")
+    st.markdown("<div style='font-size:11px;color:#8b949e;margin-bottom:15px;'>A=Perfect, B=Minor, C=Marginal, D=Poor, F=Failed</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns([2, 1])
+    query = c1.text_input("🔍 Search...")
+    out_f = c2.selectbox("Filter", ["ALL", "PROMOTED", "REJECTED"])
+    df = pd.DataFrame([{"Time": d['metadata']['timestamp'][11:19], "Task": d['metadata']['source_challenge_id'], "Grade": d['metadata']['grade'], "Outcome": "PROMOTED" if d['metadata']['grade'] in ("A", "B") else "REJECTED", "Logic": d['output']} for d in discovery_data])
+    if not df.empty:
+        if out_f != "ALL": df = df[df['Outcome'] == out_f]
+        if query: df = df[df['Logic'].str.contains(query, case=False)]
+        st.dataframe(df.sort_values("Time", ascending=False), use_container_width=True)
 
-    # Micro Legend
-    st.markdown("""
-    <div style='font-size: 11px; color: #8b949e; margin-bottom: 15px; border: 1px solid #30363d; padding: 8px; border-radius: 5px; display: inline-block;'>
-    <b>Legend:</b>
-    <span class='status-badge badge-success'>REFINED</span> Improved Attempt |
-    <span class='status-badge badge-success'>KATA</span> Training Quality |
-    <span class='status-badge badge-fail'>NEGATIVE</span> Filtered Reject |
-    <span class='status-badge badge-recovery'>RECOVERY</span> Self-Heal Correction
-    </div>
-    """, unsafe_allow_html=True)
+elif selected_stage == "WAREHOUSE":
+    st.subheader("🏛️ Gold Warehouse")
+    for i, ex in enumerate(reversed(alpaca_data)):
+        first_line = ex['instruction'].split('\n')[0]
+        with st.expander(f"📜 {first_line}"):
+            st.write(ex['instruction']); st.code(ex['output'], language="bash")
 
-    if not log_files:
-        st.warning("Mine is idle.")
-    else:
-        current_challenge = None
-        for event in reversed(load_jsonl(latest_log, limit=30)):
-            meta = event['metadata']
-            etype = meta.get('example_type', 'unknown')
-            cid = meta.get('source_challenge_id', 'unknown')
+elif selected_stage == "INTELLIGENCE":
+    st.subheader("🧠 Boundary Analytics")
+    for p in reversed(dpo_data[-10:]):
+        with st.expander(f"Boundary: {p.get('metadata', {}).get('challenge_id', 'Exploration')}"):
+            st.write(f"Source: {p.get('signal_source', 'N/A')} | Margin: {p.get('margin', 0.0)}")
+            c1, c2 = st.columns(2)
+            c1.success("✅ CHOSEN"); c1.code(p["chosen"])
+            c2.error("❌ REJECTED"); c2.code(p["rejected"])
 
-            if etype in ("positive", "kata"):
-                style, icon, label = "feed-refined", "✅", "REFINED"
-            elif etype == "negative":
-                style, icon, label = "feed-negative", "❌", "REJECTED"
-            elif etype == "error_recovery":
-                style, icon, label = "feed-recovery", "⚠️", "RECOVERY"
-            else:
-                style, icon, label = "feed-exploration", "🔍", "PROBING"
+elif selected_stage == "ANALYTICS":
+    st.subheader("📈 Performance Analytics")
+    if discovery_data:
+        df_a = pd.DataFrame(discovery_data)
+        df_a['dt'] = pd.to_datetime(df_a['metadata'].apply(lambda x: x['timestamp']))
+        st.markdown("#### Cumulative Warehouse Yield (Last 6 Hours)")
+        l6 = df_a[df_a['dt'] > (now - timedelta(hours=6))].copy()
+        if not l6.empty:
+            l6['is_success'] = l6['metadata'].apply(lambda x: 1 if x['grade'] in ('A', 'B') else 0)
+            l6 = l6.sort_values('dt'); l6['cum'] = l6['is_success'].cumsum()
+            st.line_chart(l6.set_index('dt')['cum'])
+        ca, cb = st.columns(2)
+        with ca:
+            st.markdown("#### Probe Rate (Probes/Min)")
+            st.area_chart(l6.resample('1min', on='dt').count()['output'])
+        with cb:
+            st.markdown("#### Outcome Ratio (Hourly)")
+            l6['Outcome'] = l6['metadata'].apply(lambda x: 'PROMOTED' if x['grade'] in ('A', 'B') else 'REJECTED')
+            st.bar_chart(l6.groupby([pd.Grouper(key='dt', freq='1h'), 'Outcome']).size().unstack(fill_value=0))
 
-            indent = "indent-1" if cid == current_challenge else ""
-            current_challenge = cid
-
-            st.markdown(f"""
-            <div class='feed-entry {style} {indent}'>
-                <span class='icon-label'>{icon} {label}</span> | <b>{cid}</b>
-                <br><code style='color: #8b949e;'>{event['output']}</code>
-            </div>
-            """, unsafe_allow_html=True)
-
-# --- STAGE 2: THE REFINERY ---
-elif stage == "STAGE 2: THE REFINERY":
-    st.subheader("🧪 Quality Curation & Decision Matrix")
-
-    if not discovery_data:
-        st.info("Waiting for data...")
-    else:
-        # 1. Filters & Search Bar
-        c1, c2, c3 = st.columns([2, 1, 1])
-        with c1:
-            search_query = st.text_input("🔍 Search code or reason...", "")
-        with c2:
-            outcome_filter = st.selectbox("Filter Outcome", ["ALL", "PROMOTED", "REJECTED"])
-        with c3:
-            sort_order = st.selectbox("Sort By", ["Newest", "Oldest", "Belt Level", "Grade"])
-
-        # 2. Build DataFrame
-        decisions = []
+        # --- COMMAND BREAKDOWN ---
+        st.divider()
+        st.subheader("🧩 Command Category Breakdown")
+        
+        # Prepare Data
+        cmd_data = []
         for d in discovery_data:
-            grade = d['metadata']['grade']
-            outcome = "PROMOTED" if grade in ("A", "B") else "REJECTED"
-            decisions.append({
-                "Timestamp": d['metadata']['timestamp'],
-                "Belt": d['metadata']['belt'].upper(),
-                "Task": d['metadata']['source_challenge_id'],
-                "Grade": grade,
-                "Outcome": outcome,
-                "Logic": d['output']
-            })
-        df = pd.DataFrame(decisions)
+            cmd = d.get('output', '')
+            grade = d['metadata'].get('grade', 'F')
+            is_success = grade in ('A', 'B')
+            
+            # Classification
+            cat = "Other"
+            c_low = cmd.lower()
+            if any(x in c_low for x in ['frida', 'objection', 'spawn', 'attach']): cat = 'Frida Hooks'
+            elif any(x in c_low for x in ['adb', 'pm ', 'am ', 'dumpsys', 'input']): cat = 'ADB Commands'
+            elif any(x in c_low for x in ['cat ', 'ls ', 'cd ', 'find ', 'grep ', 'chmod']): cat = 'File Access'
+            elif any(x in c_low for x in ['curl', 'wget', 'ping', 'netstat', 'ip ', 'nc ', 'nmap']): cat = 'Network'
+            
+            cmd_data.append({'Category': cat, 'Command': cmd, 'Success': is_success})
+            
+        df_cmd = pd.DataFrame(cmd_data)
+        
+        if not df_cmd.empty:
+            c1, c2 = st.columns([1, 1])
+            
+            with c1:
+                st.markdown("**Attack Distribution**")
+                pie_chart = alt.Chart(df_cmd).mark_arc(innerRadius=50).encode(
+                    theta=alt.Theta("count()", stack=True),
+                    color=alt.Color("Category"),
+                    tooltip=["Category", "count()"]
+                )
+                st.altair_chart(pie_chart, use_container_width=True)
+                
+            with c2:
+                st.markdown("**Success Rate Heatmap**")
+                # Calculate success rates
+                stats = df_cmd.groupby('Category').agg(
+                    Attempts=('Success', 'count'),
+                    Success_Rate=('Success', 'mean')
+                ).reset_index()
+                
+                # Formatted dataframe for heatmap-like display
+                st.dataframe(
+                    stats.style.format({'Success_Rate': '{:.1%}'})
+                    .background_gradient(subset=['Success_Rate'], cmap='RdYlGn'),
+                    use_container_width=True
+                )
+                
+            st.markdown("**🏆 Top 5 Most Attempted Commands**")
+            top_cmds = df_cmd['Command'].value_counts().head(5).reset_index()
+            top_cmds.columns = ['Command', 'Attempts']
+            st.table(top_cmds)
 
-        # 3. Apply Filtering
-        if search_query:
-            df = df[df['Logic'].str.contains(search_query, case=False) | df['Task'].str.contains(search_query, case=False)]
-        if outcome_filter != "ALL":
-            df = df[df['Outcome'] == outcome_filter]
-
-        # 4. Apply Sorting
-        if sort_order == "Newest":
-            df = df.sort_values("Timestamp", ascending=False)
-        elif sort_order == "Oldest":
-            df = df.sort_values("Timestamp", ascending=True)
-        elif sort_order == "Belt Level":
-            df = df.sort_values("Belt")
-        elif sort_order == "Grade":
-            df = df.sort_values("Grade")
-
-        st.dataframe(df, use_container_width=True)
-
-# --- STAGE 3: THE WAREHOUSE ---
-elif stage == "STAGE 3: THE WAREHOUSE":
-    st.subheader("🏛️ Persistent Intelligence Warehouse")
-    st.markdown("#### 🏆 Gold Standard Master Set (SFT)")
-    st.dataframe(pd.DataFrame(alpaca_data), use_container_width=True)
-
-# --- STAGE 4: THE INTELLIGENCE ---
-elif stage == "STAGE 4: THE INTELLIGENCE":
-    st.subheader("🧠 DPO Boundary Analytics")
-    if not dpo_data:
-        st.warning("Insufficient boundary data.")
-    else:
-        for i, pair in enumerate(reversed(dpo_data[-10:])):
-            with st.expander(f"Boundary Analytic: {pair.get('metadata', {}).get('challenge_id', 'Exploration')}"):
-                c1, c2 = st.columns(2)
-                c1.success("✅ CHOSEN")
-                c1.code(pair["chosen"])
-                c2.error("❌ REJECTED")
-                c2.code(pair["rejected"])
-
-# --- FOOTER ---
-st.divider()
-st.caption(f"AgenticART Mission Control v0.4.5 | Target: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+st.divider(); st.caption(f"AgenticART Mission Control v0.4.5 | Target: {datetime.now().strftime('%Y-%m-%d')}")
