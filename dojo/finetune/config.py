@@ -1,8 +1,8 @@
 """Fine-tuning configuration for AgenticART Dojo."""
 
 from dataclasses import dataclass, field
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 
 @dataclass

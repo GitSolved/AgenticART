@@ -26,13 +26,12 @@ sys.path.insert(0, str(project_root))
 from dojo import (
     Belt,
     ChallengeLoader,
-    Executor,
-    ErrorExtractor,
-    ContextInjector,
     Challenger,
     ChallengeSession,
+    ContextInjector,
+    ErrorExtractor,
+    Executor,
 )
-
 
 # ============================================================================
 # Test Results Tracking
@@ -390,7 +389,7 @@ def test_session_data_integrity(runner: TestRunner, sessions: list[ChallengeSess
     issues = []
     for session in sessions:
         if not session.challenge:
-            issues.append(f"Session missing challenge")
+            issues.append("Session missing challenge")
         if not session.attempts:
             issues.append(f"{session.challenge.id}: No attempts recorded")
         for i, attempt in enumerate(session.attempts):
@@ -470,7 +469,7 @@ def run_tests(mode: str = "mock", device_id: str = "emulator-5554") -> int:
     elif mode == "live":
         try:
             llm = OllamaLLMClient()
-            print(f"Using LIVE LLM (Ollama)")
+            print("Using LIVE LLM (Ollama)")
         except RuntimeError as e:
             print(f"ERROR: {e}")
             print("Falling back to mock mode")

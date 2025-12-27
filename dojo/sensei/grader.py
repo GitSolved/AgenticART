@@ -6,13 +6,12 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dojo.curriculum import ChallengeSession
 from dojo.models import (
     Challenge,
     Grade,
     SenseiAssessment,
-    ScoringRubric,
 )
-from dojo.curriculum import ChallengeSession
 
 
 @dataclass

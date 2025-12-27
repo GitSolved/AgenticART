@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from dojo.curriculum.executor import ExecutionResult
+
+if TYPE_CHECKING:
+    from dojo.curriculum.executor import Executor
 
 
 @dataclass

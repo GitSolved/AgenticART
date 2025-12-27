@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 import tempfile
 import time
@@ -24,25 +23,24 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from dojo import (
+    AttemptRecord,
     Belt,
-    Grade,
     Challenge,
     ChallengeInput,
-    ExpectedOutput,
-    ScriptType,
-    ScoringRubric,
     ChallengeSession,
-    AttemptRecord,
-    ExecutionResult,
     ErrorContext,
-    Sensei,
-    Grader,
-    TrainingExtractor,
-    TrainingDataExporter,
+    ExecutionResult,
+    ExpectedOutput,
     ExportFormat,
+    Grade,
+    Grader,
     ProgressTracker,
+    ScoringRubric,
+    ScriptType,
+    Sensei,
+    TrainingDataExporter,
+    TrainingExtractor,
 )
-
 
 # ============================================================================
 # Test Results Tracking
@@ -428,9 +426,9 @@ def test_exporter(runner: TestRunner) -> bool:
             # Test DPO export
             try:
                 path = exporter.export(all_examples, ExportFormat.DPO, "test")
-                dpo_created = path.exists()
+                _ = path.exists()  # DPO export attempted
             except Exception:
-                dpo_created = False
+                pass  # DPO export failed, continue anyway
 
             # Get stats
             stats = exporter.get_export_stats(all_examples)

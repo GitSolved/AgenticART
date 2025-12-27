@@ -6,12 +6,11 @@ import os
 import re
 import subprocess
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Optional
 
-from dojo.models import Challenge, ScriptType
 from dojo.exceptions import ExecutionError
+from dojo.models import Challenge, ScriptType
 
 
 @dataclass

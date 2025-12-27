@@ -7,15 +7,15 @@ from typing import Optional
 
 import yaml
 
+from dojo.exceptions import ChallengeNotFoundError, CurriculumError
 from dojo.models import (
     Belt,
     Challenge,
     ChallengeInput,
     ExpectedOutput,
-    ScriptType,
     ScoringRubric,
+    ScriptType,
 )
-from dojo.exceptions import ChallengeNotFoundError, CurriculumError, InvalidBeltError
 
 
 class ChallengeLoader:

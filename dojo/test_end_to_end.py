@@ -11,9 +11,8 @@ from __future__ import annotations
 
 import argparse
 import os
-import sys
 import shutil
-import time
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -26,16 +25,15 @@ from dojo import (
     # Phase 2
     Belt,
     ChallengeLoader,
-    Executor,
-    ErrorExtractor,
-    ContextInjector,
     Challenger,
     ChallengeSession,
+    ContextInjector,
+    ErrorExtractor,
+    Executor,
+    ExportFormat,
     # Phase 3
     Sensei,
-    ExportFormat,
 )
-
 
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)

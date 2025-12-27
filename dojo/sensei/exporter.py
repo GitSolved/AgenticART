@@ -10,8 +10,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from dojo.models import Grade, TrainingExample
 from dojo.exceptions import ExportError
+from dojo.models import Grade, TrainingExample
 
 
 class ExportFormat(Enum):

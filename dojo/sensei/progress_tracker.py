@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from dojo.models import Belt, Grade, ModelProgress, SenseiAssessment
+from dojo.models import Belt, ModelProgress, SenseiAssessment
 
 
 class ProgressTracker:

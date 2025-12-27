@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
+from dojo.curriculum import ChallengeSession, ErrorContext
 from dojo.models import (
-    Belt,
     Challenge,
     Grade,
     SenseiAssessment,
     TrainingExample,
 )
-from dojo.curriculum import ChallengeSession, ErrorContext
 
 
 @dataclass
