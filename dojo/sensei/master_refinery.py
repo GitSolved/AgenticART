@@ -17,6 +17,21 @@ class MasterRefinery:
         self.master_dir.mkdir(parents=True, exist_ok=True)
         self.alpaca_path = self.master_dir / "master_alpaca.json"
         self.dpo_path = self.master_dir / "master_dpo.jsonl"
+        self.discovery_path = self.master_dir / "master_discovery.jsonl"
+
+    def sync_discovery(self, new_examples: List[TrainingExample]):
+        """Store all exploration attempts in the discovery warehouse."""
+        if not self.discovery_path.exists():
+            open(self.discovery_path, "w").close()
+
+        added_count = 0
+        with open(self.discovery_path, "a", encoding="utf-8") as f:
+            for ex in new_examples:
+                # We save everything from exploration mode to the discovery log
+                data = ex.to_dict()
+                f.write(json.dumps(data, ensure_ascii=False) + "\n")
+                added_count += 1
+        return added_count
 
     def load_master_alpaca(self) -> List[Dict[str, Any]]:
         """Load current master SFT data."""

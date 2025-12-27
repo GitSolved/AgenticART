@@ -531,8 +531,11 @@ class ModelProgress:
             "challenges_passed": self.challenges_passed,
             "pass_rate": round(self.pass_rate, 2),
             "average_score": round(self.average_score, 2),
+            "total_score": self.total_score,
             "training_examples_generated": self.training_examples_generated,
             "last_training_date": self.last_training_date.isoformat() if self.last_training_date else None,
+            "assessment_count": len(self.assessments),
+            "assessments_summary": [], # Placeholder for actual summary logic if needed
         }
 
     def display_status(self) -> str:

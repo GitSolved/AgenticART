@@ -107,6 +107,21 @@ class Grader:
         # Determine grade
         grade = Grade.from_score(final_score)
 
+        # Store diagnostics in the last attempt for transparency
+        if session.attempts:
+            session.attempts[-1].diagnostics = {
+                "syntax_issues": syntax_issues,
+                "api_errors": api_errors,
+                "logic_flaws": obj_issues,
+                "security_issues": security_issues,
+                "score_breakdown": {
+                    "syntax_ok": syntax_ok,
+                    "api_ok": api_ok,
+                    "exec_ok": exec_ok,
+                    "obj_ok": obj_ok
+                }
+            }
+
         # Generate correction if needed (D or F grade)
         corrected_output = None
         correction_explanation = None

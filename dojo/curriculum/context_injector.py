@@ -225,9 +225,15 @@ Please provide a corrected command. Output only the command, no explanation."""
 - Process memory: shell cat /proc/$(pidof <process>)/maps
 - ADB forwarding: forward tcp:<port> tcp:<port>\n\n"""
 
-        # 3. Critical Rules (Refined for multi-line scripts)
+        # 3. Code Interpreter (for all belts in Exploration mode)
+        prompt += """PYTHON ANALYSIS (Available for automation):
+- Execute ADB: res = adb('shell getprop ...')
+- Execute Frida: res = frida('console.log("...")', target='pkg')
+- Complex Logic: Use loops, re.findall(), and logic to build exploit chains.\n\n"""
+
+        # 4. Critical Rules (Refined for multi-line scripts)
         prompt += f"""CRITICAL RULES:
-1. Output ONLY the {script_type} code/command.
+1. Output ONLY the {script_type} code/command OR a Python script.
 2. NO explanations, NO markdown, NO code blocks.
 3. For ADB: Use 'shell' prefix for on-device commands.
 4. For FRIDA/C: Provide the full script/program.

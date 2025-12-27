@@ -7,6 +7,7 @@ from typing import Optional
 
 from dojo.curriculum import ChallengeSession, ErrorContext
 from dojo.models import (
+    Belt,
     Challenge,
     Grade,
     SenseiAssessment,
@@ -92,7 +93,37 @@ class TrainingExtractor:
             recovery_examples = self._extract_error_recovery_examples(session)
             examples.extend(recovery_examples)
 
+        # 5. Exploration examples (from Probing Mode)
+        # We ALWAYS extract these to the Discovery log
+        if session.challenge.belt == Belt.BLACK:
+            exploration_examples = self._extract_exploration_examples(session, assessment)
+            examples.extend(exploration_examples)
+
         return examples
+
+    def _extract_exploration_examples(
+        self,
+        session: ChallengeSession,
+        assessment: SenseiAssessment,
+    ) -> list[TrainingExample]:
+        """Extract ALL attempts from an exploration session as training examples."""
+        if not session.attempts:
+            return []
+
+        challenge = session.challenge
+        extracted = []
+
+        for attempt in session.attempts:
+            extracted.append(TrainingExample(
+                instruction=challenge.description,
+                input_text=attempt.prompt_used,
+                output_text=attempt.model_output,
+                source_challenge_id=challenge.id,
+                example_type="exploration",
+                belt=challenge.belt,
+                grade=assessment.grade, # Using overall session grade for now
+            ))
+        return extracted
 
     def _extract_positive_example(
         self,

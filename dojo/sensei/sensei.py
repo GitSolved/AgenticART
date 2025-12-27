@@ -69,19 +69,15 @@ class Sensei:
     ):
         """
         Initialize the Sensei.
-
-        Args:
-            grader: Grader instance (created if None).
-            extractor: TrainingExtractor instance (created if None).
-            exporter: TrainingDataExporter instance (created if None).
-            progress_tracker: ProgressTracker instance (created if None).
-            output_dir: Base directory for outputs.
         """
+        # Ensure we use a stable path for the data engine
         self.output_dir = output_dir or Path("./dojo_output")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.grader = grader or Grader()
         self.extractor = extractor or TrainingExtractor()
+
+        # Initialize sub-components with the stable path
         self.exporter = exporter or TrainingDataExporter(
             output_dir=self.output_dir / "training_data"
         )
@@ -188,12 +184,13 @@ class Sensei:
 
             # Sync to Master Dataset (Automated Filtration & Build-up)
             added_alpaca, updated_alpaca = self.master_refinery.sync_alpaca(examples)
+            added_discovery = self.master_refinery.sync_discovery(examples)
 
             # Extract DPO pairs for master sync
             new_dpo_pairs = self.exporter.create_dpo_pairs(examples)
             added_dpo = self.master_refinery.sync_dpo(new_dpo_pairs)
 
-            print(f"Master Dataset Sync: +{added_alpaca} SFT, {updated_alpaca} Upgraded, +{added_dpo} DPO pairs")
+            print(f"Master Dataset Sync: +{added_alpaca} SFT, {updated_alpaca} Upgraded, +{added_discovery} Discovery, +{added_dpo} DPO pairs")
 
         # 3. Get current progress
         progress = self.progress_tracker.get_progress(model_id)
