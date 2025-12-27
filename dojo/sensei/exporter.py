@@ -76,27 +76,27 @@ class TrainingDataExporter:
         """
         cmd = cmd.strip()
         lower_cmd = cmd.lower()
-        
+
         # Remove 'adb shell ' prefix
         if lower_cmd.startswith("adb shell "):
             cmd = cmd[10:].strip()
             return f"shell {cmd}"
-            
+
         # Remove 'adb ' prefix
         if lower_cmd.startswith("adb "):
             cmd = cmd[4:].strip()
-            
+
         # List of commands that MUST have 'shell ' prefix
         on_device_commands = (
-            "pm", "am", "getprop", "setprop", "ls", "ps", "cat", 
-            "dumpsys", "input", "screencap", "uiautomator", 
+            "pm", "am", "getprop", "setprop", "ls", "ps", "cat",
+            "dumpsys", "input", "screencap", "uiautomator",
             "run-as", "sqlite3", "content", "df", "netstat", "printenv"
         )
-        
+
         # If it's an on-device command and missing 'shell ', add it
         if any(cmd.startswith(c) for c in on_device_commands) and not cmd.startswith("shell "):
             cmd = f"shell {cmd}"
-            
+
         return cmd
 
     def _normalize_example(self, example: TrainingExample) -> TrainingExample:
@@ -304,10 +304,10 @@ class TrainingDataExporter:
             # 1. Identify Gold standard (Kata) and high-quality model successes
             kata = [e for e in challenge_examples if e.example_type == "kata"]
             positive = [
-                e for e in challenge_examples 
+                e for e in challenge_examples
                 if e.example_type == "positive" and e.grade in (Grade.A, Grade.B)
             ]
-            
+
             # 2. Identify failures
             negative = [e for e in challenge_examples if e.example_type == "negative"]
             error_recovery = [e for e in challenge_examples if e.example_type == "error_recovery"]
