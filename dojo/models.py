@@ -394,8 +394,10 @@ class TrainingExample:
     belt: Belt
     grade: Optional[Grade] = None
     timestamp: datetime = field(default_factory=datetime.now)
+    model_id: Optional[str] = None
 
     def to_alpaca(self) -> dict:
+        # ... (rest of the method remains same)
         """Export as Alpaca format."""
         return {
             "instruction": self.instruction,
@@ -475,6 +477,7 @@ class TrainingExample:
                 "belt": self.belt.value,
                 "grade": self.grade.value if self.grade else None,
                 "timestamp": self.timestamp.isoformat(),
+                "model_id": self.model_id,
             },
         }
 

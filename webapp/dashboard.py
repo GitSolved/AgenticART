@@ -131,13 +131,35 @@ def get_adb_status():
     except Exception:
         return "ERROR", "health-disconnected"
 
+def get_all_discovery_data():
+    """Aggregate all discovery events from session logs with model mapping."""
+    all_data = []
+    log_files = list(Path(OUTPUT_DIR / "training_data").glob("*_jsonl.jsonl"))
+
+    for log_file in log_files:
+        # Heuristic for model name from filename
+        # Format: {model_or_session}_YYYYMMDD_HHMMSS_jsonl.jsonl
+        model_name = log_file.name.split('_202')[0]
+
+        events = load_jsonl(log_file)
+        for e in events:
+            # Prefer model_id from metadata if present (future-proofing)
+            m = e['metadata'].get('model_id')
+            if m:
+                model_name = m.split('-202')[0]
+
+            e['model_id'] = model_name
+            all_data.append(e)
+
+    return all_data
+
 # --- AUTO REFRESH ---
 st_autorefresh(interval=5000, key="global_refresh")
 
 # --- DATA LOADING ---
 alpaca_data = load_json(ALPACA_PATH)
 dpo_data = load_jsonl(DPO_PATH)
-discovery_data = load_jsonl(DISCOVERY_PATH)
+discovery_data = get_all_discovery_data()
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -221,7 +243,7 @@ with st.sidebar:
             st.rerun()
 
     st.divider()
-    selected_stage = st.radio("🕹️ Stage", ["MINE", "REFINERY", "WAREHOUSE", "INTELLIGENCE", "ANALYTICS"], index=st.session_state.get("operating_stage_index", 0))
+    selected_stage = st.radio("🕹️ Stage", ["MINE", "REFINERY", "WAREHOUSE", "INTELLIGENCE", "ANALYTICS", "COMPARISON"], index=st.session_state.get("operating_stage_index", 0))
 
 # --- HEADER ---
 c_title, c_update = st.columns([3, 1])
@@ -292,6 +314,13 @@ elif selected_stage == "ANALYTICS":
     st.subheader("📈 Performance Analytics")
     if discovery_data:
         df_a = pd.DataFrame(discovery_data)
+
+        # Model Filter
+        available_models = ["ALL"] + sorted(df_a['model_id'].unique().tolist())
+        sel_model = st.selectbox("Filter by Model", available_models)
+        if sel_model != "ALL":
+            df_a = df_a[df_a['model_id'] == sel_model]
+
         df_a['dt'] = pd.to_datetime(df_a['metadata'].apply(lambda x: x['timestamp']))
         st.markdown("#### Cumulative Warehouse Yield (Last 6 Hours)")
         l6 = df_a[df_a['dt'] > (now - timedelta(hours=6))].copy()
@@ -367,6 +396,129 @@ elif selected_stage == "ANALYTICS":
             top_cmds = df_cmd['Command'].value_counts().head(5).reset_index()
             top_cmds.columns = ['Command', 'Attempts']
             st.table(top_cmds)
+
+elif selected_stage == "COMPARISON":
+    st.subheader("🏁 Model Benchmarking & Comparison")
+
+    if not discovery_data:
+        st.warning("No data available for comparison.")
+    else:
+        # Prepare Comparison DataFrame
+        comp_rows = []
+        for d in discovery_data:
+            cmd = d.get('output', '')
+            grade = d['metadata'].get('grade', 'F')
+            model = d.get('model_id', 'UNKNOWN')
+            is_success = grade in ('A', 'B', 'C') # passing grade
+            is_high_quality = grade in ('A', 'B') # gold/refined
+
+            # Classification
+            cat = "Other"
+            c_low = cmd.lower()
+            if any(x in c_low for x in ['frida', 'objection', 'spawn', 'attach']):
+                cat = 'Frida Hooks'
+            elif any(x in c_low for x in ['adb', 'pm ', 'am ', 'dumpsys', 'input']):
+                cat = 'ADB Commands'
+            elif any(x in c_low for x in ['cat ', 'ls ', 'cd ', 'find ', 'grep ', 'chmod']):
+                cat = 'File Access'
+            elif any(x in c_low for x in ['curl', 'wget', 'ping', 'netstat', 'ip ', 'nc ', 'nmap']):
+                cat = 'Network'
+
+            comp_rows.append({
+                'Model': model,
+                'Category': cat,
+                'Success': is_success,
+                'HighQuality': is_high_quality,
+                'Grade': grade if grade else 'N/A'
+            })
+
+        df_comp = pd.DataFrame(comp_rows)
+        all_models = sorted(df_comp['Model'].unique())
+
+        selected_models = st.multiselect("Select Models to Compare", all_models, default=all_models[:3])
+
+        if selected_models:
+            df_sel = df_comp[df_comp['Model'].isin(selected_models)]
+
+            # --- ROW 1: PRIMARY METRICS ---
+            st.markdown("### 📊 Performance Benchmarking")
+            c1, c2 = st.columns(2)
+
+            with c1:
+                st.markdown("**Success Rate (%)**")
+                success_stats = df_sel.groupby('Model')['Success'].mean().reset_index()
+                success_stats['Success'] *= 100
+                chart = alt.Chart(success_stats).mark_bar().encode(
+                    x=alt.X('Model:N', sort='-y'),
+                    y=alt.Y('Success:Q', title='Success Rate %'),
+                    color='Model:N',
+                    tooltip=['Model', alt.Tooltip('Success:Q', format='.1f')]
+                ).properties(height=300)
+                st.altair_chart(chart, use_container_width=True)
+
+            with c2:
+                st.markdown("**Warehouse Yield (Total High-Quality Examples)**")
+                yield_stats = df_sel.groupby('Model')['HighQuality'].sum().reset_index()
+                chart = alt.Chart(yield_stats).mark_bar().encode(
+                    x=alt.X('Model:N', sort='-y'),
+                    y=alt.Y('HighQuality:Q', title='Examples Generated'),
+                    color='Model:N',
+                    tooltip=['Model', 'HighQuality']
+                ).properties(height=300)
+                st.altair_chart(chart, use_container_width=True)
+
+            # --- ROW 2: CATEGORY OPTIMIZATION ---
+            st.divider()
+            st.markdown("### 🎯 Task-Specification Optimization")
+            st.caption("Identify which models excel at specific categories")
+
+            cat_stats = df_sel.groupby(['Model', 'Category'])['Success'].mean().reset_index()
+            cat_stats['Success'] *= 100
+
+            chart = alt.Chart(cat_stats).mark_bar().encode(
+                x=alt.X('Model:N', title=None),
+                y=alt.Y('Success:Q', title='Success Rate %'),
+                color='Model:N',
+                column=alt.Column('Category:N', title='Command Category'),
+                tooltip=['Model', 'Category', alt.Tooltip('Success:Q', format='.1f')]
+            ).properties(width=150, height=250)
+            st.altair_chart(chart)
+
+            # --- ROW 3: QUALITY METRICS ---
+            st.divider()
+            st.markdown("### 🧪 Quality Distributions")
+
+            c3, c4 = st.columns([2, 1])
+
+            with c3:
+                st.markdown("**Grade Distribution**")
+                grade_dist = df_sel.groupby(['Model', 'Grade']).size().reset_index(name='Count')
+                chart = alt.Chart(grade_dist).mark_bar().encode(
+                    x=alt.X('Model:N'),
+                    y=alt.Y('Count:Q', stack="normalize", title='Ratio'),
+                    color=alt.Color('Grade:N', scale=alt.Scale(
+                        domain=['A', 'B', 'C', 'D', 'F', 'N/A'],
+                        range=['#238636', '#2ea043', '#8b949e', '#d29922', '#da3633', '#30363d']
+                    )),
+                    tooltip=['Model', 'Grade', 'Count']
+                ).properties(height=300)
+                st.altair_chart(chart, use_container_width=True)
+
+            with c4:
+                st.markdown("**Promotion vs Rejection Ratio**")
+                prom_stats = df_sel.copy()
+                prom_stats['Outcome'] = prom_stats['HighQuality'].apply(lambda x: 'PROMOTED' if x else 'REJECTED')
+                prom_dist = prom_stats.groupby(['Model', 'Outcome']).size().reset_index(name='Count')
+                chart = alt.Chart(prom_dist).mark_bar().encode(
+                    x=alt.X('Model:N'),
+                    y=alt.Y('Count:Q', stack="normalize"),
+                    color=alt.Color('Outcome:N', scale=alt.Scale(
+                        domain=['PROMOTED', 'REJECTED'],
+                        range=['#238636', '#da3633']
+                    )),
+                    tooltip=['Model', 'Outcome', 'Count']
+                ).properties(height=300)
+                st.altair_chart(chart, use_container_width=True)
 
 st.divider()
 st.caption(f"AgenticART Mission Control v0.4.5 | Target: {datetime.now().strftime('%Y-%m-%d')}")

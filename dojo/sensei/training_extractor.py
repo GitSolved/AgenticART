@@ -65,11 +65,13 @@ class TrainingExtractor:
             List of training examples.
         """
         examples = []
+        model_id = assessment.model_id
 
         # 1. Kata (golden) example - Always high quality
         if self.config.include_kata:
             example = self._extract_kata_example(session)
             if example:
+                example.model_id = model_id
                 examples.append(example)
 
         # 2. Positive example (successful, high-quality output)
@@ -77,6 +79,7 @@ class TrainingExtractor:
         if session.final_success and self.config.include_positive and assessment.is_positive_example:
             example = self._extract_positive_example(session, assessment)
             if example:
+                example.model_id = model_id
                 examples.append(example)
 
         # 3. Negative example with correction
@@ -85,18 +88,23 @@ class TrainingExtractor:
         if self.config.include_negative and assessment.is_negative_example:
             example = self._extract_negative_example(session, assessment)
             if example:
+                example.model_id = model_id
                 examples.append(example)
 
         # 4. Error recovery examples (from retry sequences)
         # These are useful for 'Agentic' behavior training
         if self.config.include_error_recovery:
             recovery_examples = self._extract_error_recovery_examples(session)
+            for re in recovery_examples:
+                re.model_id = model_id
             examples.extend(recovery_examples)
 
         # 5. Exploration examples (from Probing Mode)
         # We ALWAYS extract these to the Discovery log
         if session.challenge.belt == Belt.BLACK:
             exploration_examples = self._extract_exploration_examples(session, assessment)
+            for ee in exploration_examples:
+                ee.model_id = model_id
             examples.extend(exploration_examples)
 
         return examples
