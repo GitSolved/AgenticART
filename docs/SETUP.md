@@ -38,7 +38,7 @@ Complete guide for setting up the LLM-powered Android penetration testing enviro
 
 ```bash
 # Clone repository
-git clone https://github.com/your-username/llm-android-pentest.git
+git clone https://github.com/GitSolved/AgenticART.git
 cd AgenticART
 
 # Run setup script
