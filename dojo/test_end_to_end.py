@@ -172,45 +172,45 @@ class MockLLMClient:
 
 
 class OllamaLLMClient:
-    """Real LLM client using Ollama."""
+    """Real LLM client using Ollama HTTP API."""
 
     def __init__(self, model: str = "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"):
         self.model = model
+        self.api_url = "http://localhost:11434/api/generate"
         self._check_ollama()
 
     def _check_ollama(self):
-        import subprocess
+        import requests
         try:
-            result = subprocess.run(
-                ["ollama", "list"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            if result.returncode != 0:
-                raise RuntimeError("Ollama not running")
-        except FileNotFoundError:
-            raise RuntimeError("Ollama not installed")
+            response = requests.get("http://localhost:11434/api/tags", timeout=5)
+            if response.status_code != 200:
+                raise RuntimeError("Ollama server not responding")
+        except Exception:
+            raise RuntimeError("Ollama server not running. Start it with 'ollama serve'")
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        import subprocess
 
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
+        import requests
+
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "system": system_prompt if system_prompt else "",
+            "stream": False,
+            "options": {
+                "temperature": 0.1,
+                "top_p": 0.9,
+                "num_ctx": 4096
+            }
+        }
 
         try:
-            result = subprocess.run(
-                ["ollama", "run", self.model, full_prompt],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                encoding="utf-8",
-                errors="replace",
-            )
-            return result.stdout.strip()
-        except subprocess.TimeoutExpired:
-            return "[ERROR: LLM timeout]"
+            response = requests.post(self.api_url, json=payload, timeout=120)
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("response", "").strip()
+            else:
+                return f"[ERROR: API Status {response.status_code}]"
         except Exception as e:
             return f"[ERROR: {e}]"
 

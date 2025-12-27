@@ -203,6 +203,83 @@ class Challenger:
         session.completed_at = datetime.now()
         return session
 
+    def run_exploration(
+        self,
+        target: str,
+        goal: str = "Identify sensitive exported interfaces or logic flaws",
+        depth: int = 5
+    ) -> ChallengeSession:
+        """
+        Exploration Mode: Open-ended probing of a target.
+        Unlike a standard challenge, this has no fixed 'correct' answer.
+        The goal is to discover new information or trigger crashes.
+        """
+        # Create a synthetic 'Black Belt' challenge for the exploration
+        from dojo.models import Belt, Challenge, ChallengeInput, ExpectedOutput, ScriptType
+
+        exploration_challenge = Challenge(
+            id=f"explor_{datetime.now().strftime('%H%M%S')}",
+            name=f"Autonomous Probing: {target}",
+            description=f"Target: {target}\nGoal: {goal}",
+            belt=Belt.BLACK,
+            difficulty=5,
+            inputs=ChallengeInput(device_context={"target": target, "mode": "exploration"}),
+            expected_output=ExpectedOutput(script_type=ScriptType.FRIDA)
+        )
+
+        session = ChallengeSession(challenge=exploration_challenge)
+
+        # Initial exploration prompt
+        system_prompt = self.context_injector.build_system_prompt(exploration_challenge)
+        prompt = f"EXPLORATION MODE\nTarget: {target}\nObjective: {goal}\n\n"
+        prompt += "Step 1: Enumerate the target surfaces. Provide a Frida script to start."
+
+        for i in range(depth):
+            # 1. Generate exploration logic
+            model_output = self._generate(prompt, system_prompt)
+            model_output = self._clean_output(model_output)
+
+            # 2. Execute and monitor
+            exec_result = self.executor.execute(exploration_challenge, model_output)
+
+            # 3. Analyze discovery
+            # In exploration mode, any output that doesn't crash is a 'success'
+            # because we are gathering data.
+            error_ctx = None
+            if not exec_result.success:
+                error_ctx = self.error_extractor.extract(exec_result, model_output)
+
+            # 4. Record
+            attempt = AttemptRecord(
+                attempt_number=i + 1,
+                prompt_used=prompt,
+                model_output=model_output,
+                execution_result=exec_result,
+                error_context=error_ctx
+            )
+            session.attempts.append(attempt)
+
+            if self.on_attempt:
+                self.on_attempt(attempt)
+
+            # 5. Recursive Loop: Feed the result back to the model for the next step
+            if exec_result.success:
+                prompt = f"PREVIOUS DISCOVERY:\n{exec_result.stdout}\n\nNEXT STEP: Refine your probe based on this data. Generate the next Frida script."
+            elif error_ctx:
+                # If it failed, use the retry logic to fix the probe
+                prompt = self.context_injector.build_retry_prompt(
+                    challenge=exploration_challenge,
+                    previous_output=model_output,
+                    error_context=error_ctx,
+                    attempt_number=i + 1
+                )
+            else:
+                # Fallback if no error context
+                prompt = f"The previous probe failed. Target: {target}. Objective: {goal}. Try an alternative Frida script."
+
+        session.completed_at = datetime.now()
+        return session
+
     def _generate(self, prompt: str, system_prompt: str) -> str:
         """Generate output from LLM."""
         try:
@@ -212,26 +289,52 @@ class Challenger:
             return f"[LLM ERROR: {e}]"
 
     def _clean_output(self, output: str) -> str:
-        """Clean LLM output of common artifacts."""
+        """
+        Aggressively clean LLM output to extract ONLY the executable code.
+        Strips markdown, conversational filler, and explanations.
+        """
         output = output.strip()
 
-        # Remove markdown code blocks if present
-        if output.startswith("```"):
-            lines = output.split("\n")
-            # Remove first line (```language)
-            lines = lines[1:]
-            # Remove last line if it's just ```
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            output = "\n".join(lines)
+        # 1. Remove markdown code blocks (```javascript ... ```)
+        if "```" in output:
+            # Extract content between the first and last triple backticks
+            parts = output.split("```")
+            if len(parts) >= 3:
+                # Use the middle part (the code)
+                output = parts[1]
+                # Remove language identifier if present (e.g., 'javascript\n')
+                if "\n" in output:
+                    first_line = output.split("\n")[0].lower()
+                    if any(lang in first_line for lang in ["js", "javascript", "c", "bash", "python", "adb"]):
+                        output = "\n".join(output.split("\n")[1:])
+            else:
+                # If only one set of backticks, just strip them
+                output = output.replace("```", "")
 
-        # Remove common prefixes
+        # 2. Strategic Pivot: Look for code start patterns
+        # If the model still included talk, find where the actual code begins
+        code_starts = [
+            "Java.perform", "Interceptor.attach", "var ", "let ", "const ",
+            "#include", "int main", "void ", "shell ", "pm ", "am ", "getprop"
+        ]
+
+        lower_output = output.lower()
+        earliest_index = len(output)
+        found_pattern = False
+
+        for pattern in code_starts:
+            idx = lower_output.find(pattern.lower())
+            if idx != -1 and idx < earliest_index:
+                earliest_index = idx
+                found_pattern = True
+
+        if found_pattern:
+            output = output[earliest_index:]
+
+        # 3. Final cleanup of common artifacts
         prefixes_to_remove = [
-            "Here is the command:",
-            "Here's the command:",
-            "The command is:",
-            "Command:",
-            "Output:",
+            "Here is the command:", "Here is the script:", "Correction:",
+            "Command:", "Output:", "Code:"
         ]
         for prefix in prefixes_to_remove:
             if output.lower().startswith(prefix.lower()):

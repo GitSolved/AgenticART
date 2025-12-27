@@ -37,6 +37,7 @@ class FinetuneConfig:
 
     # Paths
     training_data_path: Optional[Path] = None
+    dpo_data_path: Optional[Path] = None
     output_dir: Path = Path("./dojo_finetuned")
 
     def to_dict(self) -> dict:
@@ -58,5 +59,6 @@ class FinetuneConfig:
             "use_4bit": self.use_4bit,
             "use_gradient_checkpointing": self.use_gradient_checkpointing,
             "training_data_path": str(self.training_data_path) if self.training_data_path else None,
+            "dpo_data_path": str(self.dpo_data_path) if self.dpo_data_path else None,
             "output_dir": str(self.output_dir),
         }

@@ -82,3 +82,7 @@ htmlcov/
 *.log
 *.tmp
 *.bak
+master_dataset/
+dojo_finetune_package/
+*.ab
+*.js

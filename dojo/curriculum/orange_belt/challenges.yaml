@@ -515,3 +515,99 @@ challenges:
       - environment
       - shell
       - system-info
+
+  # --- ROOT READINESS UPGRADES ---
+
+  # Challenge 16: Deep Kernel Fingerprinting
+  - id: orange_016
+    name: "Kernel Version & Compile Info"
+    description: |
+      Write an ADB command that retrieves the full kernel version string,
+      including the compile date and the user who compiled it.
+    belt: orange
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "deep kernel fingerprinting"
+
+    validation:
+      type: regex_match
+      pattern: "Linux version \\d+\\.\\d+"
+
+    hints:
+      - "Use the 'uname' command with proper flags"
+      - "The -a flag shows all system information"
+      - "Alternatively, check /proc/version"
+
+    kata_solution: "shell uname -a"
+
+    tags:
+      - reconnaissance
+      - kernel
+      - fingerprinting
+
+  # Challenge 17: Privilege Escalation Probing
+  - id: orange_017
+    name: "SUID Binary Discovery"
+    description: |
+      Write an ADB command that searches for all files in /system/bin
+      that have the SUID bit set, which could be used for privilege escalation.
+    belt: orange
+    difficulty: 4
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "probe for privilege escalation vectors"
+
+    validation:
+      type: not_empty
+
+    hints:
+      - "Use the 'find' command"
+      - "Look for permission bit 4000 (SUID)"
+      - "Syntax: find [path] -perm -4000"
+
+    kata_solution: "shell find /system/bin -perm -4000"
+
+    tags:
+      - reconnaissance
+      - permissions
+      - privilege-escalation
+
+  # Challenge 18: Payload Staging
+  - id: orange_018
+    name: "Exploit Payload Deployment"
+    description: |
+      Write an ADB command that prepares a staging area for an exploit by
+      copying a dummy file to /data/local/tmp and making it executable.
+    belt: orange
+    difficulty: 3
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "stage exploit payload"
+
+    validation:
+      type: not_empty
+
+    hints:
+      - "/data/local/tmp is often the only writable directory for the shell user"
+      - "Use 'touch' or 'echo' to create a dummy file if needed"
+      - "Use 'chmod' to set executable bits"
+
+    kata_solution: "shell touch /data/local/tmp/exploit && shell chmod 755 /data/local/tmp/exploit"
+
+    tags:
+      - exploitation
+      - file-system
+      - staging

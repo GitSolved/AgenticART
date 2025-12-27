@@ -137,6 +137,7 @@ class ScriptType(Enum):
     FRIDA = "frida"
     ADB = "adb"
     SHELL = "shell"
+    C_EXPLOIT = "c_exploit"
 
     @property
     def file_extension(self) -> str:
@@ -147,6 +148,7 @@ class ScriptType(Enum):
             ScriptType.FRIDA: ".js",
             ScriptType.ADB: ".sh",
             ScriptType.SHELL: ".sh",
+            ScriptType.C_EXPLOIT: ".c",
         }
         return extensions[self]
 

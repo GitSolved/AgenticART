@@ -1,0 +1,188 @@
+# Green Belt Challenges
+# Purpose: Dynamic Instrumentation and Runtime Analysis
+# Focus: Using Frida to intercept, modify, and analyze app behavior in real-time
+
+challenges:
+  # Challenge 1: Process Verification (Placeholder already exists but let's formalize)
+  - id: green_001
+    name: "Frida Runtime Check"
+    description: |
+      Write a basic Frida script that prints "Frida is active" to the console 
+      and then exits. Use this to verify the runtime environment.
+    belt: green
+    difficulty: 1
+    script_type: frida
+
+    inputs:
+      target_class: "com.genymotion.settings"
+      device_context:
+        task: "verify frida connectivity"
+
+    validation:
+      type: output_contains
+      expected: "Frida is active"
+
+    hints:
+      - "Use console.log() for output"
+      - "The script should be pure JavaScript"
+
+    kata_solution: "console.log('Frida is active');"
+
+    tags:
+      - frida
+      - verification
+
+  # Challenge 2: Class Enumeration
+  - id: green_002
+    name: "Class & Method Enumeration"
+    description: |
+      Write a Frida script that enumerates all loaded classes in the 
+      target process and prints their names to the console.
+    belt: green
+    difficulty: 2
+    script_type: frida
+
+    inputs:
+      target_class: "com.genymotion.settings"
+      device_context:
+        task: "enumerate loaded classes"
+
+    validation:
+      type: output_contains
+      expected: "java.lang.String"
+
+    hints:
+      - "Use Java.enumerateLoadedClasses() logic"
+      - "Iterate through the array and log each class name"
+
+    kata_solution: |
+      Java.perform(function() {
+          Java.enumerateLoadedClasses({
+              onMatch: function(className) {
+                  console.log(className);
+              },
+              onComplete: function() {
+                  console.log("Enumeration complete");
+              }
+          });
+      });
+
+    tags:
+      - reconnaissance
+      - frida
+      - enumeration
+
+  # Challenge 3: API Hooking (Logging)
+  - id: green_003
+    name: "System Log Interception"
+    description: |
+      Write a Frida script that hooks the android.util.Log.d method 
+      and prints every log message to the Frida console.
+    belt: green
+    difficulty: 3
+    script_type: frida
+
+    inputs:
+      target_class: "android.util.Log"
+      device_context:
+        task: "intercept debug logs"
+
+    validation:
+      type: regex_match
+      pattern: "\\.implementation = function"
+
+    hints:
+      - "Use Java.use('android.util.Log')"
+      - "Overwrite the .d.implementation function"
+      - "Remember to call the original method if you want logs to still appear in logcat"
+
+    kata_solution: |
+      Java.perform(function() {
+          var Log = Java.use("android.util.Log");
+          Log.d.overload("java.lang.String", "java.lang.String").implementation = function(tag, msg) {
+              console.log("[INTERCEPTED] Tag: " + tag + " Message: " + msg);
+              return this.d(tag, msg);
+          };
+      });
+
+    tags:
+      - frida
+      - hooking
+      - logging
+
+  # Challenge 4: Root Detection Bypass
+  - id: green_004
+    name: "Root Detection Logic Bypass"
+    description: |
+      An app has a method 'checkRoot' in class 'com.security.check' that 
+      returns 'true' if the device is rooted. Write a Frida script to 
+      force this method to always return 'false'.
+    belt: green
+    difficulty: 4
+    script_type: frida
+
+    inputs:
+      target_class: "com.security.check"
+      device_context:
+        task: "bypass root check"
+
+    validation:
+      type: output_contains
+      expected: "return false"
+
+    hints:
+      - "Hook the specific method implementation"
+      - "Ignore the original logic and simply return false"
+
+    kata_solution: |
+      Java.perform(function() {
+          var RootCheck = Java.use("com.security.check");
+          RootCheck.checkRoot.implementation = function() {
+              console.log("Bypassing root check...");
+              return false;
+          };
+      });
+
+    tags:
+      - frida
+      - bypass
+      - root-detection
+
+  # Challenge 5: Native Function Interception
+  - id: green_005
+    name: "Native File Open Interception"
+    description: |
+      Write a Frida script that hooks the native 'open' function in 
+      libc.so and logs the name of every file the process attempts to open.
+    belt: green
+    difficulty: 5
+    script_type: frida
+
+    inputs:
+      target_class: "libc.so"
+      device_context:
+        task: "monitor native file access"
+
+    validation:
+      type: output_contains
+      expected: "Interceptor.attach"
+
+    hints:
+      - "Use Module.findExportByName(null, 'open')"
+      - "Use Interceptor.attach with onEnter callback"
+      - "The first argument (args[0]) is the path string"
+
+    kata_solution: |
+      var openPtr = Module.findExportByName(null, 'open');
+      Interceptor.attach(openPtr, {
+          onEnter: function(args) {
+              var path = Memory.readUtf8String(args[0]);
+              console.log("[OPEN] File: " + path);
+          }
+      });
+
+    tags:
+      - frida
+      - native
+      - interceptor
+

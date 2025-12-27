@@ -202,11 +202,32 @@ class ErrorExtractor:
         error_type: str,
         result: ExecutionResult,
     ) -> list[str]:
-        """Get fix suggestions based on error type."""
+        """Get fix suggestions based on error type and privilege context."""
         suggestions = self.SUGGESTIONS.get(error_type, self.SUGGESTIONS["unknown"]).copy()
 
         # Add context-specific suggestions
         combined = f"{result.stderr}\n{result.stdout}".lower()
+        cmd = result.command.lower()
+
+        # --- EXPLOITATION PIVOT LOGIC ---
+        # Detect if model is trying to touch protected directories without root
+        protected_paths = ["/data/system", "/data/data", "/proc/kallsyms", "/default.prop"]
+        is_touching_protected = any(p in cmd for p in protected_paths)
+
+        if error_type == "permission_denied" and is_touching_protected:
+            # Check if we are currently a low-priv user (shell) via the executor
+            is_root = False
+            if self.executor:
+                try:
+                    id_res = self.executor.execute_adb("shell id")
+                    is_root = "uid=0" in id_res.stdout.lower() or "root" in id_res.stdout.lower()
+                except Exception:
+                    pass
+
+            if not is_root:
+                suggestions.insert(0, "STRATEGY PIVOT: You are hitting a privilege boundary. Do not just retry 'cat'.")
+                suggestions.insert(1, "ACTION: Search for SUID binaries (/system/bin) or kernel info (uname -a) to find an escalation vector.")
+                suggestions.insert(2, "HINT: Look for 'run-as' for app data or check the Blue Belt for kernel exploits.")
 
         if "selinux" in combined or "enforcing" in combined:
             suggestions.insert(0, "SELinux is enforcing - consider 'setenforce 0' or policy modification")

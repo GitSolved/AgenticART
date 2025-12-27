@@ -7,6 +7,7 @@ import re
 import subprocess
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 from dojo.exceptions import ExecutionError
@@ -234,6 +235,152 @@ class Executor:
                 error_type="unknown",
             )
 
+    def execute_frida(
+        self,
+        script_content: str,
+        target_process: str = "com.genymotion.settings",
+        timeout: int = 20,
+    ) -> ExecutionResult:
+        """
+        Execute a Frida script against a target process using a temporary file.
+        This method avoids shell escaping issues with multi-line scripts.
+        """
+        start_time = time.time()
+        temp_js = Path("temp_frida_script.js")
+
+        # Ensure we write valid UTF-8 and strip any accidental markdown backticks the model might have added
+        clean_script = script_content.replace("```javascript", "").replace("```js", "").replace("```", "").strip()
+        temp_js.write_text(clean_script, encoding="utf-8")
+
+        try:
+            # We use -f (spawn) instead of -n (attach) for better stability in automated tests
+            # and --runtime=v8 for modern JS support.
+            cmd = [
+                "frida", "-U",
+                "-f", target_process,
+                "-l", str(temp_js),
+                "--runtime=v8"
+            ]
+
+            # Use Popen to capture output while allowing it to run
+            # We look for [SUCCESS] or other markers in the output
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                encoding="utf-8",
+                errors="replace"
+            )
+
+            duration = time.time() - start_time
+            # Standard Frida exit is usually success if the script loaded
+            success = result.returncode == 0
+
+            return ExecutionResult(
+                success=success,
+                exit_code=result.returncode,
+                stdout=result.stdout.strip(),
+                stderr=result.stderr.strip(),
+                duration=duration,
+                command="frida -U -f " + target_process + " -l [temp_script.js]"
+            )
+
+        except subprocess.TimeoutExpired as e:
+            # This is actually the common case for Frida (it stays alive)
+            # We check the output captured so far
+            duration = time.time() - start_time
+            stdout = e.stdout.decode() if e.stdout else ""
+            stderr = e.stderr.decode() if e.stderr else ""
+
+            # Logic: If the script printed SOMETHING or didn't crash, consider it a success
+            is_valid = len(stdout.strip()) > 0 and "Failed" not in stdout
+
+            return ExecutionResult(
+                success=is_valid,
+                exit_code=0 if is_valid else -1,
+                stdout=stdout.strip(),
+                stderr=stderr.strip(),
+                duration=duration,
+                command="frida [timed_out_but_captured]"
+            )
+        except Exception as e:
+            return ExecutionResult(
+                success=False,
+                exit_code=-1,
+                stdout="",
+                stderr=str(e),
+                duration=time.time() - start_time,
+                command="frida-error"
+            )
+        finally:
+            if temp_js.exists():
+                temp_js.unlink()
+
+    def execute_c_exploit(
+        self,
+        script_content: str,
+        timeout: int = 15,
+    ) -> ExecutionResult:
+        """
+        Validate C-based exploit logic.
+        Uses local host compiler to check for syntax/logic errors.
+        Note: This does not run on the device yet (requires NDK).
+        """
+        start_time = time.time()
+        temp_c = Path("temp_exploit.c")
+        temp_obj = Path("temp_exploit.out")
+        temp_c.write_text(script_content)
+
+        try:
+            # 1. Attempt to compile locally (Syntax Check)
+            # We use -fsyntax-only to just check code correctness
+            cmd = ["clang", "-fsyntax-only", str(temp_c)]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+
+            duration = time.time() - start_time
+            success = result.returncode == 0
+
+            stdout = "Syntax Check Passed" if success else ""
+            stderr = result.stderr.strip()
+
+            if not success:
+                error_type = "c_syntax_error"
+            else:
+                error_type = None
+
+            return ExecutionResult(
+                success=success,
+                exit_code=result.returncode,
+                stdout=stdout,
+                stderr=stderr,
+                duration=duration,
+                command="clang -fsyntax-only [exploit.c]",
+                error_type=error_type
+            )
+
+        except Exception as e:
+            return ExecutionResult(
+                success=False,
+                exit_code=-1,
+                stdout="",
+                stderr=str(e),
+                duration=time.time() - start_time,
+                command="compiler-missing",
+                error_type="tool_missing"
+            )
+        finally:
+            if temp_c.exists():
+                temp_c.unlink()
+            if temp_obj.exists():
+                temp_obj.unlink()
+
     def execute(
         self,
         challenge: Challenge,
@@ -241,21 +388,17 @@ class Executor:
     ) -> ExecutionResult:
         """
         Execute model output for a challenge.
-
-        Args:
-            challenge: The challenge being attempted.
-            model_output: The model's generated code/command.
-
-        Returns:
-            ExecutionResult with output and status.
-
-        Raises:
-            ExecutionError: If script type is not supported.
+        Now supports ADB, FRIDA, and C_EXPLOIT.
         """
         script_type = challenge.expected_output.script_type
 
         if script_type == ScriptType.ADB:
             return self.execute_adb(model_output)
+        elif script_type == ScriptType.FRIDA:
+            target = challenge.inputs.target_class or "com.genymotion.settings"
+            return self.execute_frida(model_output, target_process=target)
+        elif script_type == ScriptType.C_EXPLOIT:
+            return self.execute_c_exploit(model_output)
         else:
             raise ExecutionError(
                 f"Script type not yet supported: {script_type.value}",

@@ -11,6 +11,7 @@ from dojo.curriculum import ChallengeSession
 from dojo.models import Belt, ModelProgress, SenseiAssessment, TrainingExample
 from dojo.sensei.exporter import ExportFormat, TrainingDataExporter
 from dojo.sensei.grader import Grader
+from dojo.sensei.master_refinery import MasterRefinery
 from dojo.sensei.progress_tracker import ProgressTracker
 from dojo.sensei.training_extractor import TrainingExtractor
 
@@ -86,6 +87,9 @@ class Sensei:
         )
         self.progress_tracker = progress_tracker or ProgressTracker(
             storage_path=self.output_dir / "progress"
+        )
+        self.master_refinery = MasterRefinery(
+            master_dir=self.output_dir.parent / "master_dataset"
         )
 
     def evaluate_session(
@@ -181,6 +185,15 @@ class Sensei:
 
             # Update training stats
             self.progress_tracker.update_training_stats(model_id, len(examples))
+
+            # Sync to Master Dataset (Automated Filtration & Build-up)
+            added_alpaca, updated_alpaca = self.master_refinery.sync_alpaca(examples)
+
+            # Extract DPO pairs for master sync
+            new_dpo_pairs = self.exporter.create_dpo_pairs(examples)
+            added_dpo = self.master_refinery.sync_dpo(new_dpo_pairs)
+
+            print(f"Master Dataset Sync: +{added_alpaca} SFT, {updated_alpaca} Upgraded, +{added_dpo} DPO pairs")
 
         # 3. Get current progress
         progress = self.progress_tracker.get_progress(model_id)

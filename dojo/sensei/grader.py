@@ -10,6 +10,7 @@ from dojo.curriculum import ChallengeSession
 from dojo.models import (
     Challenge,
     Grade,
+    ScriptType,
     SenseiAssessment,
 )
 
@@ -142,25 +143,26 @@ class Grader:
         challenge: Challenge,
     ) -> tuple[bool, list[str]]:
         """
-        Check for syntax correctness.
-
-        Args:
-            output: The model output to check.
-            challenge: The challenge for context.
-
-        Returns:
-            Tuple of (is_valid, list of issues).
+        Check for syntax correctness with language-awareness.
         """
         issues = []
+        script_type = challenge.expected_output.script_type
 
         if not output or not output.strip():
             issues.append("Output is empty")
             return False, issues
 
-        # Check for common syntax errors
-        for error_name, pattern in self.SYNTAX_PATTERNS.items():
-            if re.search(pattern, output, re.MULTILINE):
-                issues.append(f"Potential syntax error: {error_name.replace('_', ' ')}")
+        # --- SMART GRADING LOGIC ---
+        # Only use simplistic regex checks for one-line ADB/SHELL commands
+        if script_type in (ScriptType.ADB, ScriptType.SHELL):
+            for error_name, pattern in self.SYNTAX_PATTERNS.items():
+                if re.search(pattern, output, re.MULTILINE):
+                    issues.append(f"Potential syntax error: {error_name.replace('_', ' ')}")
+        else:
+            # For FRIDA and C_EXPLOIT, we rely on the Executor (Runtime Check)
+            # rather than primitive regex which fails on multi-line blocks.
+            # We only check for critical non-code noise.
+            pass
 
         # Check for markdown artifacts that shouldn't be there
         if output.strip().startswith("```"):
