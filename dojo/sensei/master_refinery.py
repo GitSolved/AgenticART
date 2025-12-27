@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any
-from dojo.models import TrainingExample, Grade
+from typing import Any, Dict, List
+
+from dojo.models import Grade, TrainingExample
+
 
 class MasterRefinery:
     """Manages the Gold Standard dataset by merging and ranking new data."""
@@ -19,22 +21,26 @@ class MasterRefinery:
 
     def load_master_alpaca(self) -> List[Dict[str, Any]]:
         """Load current master SFT data."""
-        if not self.alpaca_path.exists(): return []
+        if not self.alpaca_path.exists():
+            return []
         try:
-            with open(self.alpaca_path, "r") as f: return json.load(f)
-        except: return []
+            with open(self.alpaca_path, "r") as f:
+                return json.load(f)
+        except Exception:
+            return []
 
     def sync_alpaca(self, new_examples: List[TrainingExample]):
         """Merge new successes into the master set, prioritizing quality."""
         master = self.load_master_alpaca()
         lookup = {f"{ex['instruction']}|{ex.get('input', '')}": ex for ex in master}
-        
+
         added_count = 0
         updated_count = 0
 
         for ex in new_examples:
-            if ex.example_type not in ("positive", "kata"): continue
-                
+            if ex.example_type not in ("positive", "kata"):
+                continue
+
             key = f"{ex.instruction}|{ex.input_text}"
             new_data = ex.to_alpaca()
             new_data["_grade"] = ex.grade.value if ex.grade else "A"
@@ -47,7 +53,7 @@ class MasterRefinery:
                     is_improvement = True
                 elif ex.grade == Grade.A and existing.get("_grade") != "A":
                     is_improvement = True
-                
+
                 if is_improvement:
                     lookup[key] = new_data
                     updated_count += 1
@@ -61,25 +67,28 @@ class MasterRefinery:
 
         with open(self.alpaca_path, "w") as f:
             json.dump(final_list, f, indent=2)
-            
+
         return added_count, updated_count
 
     def load_master_dpo(self) -> List[Dict[str, Any]]:
         """Load current master DPO pairs."""
-        if not self.dpo_path.exists(): return []
+        if not self.dpo_path.exists():
+            return []
         pairs = []
         try:
             with open(self.dpo_path, "r") as f:
                 for line in f:
-                    if line.strip(): pairs.append(json.loads(line))
-        except: pass
+                    if line.strip():
+                        pairs.append(json.loads(line))
+        except Exception:
+            pass
         return pairs
 
     def sync_dpo(self, new_pairs: List[Any]):
         """Merge new DPO pairs, avoiding exact duplicates."""
         master = self.load_master_dpo()
         existing_keys = {f"{p['prompt']}|{p['chosen']}|{p['rejected']}" for p in master}
-        
+
         added_count = 0
         for p_obj in new_pairs:
             p = p_obj.to_dict() if hasattr(p_obj, "to_dict") else p_obj
@@ -98,7 +107,7 @@ class MasterRefinery:
         """Store all exploration attempts in the discovery warehouse."""
         if not self.discovery_path.exists():
             open(self.discovery_path, "w").close()
-            
+
         added_count = 0
         with open(self.discovery_path, "a", encoding="utf-8") as f:
             for ex in new_examples:

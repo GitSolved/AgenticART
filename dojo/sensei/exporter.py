@@ -329,7 +329,7 @@ class TrainingDataExporter:
                         # Grade B vs Grade D = Lower margin (0.75)
                         margin = 0.95 if neg.grade == Grade.F else 0.75
                         source = "expert_alignment" if kata else "regression_prevention"
-                        
+
                         pairs.append(DPOPair(
                             prompt=f"{best_chosen.instruction}\n\n{best_chosen.input_text}".strip(),
                             chosen=best_chosen.output_text,

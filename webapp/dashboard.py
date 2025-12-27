@@ -1,12 +1,11 @@
 import json
 import os
-import shutil
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import pandas as pd
 import altair as alt
+import pandas as pd
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
@@ -43,7 +42,7 @@ def set_engine_state(status):
     accumulated = current.get("accumulated_seconds", 0)
     start_time_str = current.get("start_time")
     now = datetime.now()
-    
+
     if status == "running":
         if current.get("status") != "running":
             start_time_str = now.isoformat()
@@ -52,9 +51,11 @@ def set_engine_state(status):
             try:
                 start_time = datetime.fromisoformat(start_time_str)
                 accumulated += (now - start_time).total_seconds()
-            except: pass
+            except Exception:
+                pass
         start_time_str = None
-        if status == "idle": accumulated = 0
+        if status == "idle":
+            accumulated = 0
 
     with open(ENGINE_STATE_PATH, "w") as f:
         json.dump({
@@ -88,36 +89,47 @@ st.markdown("""
 
 # --- DATA UTILS ---
 def load_json(path):
-    if not path.exists(): return []
+    if not path.exists():
+        return []
     try:
-        with open(path, "r") as f: return json.load(f)
-    except: return []
+        with open(path, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
 
 def load_jsonl(path, limit=None):
-    if not path.exists(): return []
+    if not path.exists():
+        return []
     data = []
     try:
         with open(path, "r") as f:
             lines = f.readlines()
-            if limit: lines = lines[-limit:]
+            if limit:
+                lines = lines[-limit:]
             for line in lines:
-                if line.strip(): data.append(json.loads(line))
-    except: pass
+                if line.strip():
+                    data.append(json.loads(line))
+    except Exception:
+        pass
     return data
 
 def get_model_progress():
-    if not PROGRESS_DIR.exists(): return []
+    if not PROGRESS_DIR.exists():
+        return []
     models_data = []
     for p in PROGRESS_DIR.glob("*_progress.json"):
-        with open(p, "r") as f: models_data.append(json.load(f))
+        with open(p, "r") as f:
+            models_data.append(json.load(f))
     return models_data
 
 def get_adb_status():
     try:
         result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=2)
-        if "127.0.0.1:6562" in result.stdout: return "CONNECTED", "health-connected"
+        if "127.0.0.1:6562" in result.stdout:
+            return "CONNECTED", "health-connected"
         return "DISCONNECTED", "health-disconnected"
-    except: return "ERROR", "health-disconnected"
+    except Exception:
+        return "ERROR", "health-disconnected"
 
 # --- AUTO REFRESH ---
 st_autorefresh(interval=5000, key="global_refresh")
@@ -139,7 +151,7 @@ with st.sidebar:
     active_sec = engine_state.get("accumulated_seconds", 0)
     if current_status == "running" and start_ts_str:
         active_sec += (datetime.now() - datetime.fromisoformat(start_ts_str)).total_seconds()
-    
+
     latest_model = "UNKNOWN"
     latest_session = "IDLE"
     log_files = list(Path(OUTPUT_DIR / "training_data").glob("*_jsonl.jsonl"))
@@ -147,7 +159,8 @@ with st.sidebar:
         latest_log = max(log_files, key=os.path.getmtime)
         latest_session = latest_log.name.split('_')[0]
         raw_events = load_jsonl(latest_log)
-        if raw_events: latest_model = raw_events[0]['metadata'].get('model_id', 'UNKNOWN').split('-202')[0]
+        if raw_events:
+            latest_model = raw_events[0]['metadata'].get('model_id', 'UNKNOWN').split('-202')[0]
 
     with st.expander("ℹ️ Session Intelligence", expanded=True):
         st.write(f"**Model:** `{latest_model}`")
@@ -158,14 +171,19 @@ with st.sidebar:
     st.divider()
     st.markdown("### 🏆 Rank & Progression")
     count = len(alpaca_data)
-    if count >= 40: rank, progress = "🟧 ORANGE", 0.8
-    elif count >= 20: rank, progress = "🟨 YELLOW", 0.5
-    elif count >= 10: rank, progress = "⬜ WHITE", 0.3
-    else: rank, progress = "🥚 NOVICE", 0.1
+    if count >= 40:
+        rank, progress = "🟧 ORANGE", 0.8
+    elif count >= 20:
+        rank, progress = "🟨 YELLOW", 0.5
+    elif count >= 10:
+        rank, progress = "⬜ WHITE", 0.3
+    else:
+        rank, progress = "🥚 NOVICE", 0.1
     st.markdown(f"<div class='belt-badge'>{rank}</div>", unsafe_allow_html=True)
     st.progress(progress)
     with st.expander("🎯 Milestones", expanded=True):
-        st.write(f"Warehouse: {count}/50"); st.progress(min(count/50, 1.0))
+        st.write(f"Warehouse: {count}/50")
+        st.progress(min(count/50, 1.0))
         if st.button("🔍 View Discovery Archive", use_container_width=True):
             st.session_state.operating_stage_index = 2
             st.rerun()
@@ -173,29 +191,44 @@ with st.sidebar:
     # 3. Controls
     st.divider()
     st.markdown("### ⚙️ Engine Control")
-    if current_status == "running": st.success("● ACTIVE PROBING")
-    elif current_status == "paused": st.warning("● ENGINE PAUSED")
-    else: st.info("● IDLE")
-    
+    if current_status == "running":
+        st.success("● ACTIVE PROBING")
+    elif current_status == "paused":
+        st.warning("● ENGINE PAUSED")
+    else:
+        st.info("● IDLE")
+
     c1, c2 = st.columns(2)
     if current_status == "paused":
-        if c1.button("▶️ Resume"): set_engine_state("running"); st.rerun()
+        if c1.button("▶️ Resume"):
+            set_engine_state("running")
+            st.rerun()
     else:
-        if c1.button("⏸️ Pause"): set_engine_state("paused"); st.rerun()
-    if c2.button("🛑 Stop", type="primary"): st.session_state.confirm_stop = True
-    
+        if c1.button("⏸️ Pause"):
+            set_engine_state("paused")
+            st.rerun()
+    if c2.button("🛑 Stop", type="primary"):
+        st.session_state.confirm_stop = True
+
     if st.session_state.get("confirm_stop"):
         st.error("Confirm Termination?")
-        if st.button("Yes, Stop"): set_engine_state("stopped"); st.session_state.confirm_stop = False; st.rerun()
-        if st.button("No, Cancel"): st.session_state.confirm_stop = False; st.rerun()
+        if st.button("Yes, Stop"):
+            set_engine_state("stopped")
+            st.session_state.confirm_stop = False
+            st.rerun()
+        if st.button("No, Cancel"):
+            st.session_state.confirm_stop = False
+            st.rerun()
 
     st.divider()
     selected_stage = st.radio("🕹️ Stage", ["MINE", "REFINERY", "WAREHOUSE", "INTELLIGENCE", "ANALYTICS"], index=st.session_state.get("operating_stage_index", 0))
 
 # --- HEADER ---
 c_title, c_update = st.columns([3, 1])
-with c_title: st.title("🥋 AgenticART: Mission Control")
-with c_update: st.markdown(f"<div style='text-align:right;padding-top:20px;color:#8b949e;font-size:12px;'><span class='pulse'>📡</span> <b>LIVE FEED</b> | {datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
+with c_title:
+    st.title("🥋 AgenticART: Mission Control")
+with c_update:
+    st.markdown(f"<div style='text-align:right;padding-top:20px;color:#8b949e;font-size:12px;'><span class='pulse'>📡</span> <b>LIVE FEED</b> | {datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
 
 # --- METRICS ---
 now = datetime.now()
@@ -214,9 +247,12 @@ if selected_stage == "MINE":
     if log_files:
         curr_id = None
         for e in reversed(load_jsonl(latest_log, limit=30)):
-            meta = e['metadata']; cid = meta.get('source_challenge_id', 'unknown'); etype = meta.get('example_type', 'unknown')
+            meta = e['metadata']
+            cid = meta.get('source_challenge_id', 'unknown')
+            etype = meta.get('example_type', 'unknown')
             style = {"positive": "feed-refined", "kata": "feed-refined", "negative": "feed-negative", "error_recovery": "feed-recovery"}.get(etype, "feed-exploration")
-            indent = "indent-1" if cid == curr_id else ""; curr_id = cid
+            indent = "indent-1" if cid == curr_id else ""
+            curr_id = cid
             st.markdown(f"<div class='feed-entry {style} {indent}'><b>{cid}</b> | {etype.upper()}<br><code>{e['output']}</code></div>", unsafe_allow_html=True)
 
 elif selected_stage == "REFINERY":
@@ -227,8 +263,10 @@ elif selected_stage == "REFINERY":
     out_f = c2.selectbox("Filter", ["ALL", "PROMOTED", "REJECTED"])
     df = pd.DataFrame([{"Time": d['metadata']['timestamp'][11:19], "Task": d['metadata']['source_challenge_id'], "Grade": d['metadata']['grade'], "Outcome": "PROMOTED" if d['metadata']['grade'] in ("A", "B") else "REJECTED", "Logic": d['output']} for d in discovery_data])
     if not df.empty:
-        if out_f != "ALL": df = df[df['Outcome'] == out_f]
-        if query: df = df[df['Logic'].str.contains(query, case=False)]
+        if out_f != "ALL":
+            df = df[df['Outcome'] == out_f]
+        if query:
+            df = df[df['Logic'].str.contains(query, case=False)]
         st.dataframe(df.sort_values("Time", ascending=False), use_container_width=True)
 
 elif selected_stage == "WAREHOUSE":
@@ -236,7 +274,8 @@ elif selected_stage == "WAREHOUSE":
     for i, ex in enumerate(reversed(alpaca_data)):
         first_line = ex['instruction'].split('\n')[0]
         with st.expander(f"📜 {first_line}"):
-            st.write(ex['instruction']); st.code(ex['output'], language="bash")
+            st.write(ex['instruction'])
+            st.code(ex['output'], language="bash")
 
 elif selected_stage == "INTELLIGENCE":
     st.subheader("🧠 Boundary Analytics")
@@ -244,8 +283,10 @@ elif selected_stage == "INTELLIGENCE":
         with st.expander(f"Boundary: {p.get('metadata', {}).get('challenge_id', 'Exploration')}"):
             st.write(f"Source: {p.get('signal_source', 'N/A')} | Margin: {p.get('margin', 0.0)}")
             c1, c2 = st.columns(2)
-            c1.success("✅ CHOSEN"); c1.code(p["chosen"])
-            c2.error("❌ REJECTED"); c2.code(p["rejected"])
+            c1.success("✅ CHOSEN")
+            c1.code(p["chosen"])
+            c2.error("❌ REJECTED")
+            c2.code(p["rejected"])
 
 elif selected_stage == "ANALYTICS":
     st.subheader("📈 Performance Analytics")
@@ -256,7 +297,8 @@ elif selected_stage == "ANALYTICS":
         l6 = df_a[df_a['dt'] > (now - timedelta(hours=6))].copy()
         if not l6.empty:
             l6['is_success'] = l6['metadata'].apply(lambda x: 1 if x['grade'] in ('A', 'B') else 0)
-            l6 = l6.sort_values('dt'); l6['cum'] = l6['is_success'].cumsum()
+            l6 = l6.sort_values('dt')
+            l6['cum'] = l6['is_success'].cumsum()
             st.line_chart(l6.set_index('dt')['cum'])
         ca, cb = st.columns(2)
         with ca:
@@ -270,29 +312,33 @@ elif selected_stage == "ANALYTICS":
         # --- COMMAND BREAKDOWN ---
         st.divider()
         st.subheader("🧩 Command Category Breakdown")
-        
+
         # Prepare Data
         cmd_data = []
         for d in discovery_data:
             cmd = d.get('output', '')
             grade = d['metadata'].get('grade', 'F')
             is_success = grade in ('A', 'B')
-            
+
             # Classification
             cat = "Other"
             c_low = cmd.lower()
-            if any(x in c_low for x in ['frida', 'objection', 'spawn', 'attach']): cat = 'Frida Hooks'
-            elif any(x in c_low for x in ['adb', 'pm ', 'am ', 'dumpsys', 'input']): cat = 'ADB Commands'
-            elif any(x in c_low for x in ['cat ', 'ls ', 'cd ', 'find ', 'grep ', 'chmod']): cat = 'File Access'
-            elif any(x in c_low for x in ['curl', 'wget', 'ping', 'netstat', 'ip ', 'nc ', 'nmap']): cat = 'Network'
-            
+            if any(x in c_low for x in ['frida', 'objection', 'spawn', 'attach']):
+                cat = 'Frida Hooks'
+            elif any(x in c_low for x in ['adb', 'pm ', 'am ', 'dumpsys', 'input']):
+                cat = 'ADB Commands'
+            elif any(x in c_low for x in ['cat ', 'ls ', 'cd ', 'find ', 'grep ', 'chmod']):
+                cat = 'File Access'
+            elif any(x in c_low for x in ['curl', 'wget', 'ping', 'netstat', 'ip ', 'nc ', 'nmap']):
+                cat = 'Network'
+
             cmd_data.append({'Category': cat, 'Command': cmd, 'Success': is_success})
-            
+
         df_cmd = pd.DataFrame(cmd_data)
-        
+
         if not df_cmd.empty:
             c1, c2 = st.columns([1, 1])
-            
+
             with c1:
                 st.markdown("**Attack Distribution**")
                 pie_chart = alt.Chart(df_cmd).mark_arc(innerRadius=50).encode(
@@ -301,7 +347,7 @@ elif selected_stage == "ANALYTICS":
                     tooltip=["Category", "count()"]
                 )
                 st.altair_chart(pie_chart, use_container_width=True)
-                
+
             with c2:
                 st.markdown("**Success Rate Heatmap**")
                 # Calculate success rates
@@ -309,17 +355,18 @@ elif selected_stage == "ANALYTICS":
                     Attempts=('Success', 'count'),
                     Success_Rate=('Success', 'mean')
                 ).reset_index()
-                
+
                 # Formatted dataframe for heatmap-like display
                 st.dataframe(
                     stats.style.format({'Success_Rate': '{:.1%}'})
                     .background_gradient(subset=['Success_Rate'], cmap='RdYlGn'),
                     use_container_width=True
                 )
-                
+
             st.markdown("**🏆 Top 5 Most Attempted Commands**")
             top_cmds = df_cmd['Command'].value_counts().head(5).reset_index()
             top_cmds.columns = ['Command', 'Attempts']
             st.table(top_cmds)
 
-st.divider(); st.caption(f"AgenticART Mission Control v0.4.5 | Target: {datetime.now().strftime('%Y-%m-%d')}")
+st.divider()
+st.caption(f"AgenticART Mission Control v0.4.5 | Target: {datetime.now().strftime('%Y-%m-%d')}")
