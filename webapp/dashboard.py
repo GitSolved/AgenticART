@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -69,7 +70,7 @@ col3.metric("Models Tracked", f"{len(models)}")
 col4.metric("Engine Status", "Refining" if len(alpaca_data) > 0 else "Idle")
 
 # --- MAIN CONTENT ---
-tab1, tab2, tab3 = st.tabs(["🏛 The Warehouse (Exploits)", "📊 Model Progress", "🧠 DPO Intelligence"])
+tab1, tab2, tab3, tab4 = st.tabs(["🏛 The Warehouse (Exploits)", "📊 Model Progress", "🧠 DPO Intelligence", "📡 Live Monitor"])
 
 with tab1:
     st.header("Verified 'Gold' Exploits")
@@ -126,10 +127,47 @@ with tab3:
                     st.code(pair['rejected'], language="bash")
                 st.divider()
 
+with tab4:
+    st.header("📡 Live Session Monitor")
+    st.info("Watching dojo_output for live training activity...")
+
+    # Get the latest session log
+    log_files = list(Path("dojo_output/training_data").glob("*_jsonl.jsonl"))
+    if not log_files:
+        st.warning("No live sessions active.")
+    else:
+        # Sort by modification time
+        latest_log = max(log_files, key=os.path.getmtime)
+        st.subheader(f"Latest Active Session: {latest_log.name}")
+
+        raw_log_data = load_jsonl(latest_log)
+
+        if not raw_log_data:
+            st.write("Waiting for first attempt...")
+        else:
+            for entry in reversed(raw_log_data[-5:]): # Show last 5 events
+                with st.expander(f"Attempt: {entry['metadata']['source_challenge_id']} - {entry['metadata']['example_type']}"):
+                    st.markdown(f"**Status:** {entry['metadata']['grade']}")
+                    st.markdown("**Model Output:**")
+                    st.code(entry['output'], language="bash")
+
+                    if entry['metadata']['example_type'] == "negative":
+                        st.error("Failure detected in this attempt.")
+                    elif entry['metadata']['example_type'] == "positive":
+                        st.success("Success! Refinery has whoused this result.")
+
+    if st.button("🛰 Scan for New Activity"):
+        st.rerun()
 # --- SIDEBAR ---
 with st.sidebar:
     st.image("https://img.icons8.com/color/100/karate.png")
     st.header("Engine Control")
+
+    auto_refresh = st.toggle("🛰 Auto-Refresh (10s)", value=True)
+    if auto_refresh:
+        from streamlit_autorefresh import st_autorefresh
+        st_autorefresh(interval=10000, key="datarefresh")
+
     if st.button("🔄 Refresh Warehouse"):
         st.rerun()
 

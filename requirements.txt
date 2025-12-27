@@ -1,6 +1,10 @@
 # AgenticART - Android Security Training Dojo
 # requirements.txt
 
+# ─── Web Dashboard ──────────────────────────────────────────────────────────
+streamlit>=1.30.0
+streamlit-autorefresh>=0.0.1
+
 # ─── Dojo Core ──────────────────────────────────────────────────────────────
 pyyaml>=6.0              # Challenge file parsing
 requests>=2.31.0         # Potential future API integrations
