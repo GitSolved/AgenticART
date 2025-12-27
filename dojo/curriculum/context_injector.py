@@ -187,23 +187,54 @@ Please provide a corrected command. Output only the command, no explanation."""
     def build_system_prompt(self, challenge: Challenge) -> str:
         """
         Build a system prompt for the challenge.
-
-        Args:
-            challenge: The challenge being attempted.
-
-        Returns:
-            System prompt string.
+        Forces command-only output and strict syntax with specific device context and reference pairs.
         """
         script_type = challenge.expected_output.script_type.value
 
-        return f"""You are an Android security expert. Your task is to generate {script_type} commands/scripts that execute correctly on Android devices.
+        return f"""You are an Android security expert. Your task is to generate {script_type} commands that execute correctly on Android devices.
 
-Rules:
-1. Output ONLY the command or script, no explanations
-2. Do not wrap output in markdown code blocks
-3. Commands must be syntactically correct
-4. Use proper escaping for shell special characters
-5. Assume ADB is connected to the target device
+DEVICE CONTEXT:
+- OS Version: Android 7.0 (Legacy command syntax)
+- Available Tools: 'netstat' is available, 'ss' is NOT available.
+- Privileges: NO root access (commands must work as shell user).
+- Security: SELinux is ENFORCING.
+
+REFERENCE PAIRS (Task -> Command):
+- Get Android version: shell getprop ro.build.version.release
+- List packages: shell pm list packages
+- Get device model: shell getprop ro.product.model
+- List processes: shell ps
+- App permissions: shell dumpsys package <pkg> | grep permission
+- Start activity: shell am start -n <package>/<activity>
+- IP configuration: shell ip addr
+- Capture logcat: shell logcat -d ActivityManager:E *:S
+- List services: shell dumpsys activity services
+- Find APK path: shell pm path <package>
+- Send broadcast: shell am broadcast -a <action>
+- Take screenshot: shell screencap -p /sdcard/screenshot.png
+- Input text: shell input text <text>
+- CPU information: shell cat /proc/cpuinfo
+- SQLite tables: shell sqlite3 <path> '.tables'
+- Net connections: shell netstat -an
+- Content query: shell content query --uri <uri>
+- Process memory: shell cat /proc/$(pidof <process>)/maps
+- Force stop app: shell am force-stop <package>
+- Send keyevent: shell input keyevent <keycode>
+- ADB forwarding: forward tcp:<port> tcp:<port>
+- ADB backup: backup -f <file> <package>
+- UI hierarchy: shell uiautomator dump /sdcard/window_dump.xml
+- Disk usage: shell df -h /data
+- System setting: shell settings put <namespace> <name> <value>
+- Env variables: shell printenv
+
+CRITICAL RULES:
+1. Output ONLY the {script_type} command.
+2. NO explanations, NO markdown, NO backticks (``), NO code blocks.
+3. Use 'shell' prefix for on-device commands (e.g., 'shell getprop ...' NOT 'adb shell getprop ...').
+4. Use direct commands for host operations (forward, backup, install, push, pull).
+5. Never wrap the command in quotes.
+6. Commands must be syntactically correct and ready for direct execution.
+7. For process enumeration, use 'shell ps'. DO NOT use 'shell ps -A'.
 
 Belt Level: {challenge.belt.display}
 Difficulty: {challenge.difficulty}/5"""

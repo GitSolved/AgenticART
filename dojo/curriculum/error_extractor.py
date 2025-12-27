@@ -65,14 +65,16 @@ class ErrorExtractor:
             "Verify device ID is correct with: 'adb devices'",
         ],
         "permission_denied": [
-            "The command may require root access - prefix with 'su -c'",
-            "Check if the path is accessible to the shell user",
-            "SELinux may be blocking access - check with 'getenforce'",
+            "DO NOT use 'sudo' (Android does not support it).",
+            "Try an alternative command that does not require access to protected directories like /data.",
+            "If root is required, use 'su -c <command>' instead of 'sudo'.",
+            "Consider using 'run-as <package_name>' if targeting a specific app directory.",
         ],
         "command_not_found": [
-            "Verify the command exists on the Android device",
-            "Check the full path to the binary",
-            "The command may not be available on this Android version",
+            "The tool may not exist on Android 7.0; check if it is part of the standard toybox/toolbox set.",
+            "Use a shell-builtin alternative if the binary is missing (e.g., 'printf' instead of 'echo -e').",
+            "Check if the command is located in /system/bin or /vendor/bin.",
+            "Verify the syntax; some tools on Android have limited flags compared to standard Linux.",
         ],
         "connection_refused": [
             "Check if the target service is running",

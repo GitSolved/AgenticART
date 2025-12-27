@@ -402,11 +402,53 @@ class TrainingExample:
         }
 
     def to_sharegpt(self) -> dict:
-        """Export as ShareGPT/OpenAI messages format."""
+        """
+        Export as ShareGPT/OpenAI messages format.
+        Supports multi-turn for error_recovery examples to teach debugging.
+        """
+        if self.example_type == "error_recovery":
+            # Input text for error_recovery contains '## Failed Attempt' and '## Error Information'
+            # We want to extract the task and the failed attempt to build a conversation.
+            lines = self.input_text.split("\n")
+            task = ""
+            failed_cmd = ""
+            error_info = ""
+            
+            current_section = ""
+            for line in lines:
+                if line.startswith("## Task"):
+                    current_section = "task"
+                    continue
+                elif line.startswith("## Failed Attempt"):
+                    current_section = "failed"
+                    continue
+                elif line.startswith("## Error Information"):
+                    current_section = "error"
+                    continue
+                elif line.startswith("## Instructions"):
+                    current_section = "instructions"
+                    continue
+                
+                if current_section == "task" and line.strip():
+                    task += line + "\n"
+                elif current_section == "failed" and line.strip() and "```" not in line:
+                    failed_cmd += line + "\n"
+                elif current_section == "error" and line.strip():
+                    error_info += line + "\n"
+
+            return {
+                "conversations": [
+                    {"from": "human", "value": task.strip()},
+                    {"from": "gpt", "value": failed_cmd.strip()},
+                    {"from": "human", "value": f"That command failed with the following error:\n\n{error_info.strip()}\n\nPlease provide a corrected version."},
+                    {"from": "gpt", "value": self.output_text.strip()},
+                ]
+            }
+
+        # Default single-turn for positive/kata
         return {
             "conversations": [
-                {"from": "system", "value": self.instruction},
-                {"from": "human", "value": self.input_text},
+                {"from": "human", "value": f"{self.instruction}\n\n{self.input_text}".strip()},
                 {"from": "gpt", "value": self.output_text},
             ]
         }

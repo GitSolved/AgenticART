@@ -192,7 +192,7 @@ class Challenger:
                 break
 
             # 8. Build retry prompt with context for next attempt
-            if attempt_num < self.max_retries:
+            if attempt_num < self.max_retries and error_ctx:
                 prompt = self.context_injector.build_retry_prompt(
                     challenge=challenge,
                     previous_output=model_output,

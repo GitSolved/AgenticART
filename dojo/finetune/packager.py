@@ -644,7 +644,7 @@ Target: 80%+ pass rate on white/yellow belt challenges.
 
 FROM hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M
 
-PARAMETER temperature 0.3
+PARAMETER temperature 0.1
 PARAMETER top_p 0.9
 PARAMETER num_ctx 4096
 

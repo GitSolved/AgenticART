@@ -54,6 +54,7 @@ class TrainingExtractor:
     ) -> list[TrainingExample]:
         """
         Extract all applicable training examples from a session.
+        Strictly filters for successful outputs to prevent training on failures.
 
         Args:
             session: The challenge session.
@@ -64,28 +65,32 @@ class TrainingExtractor:
         """
         examples = []
 
-        # Positive example (successful, high-quality output)
-        if self.config.include_positive and assessment.is_positive_example:
+        # 1. Kata (golden) example - Always high quality
+        if self.config.include_kata:
+            example = self._extract_kata_example(session)
+            if example:
+                examples.append(example)
+
+        # 2. Positive example (successful, high-quality output)
+        # ONLY if the final result was a success
+        if session.final_success and self.config.include_positive and assessment.is_positive_example:
             example = self._extract_positive_example(session, assessment)
             if example:
                 examples.append(example)
 
-        # Negative example with correction
+        # 3. Negative example with correction
+        # We still keep these, but they are flagged as 'negative' type 
+        # so the Exporter can filter them out of SFT (Alpaca) and into DPO.
         if self.config.include_negative and assessment.is_negative_example:
             example = self._extract_negative_example(session, assessment)
             if example:
                 examples.append(example)
 
-        # Error recovery examples (from retry sequences)
+        # 4. Error recovery examples (from retry sequences)
+        # These are useful for 'Agentic' behavior training
         if self.config.include_error_recovery:
             recovery_examples = self._extract_error_recovery_examples(session)
             examples.extend(recovery_examples)
-
-        # Kata (golden) example
-        if self.config.include_kata:
-            example = self._extract_kata_example(session)
-            if example:
-                examples.append(example)
 
         return examples
 
