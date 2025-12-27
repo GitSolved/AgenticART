@@ -79,7 +79,7 @@ class TrainingExtractor:
                 examples.append(example)
 
         # 3. Negative example with correction
-        # We still keep these, but they are flagged as 'negative' type 
+        # We still keep these, but they are flagged as 'negative' type
         # so the Exporter can filter them out of SFT (Alpaca) and into DPO.
         if self.config.include_negative and assessment.is_negative_example:
             example = self._extract_negative_example(session, assessment)
@@ -348,8 +348,8 @@ class TrainingExtractor:
         Returns:
             Summary dictionary.
         """
-        by_type = {}
-        by_belt = {}
+        by_type: dict[str, int] = {}
+        by_belt: dict[str, int] = {}
 
         for example in examples:
             # Count by type

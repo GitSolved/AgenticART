@@ -413,7 +413,7 @@ class TrainingExample:
             task = ""
             failed_cmd = ""
             error_info = ""
-            
+
             current_section = ""
             for line in lines:
                 if line.startswith("## Task"):
@@ -428,7 +428,7 @@ class TrainingExample:
                 elif line.startswith("## Instructions"):
                     current_section = "instructions"
                     continue
-                
+
                 if current_section == "task" and line.strip():
                     task += line + "\n"
                 elif current_section == "failed" and line.strip() and "```" not in line:

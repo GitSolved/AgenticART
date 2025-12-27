@@ -15,7 +15,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -243,6 +243,7 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     print(f"ADB: {adb_path}")
 
     # Create LLM client
+    llm: Any
     if mode == "mock":
         llm = MockLLMClient()
         print("LLM: Mock (returns expected answers)")
@@ -358,7 +359,7 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     # Print extraction summary
     print("Training Examples Extracted:")
     print("-" * 40)
-    by_type = {}
+    by_type: dict[str, int] = {}
     for ex in result.examples:
         by_type[ex.example_type] = by_type.get(ex.example_type, 0) + 1
     for ex_type, count in sorted(by_type.items()):
