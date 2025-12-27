@@ -1,36 +1,55 @@
 # 🥋 AgenticART: The Android Security Training Dojo
 
-**An automated, hardware-grounded feedback loop for turning generic LLMs into specialized Android Security Agents.**
+**An automated, hardware-grounded Data Engine for turning generic LLMs into specialized Android Security Agents.**
 
-Traditional LLMs (like Llama 3 or GPT-4) frequently fail at niche technical tasks like Android Penetration Testing because of high-sensitivity syntax and complex privilege models. **AgenticART** solves the "Cold Start" problem by using a real Android environment to "teach" models through failure.
-
-## 🚀 The Core Value
-This is not a "hacking tool"—it is a **Training Data Factory**. It automates the process of:
-1. **Testing** an LLM against real Android hardware (ADB).
-2. **Extracting** specific failure reasons (Permission Denied, Syntax Error, etc.).
-3. **Coaching** the model with automated hints to force self-correction.
-4. **Refining** the output through strict prefix normalization and success-only filtering.
-5. **Exporting** the resulting logs into high-quality **Fine-tuning datasets (Alpaca, ShareGPT & DPO)**.
+Most AI security projects fail because they train models on "noisy" data (failures mixed with successes). **AgenticART** implements a "Self-Correcting Gold Mine" architecture that uses real Android hardware to filter, refine, and warehouse only the highest-quality training trajectories.
 
 ---
 
-## 🔄 The "Sensei" Feedback Loop
-The framework treats the LLM like a student in a martial arts dojo:
+## 🏗 The Data Engine Architecture: "The Gold Mine"
 
-1. **The Challenge:** The Sensei (Framework) gives the Student (LLM) a security task (e.g., "Extract the contacts database").
-2. **The Attempt:** The Student generates an ADB command.
-3. **The Execution:** The `Executor` runs the command on a live Android Emulator.
-4. **The Lesson:** If it fails, the `ErrorExtractor` analyzes the `stderr` and feeds a hint back to the LLM.
-5. **The Kata:** Once the model succeeds (verified via Regex), the entire multi-turn interaction is saved as a training example.
+AgenticART operates as a four-stage engine that turns raw LLM attempts into hardware-verified intelligence.
+
+### 1. The Mine (Hardware Grounding)
+The model attempts security challenges against a **live Android device (ADB)**. 
+*   **Judge:** The Android Kernel. If a command fails, the system captures the objective error (e.g., `Permission Denied`).
+*   **Result:** Raw data that is grounded in reality, not internet theory.
+
+### 2. The Refinery (Automated Filtration)
+Raw logs are "poisonous." Our refinery automatically cleans them:
+*   **Success-Only Filter:** Strictly blocks failed attempts from entering the Supervised Learning (SFT) set.
+*   **Prefix Normalization:** Strips redundant syntax (e.g., `adb shell`) to ensure 100% consistent command structure.
+*   **Multi-Turn Logic:** Converts "Failure → Hint → Success" sequences into conversational data that teaches the model *how* to debug.
+
+### 3. The Warehouse (Master Dataset)
+A persistent, ever-growing library of the "Best Hits" recorded across all models.
+*   **Deduplication:** Ignores redundant data to keep training sets lean.
+*   **Quality Upgrades:** If a new run finds a **Grade A** (Perfect) command for a task where we only had a **Grade B**, the Warehouse automatically **overwrites** the old data with the better version.
+
+### 4. The Intelligence (DPO Boundary Learning)
+The final stage where raw data is transformed into "Security Intuition."
+*   **Boundary Mapping:** The system pairs the **Warehouse Success (Chosen)** against the **New Failure Modes (Rejected)** for the same task.
+*   **The Lesson:** During training, the model doesn't just learn "This is the answer." It learns the **Boundary**: *"Doing X results in a Permission Error; therefore, the only logical path is Y."*
 
 ---
 
-## 🍱 Project Structure (The Belt System)
-The curriculum is divided into "Belts," allowing you to measure an LLM's progression:
+## 📈 Why this makes Models Smarter (The Flywheel)
 
-*   ⚪ **White Belt:** Basic recon and device info gathering (`getprop`, `pm list`).
-*   🟡 **Yellow Belt:** Intermediate diagnostics and intent manipulation (`dumpsys`, `am start`).
-*   🟠 **Orange Belt:** Advanced exploitation and root-level access (`run-as`, `sqlite3`, `content query`).
+| Stage | Traditional Method | AgenticART Data Engine |
+| :--- | :--- | :--- |
+| **Data Quality** | "Poisoned" with failures | **100% Hardware-Verified Successes** |
+| **Consistency** | Confused by mixed prefixes | **Strictly Normalized Syntax** |
+| **Learning** | Rote Memorization | **Agentic Reasoning (Logic of the Fix)** |
+| **Over Time** | Model regresses/gets worse | **Model "Levels Up" via the Warehouse** |
+
+---
+
+## 🍱 The Belt System (Curriculum)
+The curriculum is divided into "Belts" to measure progression:
+*   ⚪ **White Belt:** Fundamentals (`getprop`, `pm list`).
+*   🟡 **Yellow Belt:** Reconnaissance (`dumpsys`, `am start`).
+*   🟠 **Orange Belt:** Exploitation (`run-as`, `sqlite3`, `content query`).
+*   ⚫ **Black Belt:** (In Research) Novel zero-day pattern generation.
 
 ---
 
@@ -38,33 +57,20 @@ The curriculum is divided into "Belts," allowing you to measure an LLM's progres
 
 ### 1. Requirements
 *   **Ollama:** For local LLM inference.
-*   **Android SDK:** A running emulator (AVD) or physical device connected via ADB.
+*   **Android SDK:** A running emulator (AVD) or physical device via ADB.
 *   **Python 3.10+**
 
 ### 2. Run a Training Session
-Generate a dataset by running a model through the White Belt:
 ```bash
-python3 -m dojo.test_end_to_end --mode live --model llama3.1:8b --belt white
+python3 -m dojo.test_end_to_end --mode live --model llama3.1:8b --belt yellow
 ```
 
-### 3. Export Data
-After the run, your specialized training data is waiting in `dojo_output/`:
-*   `training_data_alpaca.json`: Filtered, success-only data for Supervised Fine-Tuning (SFT).
-*   `training_data_sharegpt.jsonl`: Multi-turn conversational data for "Reasoning" training.
-*   `training_data_dpo.jsonl`: **Direct Preference Optimization** pairs (the "Wrong" vs "Right" paths).
+### 3. Access the Warehouse
+Your "Gold Standard" training data is automatically maintained in:
+*   `master_dataset/master_alpaca.json`: The best successes for SFT.
+*   `master_dataset/master_dpo.jsonl`: Preference pairs for DPO.
 
 ---
 
-## 📊 Performance Benchmark (Yellow Belt)
-Current findings show that the Dojo framework significantly improves model accuracy by providing hardware-grounded context and strict formatting rules.
-
-| Model Configuration | Pass Rate | Attempt 1 Success |
-| :--- | :--- | :--- |
-| **Llama 3.1 8B (Baseline)** | 30% | <10% |
-| **WhiteRabbitNeo 7B (Baseline)** | 30% | <10% |
-| **Refined Dojo (Ours)** | **50% - 80%** | **40% - 60%** |
-
----
-
-## ⚖️ Why this Project Matters
-Manual data collection for cybersecurity is slow and dangerous. **AgenticART** creates a safe, automated "Sandboxed Sandbox" where models can try and fail thousands of times until they master the art of Android security—resulting in a model that is hardware-verified, not just "smart-sounding."
+## ⚖️ The Unique Value
+AgenticART creates a **"Data Moat."** By running this engine, you generate a proprietary dataset of hardware-verified Android exploits that doesn't exist anywhere else. You aren't just using AI; you are **manufacturing the intelligence** required to find the next generation of zero-day vulnerabilities.
