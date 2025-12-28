@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import os
+
+# Suppress tokenizer parallelism warnings to avoid deadlocks in forked processes
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from dataclasses import dataclass
 from typing import Optional
 
