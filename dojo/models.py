@@ -6,7 +6,10 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from dojo.curriculum.challenger import AttemptRecord
 
 
 class Belt(Enum):
