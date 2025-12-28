@@ -258,7 +258,7 @@ class MLXLLMClient:
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         import re
 
-        from mlx_lm import generate, stream_generate
+        from mlx_lm import stream_generate
 
         # Parse the prompt to extract Instruction and Input
         input_match = re.search(r"## Device Context", prompt)
