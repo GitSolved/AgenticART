@@ -1,4 +1,4 @@
-# AgenticART: Recursive Hardware-Grounded Alignment for Autonomous Android Vulnerability Research
+# AgenticART: A Dojo Framework for Recursive Security LLM Training
 
 **Abstract:** AgenticART is a research framework for studying how Large Language Models (LLMs) can be aligned to Android security tasks. It implements a recursive "feedback loopback" architecture that (i) synthesizes candidate exploit trajectories, (ii) executes them on a live Android environment, and (iii) uses the resulting execution traces to refine models via Supervised Fine-Tuning (SFT) and Direct Preference Optimization (DPO). The current implementation targets shell/ADB, Frida-based dynamic instrumentation, and native interfaces as primary execution domains.
 
