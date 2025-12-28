@@ -71,7 +71,55 @@ class ContextInjector:
     - Machine-readable parsing
     - Consistent training data extraction
     - Automatic validation
+
+    Instructions are context-aware based on error type to align with suggestions.
     """
+
+    # Error-type-specific instruction templates
+    # These align with the suggestions from ErrorExtractor
+    ERROR_INSTRUCTIONS: Dict[str, str] = {
+        "permission_denied": (
+            "STOP trying to access this protected path directly.\n"
+            "PIVOT your strategy: use the reconnaissance approaches in SUGGESTIONS above.\n"
+            "Output a command that gathers information without requiring elevated privileges."
+        ),
+        "command_not_found": (
+            "The tool you tried does not exist on this Android device.\n"
+            "Use an ALTERNATIVE command from the SUGGESTIONS above.\n"
+            "Output a command using available Android utilities (toybox/toolbox)."
+        ),
+        "device_offline": (
+            "The device is not reachable.\n"
+            "DO NOT retry the same command - it will fail again.\n"
+            "First verify device connectivity, then retry the original task."
+        ),
+        "timeout": (
+            "Your command is too slow or the device is unresponsive.\n"
+            "SIMPLIFY your approach: break the task into smaller steps.\n"
+            "Output a faster, more targeted command."
+        ),
+        "syntax_error": (
+            "Your command has a syntax error.\n"
+            "FIX the syntax issue identified in the ERROR block.\n"
+            "Output a syntactically correct command."
+        ),
+        "connection_refused": (
+            "The target service is not accepting connections.\n"
+            "VERIFY the service is running before retrying.\n"
+            "Consider an alternative approach to achieve the goal."
+        ),
+        "segfault": (
+            "The command crashed - this indicates incompatibility or a bug.\n"
+            "DO NOT retry the same command.\n"
+            "Use a different tool or approach to achieve the goal."
+        ),
+    }
+
+    # Default instruction for unknown error types
+    DEFAULT_INSTRUCTION = (
+        "Analyze the error and apply the SUGGESTIONS above.\n"
+        "Output a corrected command that avoids the previous failure."
+    )
 
     def __init__(self, max_attempts: int = 3, verbose: bool = True):
         """
@@ -205,14 +253,28 @@ class ContextInjector:
         )
         blocks.append(self.build_block(BlockType.ATTEMPT_INFO, attempt_info))
 
-        # Instructions block
-        instructions = (
-            "Generate a corrected version that fixes the error above.\n"
-            "Output only the command/script, no explanations."
-        )
+        # Instructions block - context-aware based on error type
+        instructions = self._get_error_instructions(error_context.error_type)
         blocks.append(self.build_block(BlockType.INSTRUCTIONS, instructions))
 
         return self.render_blocks(blocks)
+
+    def _get_error_instructions(self, error_type: str) -> str:
+        """
+        Get error-type-specific instructions that align with suggestions.
+
+        Args:
+            error_type: The type of error encountered.
+
+        Returns:
+            Instructions string appropriate for this error type.
+        """
+        base_instruction = self.ERROR_INSTRUCTIONS.get(
+            error_type, self.DEFAULT_INSTRUCTION
+        )
+
+        # Add common suffix
+        return f"{base_instruction}\nOutput only the command/script, no explanations."
 
     def build_raw_failure_prompt(
         self,
