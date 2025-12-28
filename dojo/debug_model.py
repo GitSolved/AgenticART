@@ -36,20 +36,27 @@ Provide only the adb command/script. No explanations or markdown.
     response = generate(model, tokenizer, prompt="hello", max_tokens=10, verbose=True)
     print(f"Result: {response}")
 
+    from mlx_lm import stream_generate
+    
     # Test 2: Prompt with space
     prompt_space = prompt + " "
     print("\nTest 2: Prompt with space")
-    response = generate(
-        model,
-        tokenizer,
-        prompt=prompt_space,
-        max_tokens=100,
-        verbose=True
-    )
-    if response:
-        print(f"Raw Response: '{response}'")
-    else:
-        print("Response was None")
+    
+    stop_sequences = ["<|endoftext|>", "###", "Human:", "Assistant:"]
+    response_text = ""
+    
+    print("==========")
+    for response in stream_generate(model, tokenizer, prompt=prompt_space, max_tokens=100):
+        response_text += response.text
+        print(response.text, end="", flush=True)
+        if any(stop in response_text for stop in stop_sequences):
+            for stop in stop_sequences:
+                if stop in response_text:
+                    response_text = response_text[:response_text.find(stop)]
+            break
+    print("\n==========")
+    
+    print(f"Final Response: '{response_text.strip()}'")
 
 if __name__ == "__main__":
     main()

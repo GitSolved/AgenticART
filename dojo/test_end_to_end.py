@@ -257,6 +257,7 @@ class MLXLLMClient:
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         import re
+<<<<<<< HEAD
 
         from mlx_lm import generate
 
@@ -279,40 +280,43 @@ class MLXLLMClient:
         # Note: Training data used "Device Context:", inference has "## Device Context"
         # We will normalize to "Device Context:" for the model
 
+=======
+        from mlx_lm import generate, stream_generate
+
+        # Parse the prompt to extract Instruction and Input
+>>>>>>> f4f4bd7 (docs: Complete research export with lab environment specs)
         input_match = re.search(r"## Device Context", prompt)
         if input_match:
             input_start = input_match.start()
-            # Everything from here is context/hints
             raw_input = prompt[input_start:]
-            # Clean up the header to match training: "Device Context: ..."
             input_context = raw_input.replace("## Device Context", "Device Context:")
+<<<<<<< HEAD
 
             # 2. Extract Instruction (Text before Device Context)
             pre_input = prompt[:input_start].strip()
 
             # Try to clean up metadata like Belt Level/Difficulty if present
             # Look for "Difficulty: X/5"
+=======
+            pre_input = prompt[:input_start].strip()
+>>>>>>> f4f4bd7 (docs: Complete research export with lab environment specs)
             diff_match = re.search(r"Difficulty: \d+/\d+", pre_input)
-            if diff_match:
-                instruction = pre_input[diff_match.end():].strip()
-            else:
-                instruction = pre_input.strip()
+            instruction = pre_input[diff_match.end():].strip() if diff_match else pre_input.strip()
         else:
-            # Fallback: Treat whole prompt as instruction
             instruction = prompt.strip()
+<<<<<<< HEAD
 
         # Construct the aligned prompt
+=======
+            input_context = ""
+        
+>>>>>>> f4f4bd7 (docs: Complete research export with lab environment specs)
         if input_context:
-            formatted_prompt = (
-                f"### Instruction:\n{instruction}\n\n"
-                f"### Input:\n{input_context}\n\n"
-                f"### Response: "
-            )
+            formatted_prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{input_context}\n\n### Response: "
         else:
-            formatted_prompt = (
-                f"### Instruction:\n{instruction}\n\n### Response: "
-            )
+            formatted_prompt = f"### Instruction:\n{instruction}\n\n### Response: "
 
+<<<<<<< HEAD
         # DEBUG: Print prompt to see alignment
         print(f"\n[DEBUG] Aligned Prompt:\n---\n{formatted_prompt}\n---\n")
 
@@ -330,6 +334,36 @@ class MLXLLMClient:
                 return line.strip()
 
         return clean_response
+=======
+        # Manual streaming to support stop tokens
+        stop_sequences = ["<|endoftext|>", "###", "Human:", "Assistant:", "\n\n"]
+        response_text = ""
+        
+        for response in stream_generate(self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=100):
+            response_text += response.text
+            if any(stop in response_text for stop in stop_sequences):
+                for stop in stop_sequences:
+                    if stop in response_text:
+                        response_text = response_text[:response_text.find(stop)]
+                break
+
+        # Post-processing to handle hallucinations
+        lines = response_text.strip().split('\n')
+        
+        # Priority 1: Find the line that actually contains the command
+        for line in lines:
+            clean_line = line.strip()
+            if clean_line.startswith('shell '):
+                return clean_line
+        
+        # Priority 2: Return the first non-empty line if no 'shell' prefix found
+        for line in lines:
+            clean_line = line.strip()
+            if clean_line:
+                return clean_line
+                
+        return ""
+>>>>>>> f4f4bd7 (docs: Complete research export with lab environment specs)
 
 
 class OllamaLLMClient:
