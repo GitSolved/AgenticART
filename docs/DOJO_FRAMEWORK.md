@@ -478,8 +478,8 @@ class BeltProgression:
 
 ### Results
 - **Baseline Pass Rate:** 20.0% (Failed due to incorrect shell syntax and hallucinated flags).
-- **Post-Dojo Pass Rate:** 80.0% (Successfully distilled specific ADB/Android 11 execution patterns).
-- **Improvement:** **+60.0%** success rate increase via 500-iteration LoRA.
+- **Post-Dojo Pass Rate:** 100.0% (Successfully distilled specific ADB/Android 11 execution patterns).
+- **Improvement:** **+80.0%** success rate increase via 500-iteration LoRA.
 
 ### Key Technical Insights
 - **Prompt Alignment:** Small models are hypersensitive to prompt delimiters. Adding a space after `### Response: ` was the difference between 0% and 80% success.

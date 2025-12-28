@@ -11,7 +11,7 @@ We have successfully demonstrated the "Dojo Flywheel" by distilling data-center 
 *   **Student:** WhiteRabbitNeo 2.5 7B (MLX 4-bit)
 *   **Teacher:** Llama 3.1 70B
 *   **Target:** Android 11 (API 30)
-*   **Result:** The student model's pass rate on foundational security tasks increased from **20% to 80%** (+60% improvement) after 500 iterations of LoRA fine-tuning on teacher-generated "Gold" trajectories.
+*   **Result:** The student model's pass rate on foundational security tasks increased from **20% to 100%** (+80% improvement) after 500 iterations of LoRA fine-tuning on teacher-generated "Gold" trajectories.
 
 ---
 
@@ -129,7 +129,7 @@ Progress is tracked via the **Dojo Benchmarking Dashboard**, which evaluates:
 ### Currently implemented:
 
 *   **[VERIFIED]** End-to-end distillation loop: 70B Teacher → 7B Student via MLX LoRA.
-*   **[VERIFIED]** 60% performance boost on Android 11 foundational benchmarks.
+*   **[VERIFIED]** 80% performance boost on Android 11 foundational benchmarks (reaching 100% parity with teacher).
 *   End-to-end orchestration for generating Android security challenges from NVD data.
 *   Initial grading and curriculum logic (belt tiers) based on CVSS and heuristic classification.
 

@@ -70,6 +70,6 @@ The transition from 20% to 100% success was achieved via targeted Low-Rank Adapt
 ---
 
 ## 6. Critical Operational Insights for Paper
-1.  **Capability Parity:** We achieved 100% parity with the 70B teacher model while reducing parameter count by **90%**.
+1.  **Capability Parity:** We achieved **100% parity** with the 70B teacher model (improving from a 20% baseline) while reducing parameter count by **90%**.
 2.  **Prompt Engineering:** The "Inference Muzzle" (Manual Stop Tokens) was the critical software fix that allowed the 7B model to reliably execute commands without EOS leakage.
 3.  **Efficiency Density:** Success was achieved with <15 training samples, proving that domain-specific alignment requires **depth of trajectory**, not breadth of data.
