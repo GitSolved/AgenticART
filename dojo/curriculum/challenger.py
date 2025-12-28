@@ -1,4 +1,4 @@
-"Challenger - orchestrates challenge attempts with feedback loop."
+"""Challenger - orchestrates challenge attempts with feedback loop."""
 
 from __future__ import annotations
 

@@ -329,11 +329,14 @@ with c_update:
 
 # --- METRICS ---
 now = datetime.now()
-recent = [
-    d
-    for d in discovery_data
-    if datetime.fromisoformat(d["metadata"]["timestamp"]) > (now - timedelta(hours=1))
-]
+recent = []
+for d in discovery_data:
+    try:
+        ts = datetime.fromisoformat(d.get("metadata", {}).get("timestamp", ""))
+        if ts > (now - timedelta(hours=1)):
+            recent.append(d)
+    except (ValueError, TypeError):
+        continue
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("Playbook Yield", len(alpaca_data), help="Lifetime Successes")
 m2.metric(

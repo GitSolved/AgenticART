@@ -4,10 +4,13 @@
 # ─── Web Dashboard ──────────────────────────────────────────────────────────
 streamlit>=1.30.0
 streamlit-autorefresh>=0.0.1
+pandas>=2.0.0            # Dashboard data handling
+altair>=5.0.0            # Dashboard visualizations
 
 # ─── Dojo Core ──────────────────────────────────────────────────────────────
 pyyaml>=6.0              # Challenge file parsing
 requests>=2.31.0         # Potential future API integrations
+python-dotenv>=1.0.0     # Environment variable loading
 
 # ─── Development & Quality ──────────────────────────────────────────────────
 ruff>=0.1.0              # Fast linting

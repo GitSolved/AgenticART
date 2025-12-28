@@ -402,7 +402,6 @@ class TrainingExample:
     model_id: Optional[str] = None
 
     def to_alpaca(self) -> dict:
-        # ... (rest of the method remains same)
         """Export as Alpaca format."""
         return {
             "instruction": self.instruction,

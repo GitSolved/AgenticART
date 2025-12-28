@@ -197,7 +197,7 @@ if __name__ == "__main__": main()
 
     def _create_requirements(self, package_dir: Path):
         """Create requirements.txt."""
-        reqs = "torch\ntransformers\ndatasets\naccelerate\ntrl\npeft\nbitsandbytes\nsentencepiece\nprotobuf\nmix-lm\nmix\n"
+        reqs = "torch\ntransformers\ndatasets\naccelerate\ntrl\npeft\nbitsandbytes\nsentencepiece\nprotobuf\nmlx-lm\nmlx\n"
         with open(package_dir / "requirements.txt", "w") as f:
             f.write(reqs)
 

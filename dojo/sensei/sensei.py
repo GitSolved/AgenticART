@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from dojo.curriculum import ChallengeSession
-from dojo.models import Belt, ModelProgress, SenseiAssessment, TrainingExample
+from dojo.models import Belt, Grade, ModelProgress, SenseiAssessment, TrainingExample
 from dojo.sensei.exporter import ExportFormat, TrainingDataExporter
 from dojo.sensei.grader import Grader
 from dojo.sensei.master_refinery import MasterRefinery
@@ -344,7 +344,3 @@ class Sensei:
         lines.append("=" * 60)
 
         return "\n".join(lines)
-
-
-# Import Grade for the feedback method
-from dojo.models import Grade

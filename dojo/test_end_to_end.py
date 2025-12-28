@@ -352,7 +352,10 @@ def run_end_to_end(
     sensei = Sensei(output_dir=output_dir)
 
     # Sanitize model name for ID
-    safe_model_name = model.split("/")[-1].replace(":", "-") if model else mode
+    if model:
+        safe_model_name = model.split("/")[-1].replace(":", "-")
+    else:
+        safe_model_name = f"{mode}_model"
     model_id = f"{safe_model_name}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     # Run training cycle

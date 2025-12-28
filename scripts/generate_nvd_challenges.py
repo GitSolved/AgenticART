@@ -4,14 +4,14 @@ import os
 import sys
 from pathlib import Path
 
+# Add project root to path BEFORE local imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from dotenv import load_dotenv
 
 # Local imports
 from dojo.tools.nvd_challenge_generator import NVDChallengeGenerator
-
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
 
 load_dotenv()
 

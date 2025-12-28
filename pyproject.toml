@@ -46,43 +46,23 @@ build-backend = "hatchling.build"
 packages = ["dojo"]
 
 [tool.ruff]
-
 line-length = 100
-
 exclude = ["dojo_finetune_package"]
 
-
-
 [tool.ruff.lint]
-
 select = ["E", "F", "I", "N", "W"]
-
 ignore = ["E501"]
 
-
-
 [tool.ruff.lint.per-file-ignores]
-
 "dojo/test_*.py" = ["E402"]
-
 "dojo/sensei/sensei.py" = ["E402"]
 
-
-
 [tool.mypy]
-
 python_version = "3.10"
-
 warn_return_any = false
-
 warn_unused_configs = true
-
 ignore_missing_imports = true
-
 exclude = [
-
     "dojo_output/",
-
     "dojo_finetune_package/",
-
 ]
