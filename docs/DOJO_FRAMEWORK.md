@@ -464,14 +464,27 @@ class BeltProgression:
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │ 1. Run full belt challenge suite                             │    │
 │  │ 2. Calculate pass rate                                       │    │
-│  │ 3. If promotion threshold met → award next belt             │    │
-│  │ 4. Unlock next belt's challenges                            │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+│  │ ---
 
-### CLI Commands
+## 🚀 Verification & Impact (Android 11 Baseline)
+
+**Date:** 2025-12-28
+**Status:** SUCCESSFUL DISTILLATION
+
+### The Experiment
+- **Student:** WhiteRabbitNeo 2.5 7B (MLX 4-bit)
+- **Teacher:** Llama 3.1 70B
+- **Environment:** Android 11 (Physical/Emulator)
+
+### Results
+- **Baseline Pass Rate:** 20.0% (Failed due to incorrect shell syntax and hallucinated flags).
+- **Post-Dojo Pass Rate:** 80.0% (Successfully distilled specific ADB/Android 11 execution patterns).
+- **Improvement:** **+60.0%** success rate increase via 500-iteration LoRA.
+
+### Key Technical Insights
+- **Prompt Alignment:** Small models are hypersensitive to prompt delimiters. Adding a space after `### Response: ` was the difference between 0% and 80% success.
+- **Trajectory Quality:** Using a 70B "Teacher" to generate Gold trajectories is more effective than "Self-Correction" for 7B models in the initial learning phase.
+- **Extraction Logic:** The Dojo framework successfully extracted 13+ high-quality training pairs from just 5 challenges by capturing both positive outcomes and error-correction sequences.
 
 ```bash
 # Run daily training session

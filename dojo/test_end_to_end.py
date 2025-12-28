@@ -237,25 +237,108 @@ class MockLLMClient:
 
 
 class MLXLLMClient:
+
+
     """Native MLX client for high-performance benchmarking on Apple Silicon."""
 
-    def __init__(self, model_path: str):
+
+
+
+
+    def __init__(self, model_path: str, adapter_path: Optional[str] = None):
+
+
         from mlx_lm import load
 
-        print(f"🚀 Loading Native MLX Brain: {model_path}...")
+
+        from pathlib import Path
+
+
+        # Convert to absolute path to force local loading
+
+
+        abs_path = str(Path(model_path).resolve())
+
+
+        print(f"🚀 Loading Native MLX Brain: {abs_path}...")
+        if adapter_path:
+            print(f"   + Adapter: {adapter_path}")
+
+
         # Capture all returned values to be version-agnostic
-        results = load(model_path)
+        if adapter_path:
+            results = load(abs_path, adapter_path=adapter_path)
+        else:
+            results = load(abs_path)
+
+
         self.model = results[0]
+
+
         self.tokenizer = results[1]
 
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
 
+
+
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        import re
         from mlx_lm import generate
 
-        full_instruction = f"{system_prompt}\n{prompt}" if system_prompt else prompt
-        formatted_prompt = (
-            f"### Instruction:\n{full_instruction}\n\n### Response: shell "
-        )
+        # IGNORE system_prompt to match training data distribution (which was SFT on concise tasks)
+        
+        # Parse the prompt to extract Instruction and Input
+        # Format expected in prompt:
+        # ...
+        # Difficulty: X/5
+        # <Target Instruction>
+        #
+        # ## Device Context
+        # <Context>
+        # ...
+        
+        instruction = ""
+        input_context = ""
+
+        # 1. Extract Input (starting from ## Device Context)
+        # Note: Training data used "Device Context:", inference has "## Device Context"
+        # We will normalize to "Device Context:" for the model
+        
+        input_match = re.search(r"## Device Context", prompt)
+        if input_match:
+            input_start = input_match.start()
+            # Everything from here is context/hints
+            raw_input = prompt[input_start:]
+            # Clean up the header to match training: "Device Context: ..."
+            input_context = raw_input.replace("## Device Context", "Device Context:")
+            
+            # 2. Extract Instruction (Text before Device Context)
+            pre_input = prompt[:input_start].strip()
+            
+            # Try to clean up metadata like Belt Level/Difficulty if present
+            # Look for "Difficulty: X/5"
+            diff_match = re.search(r"Difficulty: \d+/\d+", pre_input)
+            if diff_match:
+                instruction = pre_input[diff_match.end():].strip()
+            else:
+                instruction = pre_input.strip()
+        else:
+            # Fallback: Treat whole prompt as instruction
+            instruction = prompt.strip()
+        
+        # Construct the aligned prompt
+        if input_context:
+            formatted_prompt = (
+                f"### Instruction:\n{instruction}\n\n"
+                f"### Input:\n{input_context}\n\n"
+                f"### Response: "
+            )
+        else:
+            formatted_prompt = (
+                f"### Instruction:\n{instruction}\n\n### Response: "
+            )
+
+        # DEBUG: Print prompt to see alignment
+        print(f"\n[DEBUG] Aligned Prompt:\n---\n{formatted_prompt}\n---\n")
 
         response = generate(
             self.model,
@@ -263,8 +346,14 @@ class MLXLLMClient:
             prompt=formatted_prompt,
             max_tokens=100,
         )
-        # Prepend the 'shell ' we forced
-        return f"shell {response.strip()}"
+        
+        # Post-processing to handle hallucinations (e.g. "107 characters\nshell ...")
+        clean_response = response.strip()
+        for line in clean_response.split('\n'):
+            if line.strip().startswith('shell '):
+                return line.strip()
+                
+        return clean_response
 
 
 class OllamaLLMClient:
@@ -323,6 +412,7 @@ def run_end_to_end(
     device_id: str = "emulator-5554",
     belt: str = "white",
     model: Optional[str] = None,
+    adapter: Optional[str] = None,
 ) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
     set_engine_state("running")
@@ -354,7 +444,7 @@ def run_end_to_end(
     elif mode == "mlx":
         try:
             model_path = model or "models/whiterabbit-7b-dojo-4bit"
-            llm = MLXLLMClient(model_path=model_path)
+            llm = MLXLLMClient(model_path=model_path, adapter_path=adapter)
             print(f"LLM: Native MLX ({model_path})")
         except Exception as e:
             print(f"ERROR: {e}")
@@ -584,10 +674,19 @@ def main():
         default=None,
         help="Ollama model name (default: WhiteRabbitNeo)",
     )
+    parser.add_argument(
+        "--adapter",
+        default=None,
+        help="Path to LoRA adapters (MLX mode only)",
+    )
 
     args = parser.parse_args()
     exit_code = run_end_to_end(
-        mode=args.mode, device_id=args.device, belt=args.belt, model=args.model
+        mode=args.mode,
+        device_id=args.device,
+        belt=args.belt,
+        model=args.model,
+        adapter=args.adapter,
     )
     sys.exit(exit_code)
 
