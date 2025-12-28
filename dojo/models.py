@@ -352,7 +352,12 @@ class SenseiAssessment:
     @property
     def all_issues(self) -> list[str]:
         """Get all issues combined."""
-        return self.syntax_issues + self.api_errors + self.logic_flaws + self.security_issues
+        return (
+            self.syntax_issues
+            + self.api_errors
+            + self.logic_flaws
+            + self.security_issues
+        )
 
     @property
     def issue_count(self) -> int:
@@ -444,7 +449,10 @@ class TrainingExample:
                 "conversations": [
                     {"from": "human", "value": task.strip()},
                     {"from": "gpt", "value": failed_cmd.strip()},
-                    {"from": "human", "value": f"That command failed with the following error:\n\n{error_info.strip()}\n\nPlease provide a corrected version."},
+                    {
+                        "from": "human",
+                        "value": f"That command failed with the following error:\n\n{error_info.strip()}\n\nPlease provide a corrected version.",
+                    },
                     {"from": "gpt", "value": self.output_text.strip()},
                 ]
             }
@@ -452,7 +460,10 @@ class TrainingExample:
         # Default single-turn for positive/kata
         return {
             "conversations": [
-                {"from": "human", "value": f"{self.instruction}\n\n{self.input_text}".strip()},
+                {
+                    "from": "human",
+                    "value": f"{self.instruction}\n\n{self.input_text}".strip(),
+                },
                 {"from": "gpt", "value": self.output_text},
             ]
         }
@@ -551,9 +562,11 @@ class ModelProgress:
             "average_score": round(self.average_score, 2),
             "total_score": self.total_score,
             "training_examples_generated": self.training_examples_generated,
-            "last_training_date": self.last_training_date.isoformat() if self.last_training_date else None,
+            "last_training_date": (
+                self.last_training_date.isoformat() if self.last_training_date else None
+            ),
             "assessment_count": len(self.assessments),
-            "assessments_summary": [], # Placeholder for actual summary logic if needed
+            "assessments_summary": [],  # Placeholder for actual summary logic if needed
         }
 
     def display_status(self) -> str:

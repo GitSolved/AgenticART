@@ -76,7 +76,11 @@ class TrainingExtractor:
 
         # 2. Positive example (successful, high-quality output)
         # ONLY if the final result was a success
-        if session.final_success and self.config.include_positive and assessment.is_positive_example:
+        if (
+            session.final_success
+            and self.config.include_positive
+            and assessment.is_positive_example
+        ):
             example = self._extract_positive_example(session, assessment)
             if example:
                 example.model_id = model_id
@@ -102,7 +106,9 @@ class TrainingExtractor:
         # 5. Exploration examples (from Probing Mode)
         # We ALWAYS extract these to the Discovery log
         if session.challenge.belt == Belt.BLACK:
-            exploration_examples = self._extract_exploration_examples(session, assessment)
+            exploration_examples = self._extract_exploration_examples(
+                session, assessment
+            )
             for ee in exploration_examples:
                 ee.model_id = model_id
             examples.extend(exploration_examples)
@@ -122,15 +128,17 @@ class TrainingExtractor:
         extracted = []
 
         for attempt in session.attempts:
-            extracted.append(TrainingExample(
-                instruction=challenge.description,
-                input_text=attempt.prompt_used,
-                output_text=attempt.model_output,
-                source_challenge_id=challenge.id,
-                example_type="exploration",
-                belt=challenge.belt,
-                grade=assessment.grade, # Using overall session grade for now
-            ))
+            extracted.append(
+                TrainingExample(
+                    instruction=challenge.description,
+                    input_text=attempt.prompt_used,
+                    output_text=attempt.model_output,
+                    source_challenge_id=challenge.id,
+                    example_type="exploration",
+                    belt=challenge.belt,
+                    grade=assessment.grade,  # Using overall session grade for now
+                )
+            )
         return extracted
 
     def _extract_positive_example(
@@ -370,7 +378,9 @@ class TrainingExtractor:
 
         lines.append("")
         lines.append("## Instructions")
-        lines.append(f"Correct the command to resolve the {error_context.error_type} error.")
+        lines.append(
+            f"Correct the command to resolve the {error_context.error_type} error."
+        )
 
         return "\n".join(lines)
 

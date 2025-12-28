@@ -92,7 +92,8 @@ class DojoConfig:
             passing_score=int(os.getenv("DOJO_PASSING_SCORE", "70")),
             promotion_score=int(os.getenv("DOJO_PROMOTION_SCORE", "80")),
             max_retries=int(os.getenv("DOJO_MAX_RETRIES", "3")),
-            retry_with_context=os.getenv("DOJO_RETRY_WITH_CONTEXT", "true").lower() == "true",
+            retry_with_context=os.getenv("DOJO_RETRY_WITH_CONTEXT", "true").lower()
+            == "true",
             llm_provider=os.getenv("LLM_PROVIDER"),
             llm_model=os.getenv("OLLAMA_MODEL"),
             llm_timeout=int(os.getenv("DOJO_LLM_TIMEOUT", "300")),
@@ -113,8 +114,12 @@ class DojoConfig:
         return {
             "paths": {
                 "dojo_root": str(self.dojo_root),
-                "curriculum_dir": str(self.curriculum_dir) if self.curriculum_dir else None,
-                "training_output_dir": str(self.training_output_dir) if self.training_output_dir else None,
+                "curriculum_dir": (
+                    str(self.curriculum_dir) if self.curriculum_dir else None
+                ),
+                "training_output_dir": (
+                    str(self.training_output_dir) if self.training_output_dir else None
+                ),
             },
             "grading": {
                 "passing_score": self.passing_score,

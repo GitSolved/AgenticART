@@ -92,7 +92,9 @@ class ProgressTracker:
         """
         progress = self.get_progress(model_id)
 
-        if progress.check_promotion_eligibility(required_pass_rate, required_challenges):
+        if progress.check_promotion_eligibility(
+            required_pass_rate, required_challenges
+        ):
             next_belt = progress.current_belt.next_belt()
             return True, next_belt
 

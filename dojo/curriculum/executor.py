@@ -94,10 +94,7 @@ class Executor:
             timeout: Default command timeout in seconds.
         """
         self.device_id = device_id or os.getenv("EMULATOR_DEVICE", "emulator-5554")
-        self.adb_path = adb_path or os.getenv(
-            "ADB_PATH",
-            "adb"  # Assume it's in PATH
-        )
+        self.adb_path = adb_path or os.getenv("ADB_PATH", "adb")  # Assume it's in PATH
         self.timeout = timeout
 
     def _classify_error(self, stderr: str, stdout: str) -> Optional[str]:
@@ -249,17 +246,25 @@ class Executor:
         temp_js = Path("temp_frida_script.js")
 
         # Ensure we write valid UTF-8 and strip any accidental markdown backticks the model might have added
-        clean_script = script_content.replace("```javascript", "").replace("```js", "").replace("```", "").strip()
+        clean_script = (
+            script_content.replace("```javascript", "")
+            .replace("```js", "")
+            .replace("```", "")
+            .strip()
+        )
         temp_js.write_text(clean_script, encoding="utf-8")
 
         try:
             # We use -f (spawn) instead of -n (attach) for better stability in automated tests
             # and --runtime=v8 for modern JS support.
             cmd = [
-                "frida", "-U",
-                "-f", target_process,
-                "-l", str(temp_js),
-                "--runtime=v8"
+                "frida",
+                "-U",
+                "-f",
+                target_process,
+                "-l",
+                str(temp_js),
+                "--runtime=v8",
             ]
 
             # Use Popen to capture output while allowing it to run
@@ -270,7 +275,7 @@ class Executor:
                 text=True,
                 timeout=timeout,
                 encoding="utf-8",
-                errors="replace"
+                errors="replace",
             )
 
             duration = time.time() - start_time
@@ -283,7 +288,7 @@ class Executor:
                 stdout=result.stdout.strip(),
                 stderr=result.stderr.strip(),
                 duration=duration,
-                command="frida -U -f " + target_process + " -l [temp_script.js]"
+                command="frida -U -f " + target_process + " -l [temp_script.js]",
             )
 
         except subprocess.TimeoutExpired as e:
@@ -302,7 +307,7 @@ class Executor:
                 stdout=stdout.strip(),
                 stderr=stderr.strip(),
                 duration=duration,
-                command="frida [timed_out_but_captured]"
+                command="frida [timed_out_but_captured]",
             )
         except Exception as e:
             return ExecutionResult(
@@ -311,7 +316,7 @@ class Executor:
                 stdout="",
                 stderr=str(e),
                 duration=time.time() - start_time,
-                command="frida-error"
+                command="frida-error",
             )
         finally:
             if temp_js.exists():
@@ -338,10 +343,7 @@ class Executor:
             cmd = ["clang", "-fsyntax-only", str(temp_c)]
 
             result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout
+                cmd, capture_output=True, text=True, timeout=timeout
             )
 
             duration = time.time() - start_time
@@ -362,7 +364,7 @@ class Executor:
                 stderr=stderr,
                 duration=duration,
                 command="clang -fsyntax-only [exploit.c]",
-                error_type=error_type
+                error_type=error_type,
             )
 
         except Exception as e:
@@ -373,7 +375,7 @@ class Executor:
                 stderr=str(e),
                 duration=time.time() - start_time,
                 command="compiler-missing",
-                error_type="tool_missing"
+                error_type="tool_missing",
             )
         finally:
             if temp_c.exists():

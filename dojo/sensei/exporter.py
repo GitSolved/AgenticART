@@ -31,7 +31,9 @@ class DPOPair:
     chosen: str
     rejected: str
     margin: float = 1.0  # Quality gap between chosen and rejected (0.0 to 1.0)
-    signal_source: str = "curation" # e.g., "regression_prevention", "syntax_correction"
+    signal_source: str = (
+        "curation"  # e.g., "regression_prevention", "syntax_correction"
+    )
     metadata: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -93,13 +95,29 @@ class TrainingDataExporter:
 
         # List of commands that MUST have 'shell ' prefix
         on_device_commands = (
-            "pm", "am", "getprop", "setprop", "ls", "ps", "cat",
-            "dumpsys", "input", "screencap", "uiautomator",
-            "run-as", "sqlite3", "content", "df", "netstat", "printenv"
+            "pm",
+            "am",
+            "getprop",
+            "setprop",
+            "ls",
+            "ps",
+            "cat",
+            "dumpsys",
+            "input",
+            "screencap",
+            "uiautomator",
+            "run-as",
+            "sqlite3",
+            "content",
+            "df",
+            "netstat",
+            "printenv",
         )
 
         # If it's an on-device command and missing 'shell ', add it
-        if any(cmd.startswith(c) for c in on_device_commands) and not cmd.startswith("shell "):
+        if any(cmd.startswith(c) for c in on_device_commands) and not cmd.startswith(
+            "shell "
+        ):
             cmd = f"shell {cmd}"
 
         return cmd
@@ -130,7 +148,7 @@ class TrainingDataExporter:
             example_type=example.example_type,
             belt=example.belt,
             grade=example.grade,
-            timestamp=example.timestamp
+            timestamp=example.timestamp,
         )
 
     def export(
@@ -261,7 +279,9 @@ class TrainingDataExporter:
         """
         # Filter to positive and kata examples
         sharegpt_examples = [
-            e for e in examples if e.example_type in ("positive", "kata", "error_recovery")
+            e
+            for e in examples
+            if e.example_type in ("positive", "kata", "error_recovery")
         ]
 
         with open(path, "w", encoding="utf-8") as f:
@@ -309,13 +329,16 @@ class TrainingDataExporter:
             # 1. Identify Gold standard (Kata) and high-quality model successes
             kata = [e for e in challenge_examples if e.example_type == "kata"]
             positive = [
-                e for e in challenge_examples
+                e
+                for e in challenge_examples
                 if e.example_type == "positive" and e.grade in (Grade.A, Grade.B)
             ]
 
             # 2. Identify failures
             negative = [e for e in challenge_examples if e.example_type == "negative"]
-            error_recovery = [e for e in challenge_examples if e.example_type == "error_recovery"]
+            error_recovery = [
+                e for e in challenge_examples if e.example_type == "error_recovery"
+            ]
 
             # Choose the BEST available correct answer
             best_chosen = kata[0] if kata else (positive[0] if positive else None)
@@ -330,26 +353,30 @@ class TrainingDataExporter:
                         margin = 0.95 if neg.grade == Grade.F else 0.75
                         source = "expert_alignment" if kata else "regression_prevention"
 
-                        pairs.append(DPOPair(
-                            prompt=f"{best_chosen.instruction}\n\n{best_chosen.input_text}".strip(),
-                            chosen=best_chosen.output_text,
-                            rejected=rejected_output,
-                            margin=margin,
-                            signal_source=source,
-                            metadata={"challenge_id": challenge_id}
-                        ))
+                        pairs.append(
+                            DPOPair(
+                                prompt=f"{best_chosen.instruction}\n\n{best_chosen.input_text}".strip(),
+                                chosen=best_chosen.output_text,
+                                rejected=rejected_output,
+                                margin=margin,
+                                signal_source=source,
+                                metadata={"challenge_id": challenge_id},
+                            )
+                        )
 
             for er in error_recovery:
                 failed_output = self._extract_failed_from_recovery(er.input_text)
                 if failed_output:
-                    pairs.append(DPOPair(
-                        prompt=er.instruction,
-                        chosen=er.output_text,
-                        rejected=failed_output,
-                        margin=0.85,
-                        signal_source="error_recovery_fix",
-                        metadata={"challenge_id": challenge_id}
-                    ))
+                    pairs.append(
+                        DPOPair(
+                            prompt=er.instruction,
+                            chosen=er.output_text,
+                            rejected=failed_output,
+                            margin=0.85,
+                            signal_source="error_recovery_fix",
+                            metadata={"challenge_id": challenge_id},
+                        )
+                    )
 
         return pairs
 

@@ -18,10 +18,17 @@ class FinetuneConfig:
     lora_r: int = 16
     lora_alpha: int = 32
     lora_dropout: float = 0.05
-    target_modules: list = field(default_factory=lambda: [
-        "q_proj", "k_proj", "v_proj", "o_proj",
-        "gate_proj", "up_proj", "down_proj"
-    ])
+    target_modules: list = field(
+        default_factory=lambda: [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ]
+    )
 
     # Training settings
     num_epochs: int = 3
@@ -58,7 +65,9 @@ class FinetuneConfig:
             "max_seq_length": self.max_seq_length,
             "use_4bit": self.use_4bit,
             "use_gradient_checkpointing": self.use_gradient_checkpointing,
-            "training_data_path": str(self.training_data_path) if self.training_data_path else None,
+            "training_data_path": (
+                str(self.training_data_path) if self.training_data_path else None
+            ),
             "dpo_data_path": str(self.dpo_data_path) if self.dpo_data_path else None,
             "output_dir": str(self.output_dir),
         }

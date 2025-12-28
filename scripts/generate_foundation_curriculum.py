@@ -46,11 +46,15 @@ def main():
                     if cve:
                         template = generator.create_challenge_template(cve)
                         generator.export_to_curriculum(template)
-                        print(f"  - Added {cve.cve_id} to {template['belt'].upper()} Belt")
+                        print(
+                            f"  - Added {cve.cve_id} to {template['belt'].upper()} Belt"
+                        )
         except Exception as e:
             print(f"  - Error fetching {query}: {e}")
 
-    print("\n🏁 Foundation Pack complete. Your Dojo now has a structural knowledge base.")
+    print(
+        "\n🏁 Foundation Pack complete. Your Dojo now has a structural knowledge base."
+    )
 
 
 if __name__ == "__main__":

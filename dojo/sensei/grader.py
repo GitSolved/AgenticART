@@ -47,19 +47,19 @@ class Grader:
     # Common syntax error patterns
     SYNTAX_PATTERNS = {
         "unclosed_quote": r'["\'][^"\']*$',
-        "unclosed_paren": r'\([^)]*$',
-        "unclosed_bracket": r'\[[^\]]*$',
-        "unclosed_brace": r'\{[^}]*$',
-        "double_operator": r'[&|]{3,}',
-        "empty_command": r'^\s*$',
+        "unclosed_paren": r"\([^)]*$",
+        "unclosed_bracket": r"\[[^\]]*$",
+        "unclosed_brace": r"\{[^}]*$",
+        "double_operator": r"[&|]{3,}",
+        "empty_command": r"^\s*$",
     }
 
     # Security concern patterns
     SECURITY_PATTERNS = {
         "hardcoded_credential": r'(password|passwd|pwd|secret|key)\s*[=:]\s*["\'][^"\']+["\']',
-        "dangerous_rm": r'rm\s+(-rf?|--force)\s+/',
-        "world_writable": r'chmod\s+777',
-        "eval_usage": r'\beval\b',
+        "dangerous_rm": r"rm\s+(-rf?|--force)\s+/",
+        "world_writable": r"chmod\s+777",
+        "eval_usage": r"\beval\b",
     }
 
     def __init__(self, attempt_penalty: int = 5):
@@ -118,8 +118,8 @@ class Grader:
                     "syntax_ok": syntax_ok,
                     "api_ok": api_ok,
                     "exec_ok": exec_ok,
-                    "obj_ok": obj_ok
-                }
+                    "obj_ok": obj_ok,
+                },
             }
 
         # Generate correction if needed (D or F grade)
@@ -172,7 +172,9 @@ class Grader:
         if script_type in (ScriptType.ADB, ScriptType.SHELL):
             for error_name, pattern in self.SYNTAX_PATTERNS.items():
                 if re.search(pattern, output, re.MULTILINE):
-                    issues.append(f"Potential syntax error: {error_name.replace('_', ' ')}")
+                    issues.append(
+                        f"Potential syntax error: {error_name.replace('_', ' ')}"
+                    )
         else:
             # For FRIDA and C_EXPLOIT, we rely on the Executor (Runtime Check)
             # rather than primitive regex which fails on multi-line blocks.
@@ -217,7 +219,15 @@ class Grader:
             # ADB-specific validation
             if not any(
                 output.startswith(prefix)
-                for prefix in ["shell", "push", "pull", "install", "uninstall", "logcat", "adb"]
+                for prefix in [
+                    "shell",
+                    "push",
+                    "pull",
+                    "install",
+                    "uninstall",
+                    "logcat",
+                    "adb",
+                ]
             ):
                 # It's okay if it doesn't start with these - might be just the command
                 pass
@@ -329,7 +339,9 @@ class Grader:
 
         # Use kata solution if available
         if challenge.kata_solution:
-            explanation = self._build_correction_explanation(issues, challenge.kata_solution)
+            explanation = self._build_correction_explanation(
+                issues, challenge.kata_solution
+            )
             return challenge.kata_solution, explanation
 
         # No correction available

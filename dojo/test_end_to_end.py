@@ -39,6 +39,7 @@ from dojo import (
 # ADB Path Detection (from test_phase2.py)
 # ============================================================================
 
+
 def find_adb_path() -> str:
     """Find the ADB executable path."""
     adb_path = os.environ.get("ADB_PATH")
@@ -52,7 +53,9 @@ def find_adb_path() -> str:
     if sys.platform == "win32":
         common_paths = [
             os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
-            os.path.expandvars(r"%USERPROFILE%\AppData\Local\Android\Sdk\platform-tools\adb.exe"),
+            os.path.expandvars(
+                r"%USERPROFILE%\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+            ),
         ]
         for path in common_paths:
             if os.path.exists(path):
@@ -64,6 +67,7 @@ def find_adb_path() -> str:
 # ============================================================================
 # LLM Clients (from test_phase2.py)
 # ============================================================================
+
 
 class MockLLMClient:
     """Mock LLM that returns expected answers for testing."""
@@ -118,7 +122,10 @@ class MockLLMClient:
         ("white_002", ["installed packages", "package manager", "pm list"]),
         ("white_001", ["android version", "version number", "version of"]),
         # Yellow belt
-        ("yellow_001", ["app permission", "permissions requested", "com.android.settings"]),
+        (
+            "yellow_001",
+            ["app permission", "permissions requested", "com.android.settings"],
+        ),
         ("yellow_002", ["launch activity", "start activity", "settings app"]),
         ("yellow_003", ["network interface", "network configuration", "ip address"]),
         ("yellow_004", ["logcat", "error level", "activitymanager"]),
@@ -154,7 +161,10 @@ class MockLLMClient:
         self.call_count += 1
         prompt_lower = prompt.lower()
 
-        if "previous attempt failed" in prompt_lower or "your previous command failed" in prompt_lower:
+        if (
+            "previous attempt failed" in prompt_lower
+            or "your previous command failed" in prompt_lower
+        ):
             if self.last_challenge_id and self.last_challenge_id in self.RETRY_ANSWERS:
                 return self.RETRY_ANSWERS[self.last_challenge_id]
 
@@ -174,19 +184,25 @@ class MockLLMClient:
 class OllamaLLMClient:
     """Real LLM client using Ollama HTTP API."""
 
-    def __init__(self, model: str = "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"):
+    def __init__(
+        self,
+        model: str = "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M",
+    ):
         self.model = model
         self.api_url = "http://localhost:11434/api/generate"
         self._check_ollama()
 
     def _check_ollama(self):
         import requests
+
         try:
             response = requests.get("http://localhost:11434/api/tags", timeout=5)
             if response.status_code != 200:
                 raise RuntimeError("Ollama server not responding")
         except Exception:
-            raise RuntimeError("Ollama server not running. Start it with 'ollama serve'")
+            raise RuntimeError(
+                "Ollama server not running. Start it with 'ollama serve'"
+            )
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
 
@@ -197,11 +213,7 @@ class OllamaLLMClient:
             "prompt": prompt,
             "system": system_prompt if system_prompt else "",
             "stream": False,
-            "options": {
-                "temperature": 0.1,
-                "top_p": 0.9,
-                "num_ctx": 4096
-            }
+            "options": {"temperature": 0.1, "top_p": 0.9, "num_ctx": 4096},
         }
 
         try:
@@ -219,7 +231,13 @@ class OllamaLLMClient:
 # End-to-End Runner
 # ============================================================================
 
-def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: str = "white", model: Optional[str] = None) -> int:
+
+def run_end_to_end(
+    mode: str = "mock",
+    device_id: str = "emulator-5554",
+    belt: str = "white",
+    model: Optional[str] = None,
+) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
 
     belt_enum = Belt.from_string(belt)
@@ -249,7 +267,10 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
         print("LLM: Mock (returns expected answers)")
     elif mode == "live":
         try:
-            model_name = model or "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"
+            model_name = (
+                model
+                or "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"
+            )
             llm = OllamaLLMClient(model=model_name)
             print(f"LLM: Ollama ({model_name})")
         except RuntimeError as e:
@@ -342,7 +363,12 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     result = sensei.run_training_cycle(
         sessions=sessions,
         model_id=model_id,
-        export_formats=[ExportFormat.JSONL, ExportFormat.ALPACA, ExportFormat.SHAREGPT, ExportFormat.DPO],
+        export_formats=[
+            ExportFormat.JSONL,
+            ExportFormat.ALPACA,
+            ExportFormat.SHAREGPT,
+            ExportFormat.DPO,
+        ],
         auto_promote=True,
     )
 
@@ -351,7 +377,9 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     print("-" * 40)
     for i, assessment in enumerate(result.assessments):
         challenge = sessions[i].challenge
-        print(f"  {challenge.id}: Grade {assessment.grade.value} (Score: {assessment.score})")
+        print(
+            f"  {challenge.id}: Grade {assessment.grade.value} (Score: {assessment.score})"
+        )
         if assessment.all_issues:
             for issue in assessment.all_issues[:2]:
                 print(f"    - {issue}")
@@ -422,6 +450,7 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
 # Entry Point
 # ============================================================================
 
+
 def main():
     parser = argparse.ArgumentParser(description="End-to-End Test")
     parser.add_argument(
@@ -437,7 +466,16 @@ def main():
     )
     parser.add_argument(
         "--belt",
-        choices=["white", "yellow", "orange", "green", "blue", "purple", "brown", "black"],
+        choices=[
+            "white",
+            "yellow",
+            "orange",
+            "green",
+            "blue",
+            "purple",
+            "brown",
+            "black",
+        ],
         default="white",
         help="Belt level to test",
     )
@@ -448,7 +486,9 @@ def main():
     )
 
     args = parser.parse_args()
-    exit_code = run_end_to_end(mode=args.mode, device_id=args.device, belt=args.belt, model=args.model)
+    exit_code = run_end_to_end(
+        mode=args.mode, device_id=args.device, belt=args.belt, model=args.model
+    )
     sys.exit(exit_code)
 
 

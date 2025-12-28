@@ -31,7 +31,16 @@ class InvalidBeltError(DojoError):
 
     def __init__(self, belt: str):
         self.belt = belt
-        valid_belts = ["white", "yellow", "orange", "green", "blue", "purple", "brown", "black"]
+        valid_belts = [
+            "white",
+            "yellow",
+            "orange",
+            "green",
+            "blue",
+            "purple",
+            "brown",
+            "black",
+        ]
         super().__init__(
             f"Invalid belt: {belt}. Valid belts: {', '.join(valid_belts)}",
             {"belt": belt, "valid_belts": valid_belts},
@@ -41,7 +50,12 @@ class InvalidBeltError(DojoError):
 class GradingError(DojoError):
     """Raised when grading fails."""
 
-    def __init__(self, message: str, challenge_id: Optional[str] = None, cause: Optional[Exception] = None):
+    def __init__(
+        self,
+        message: str,
+        challenge_id: Optional[str] = None,
+        cause: Optional[Exception] = None,
+    ):
         self.challenge_id = challenge_id
         self.cause = cause
         details = {"challenge_id": challenge_id}
@@ -53,7 +67,12 @@ class GradingError(DojoError):
 class ExportError(DojoError):
     """Raised when training data export fails."""
 
-    def __init__(self, message: str, format: Optional[str] = None, cause: Optional[Exception] = None):
+    def __init__(
+        self,
+        message: str,
+        format: Optional[str] = None,
+        cause: Optional[Exception] = None,
+    ):
         self.format = format
         self.cause = cause
         details = {"format": format}
@@ -104,7 +123,12 @@ class ConfigurationError(DojoError):
 class CurriculumError(DojoError):
     """Raised when there's an issue with curriculum loading."""
 
-    def __init__(self, message: str, file_path: Optional[str] = None, cause: Optional[Exception] = None):
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        cause: Optional[Exception] = None,
+    ):
         self.file_path = file_path
         self.cause = cause
         details = {"file_path": file_path}

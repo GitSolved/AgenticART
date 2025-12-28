@@ -610,7 +610,6 @@ elif selected_stage == "BENCHMARKING":
                 heatmap_rows.append(
                     {"Model": model, "Belt": belt, "Success": is_success}
                 )
-                
 
             if heatmap_rows:
                 df_heat = pd.DataFrame(heatmap_rows)

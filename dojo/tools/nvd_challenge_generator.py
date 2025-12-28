@@ -23,9 +23,11 @@ from dojo.models import (
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class LiveCVE:
     """CVE from live NVD API query."""
+
     cve_id: str
     published: str
     cvss_score: float
@@ -35,6 +37,7 @@ class LiveCVE:
     exploit_maturity: str = "UNPROVEN"
     references: List[Dict[str, Any]] = field(default_factory=list)
     cwe_ids: List[str] = field(default_factory=list)
+
 
 class NVDChallengeGenerator:
     """Fetches CVEs from NVD and generates Dojo challenge templates."""
@@ -49,13 +52,12 @@ class NVDChallengeGenerator:
         else:
             logger.warning("No NVD API key - rate limits will be strict")
 
-    def fetch_recent_android_cves(self, android_version: str, limit: int = 10) -> List[LiveCVE]:
+    def fetch_recent_android_cves(
+        self, android_version: str, limit: int = 10
+    ) -> List[LiveCVE]:
         """Fetch recent CVEs for a specific Android version."""
         query = f"Android {android_version}"
-        params = {
-            "keywordSearch": query,
-            "resultsPerPage": str(limit)
-        }
+        params = {"keywordSearch": query, "resultsPerPage": str(limit)}
 
         try:
             response = self.session.get(self.BASE_URL, params=params, timeout=30)
@@ -118,7 +120,7 @@ class NVDChallengeGenerator:
                 severity=severity,
                 description=description,
                 attack_vector=attack_vector,
-                cwe_ids=cwes
+                cwe_ids=cwes,
             )
         except Exception:
             return None
@@ -128,19 +130,42 @@ class NVDChallengeGenerator:
         desc = cve.description.lower()
 
         # 1. Critical Kernel/Driver Path (Black/Brown)
-        if any(kw in desc for kw in ["kernel", "use-after-free", "race condition", "uaf", "binder"]):
+        if any(
+            kw in desc
+            for kw in ["kernel", "use-after-free", "race condition", "uaf", "binder"]
+        ):
             return Belt.BLACK if cve.attack_vector == "NETWORK" else Belt.BROWN
 
         # 2. Native Code / Memory Path (Blue)
-        if any(kw in desc for kw in ["buffer overflow", "integer overflow", "out-of-bounds", "memory corruption"]):
+        if any(
+            kw in desc
+            for kw in [
+                "buffer overflow",
+                "integer overflow",
+                "out-of-bounds",
+                "memory corruption",
+            ]
+        ):
             return Belt.BLUE
 
         # 3. IPC / App Logic Path (Orange)
-        if any(kw in desc for kw in ["intent", "content provider", "permission bypass", "exported", "broadcast"]):
+        if any(
+            kw in desc
+            for kw in [
+                "intent",
+                "content provider",
+                "permission bypass",
+                "exported",
+                "broadcast",
+            ]
+        ):
             return Belt.ORANGE
 
         # 4. Information / Recon Path (Yellow)
-        if any(kw in desc for kw in ["information disclosure", "leak", "logcat", "sensitive"]):
+        if any(
+            kw in desc
+            for kw in ["information disclosure", "leak", "logcat", "sensitive"]
+        ):
             return Belt.YELLOW
 
         # Fallback to CVSS score
@@ -161,7 +186,9 @@ class NVDChallengeGenerator:
         script_type = "adb"
         if "kernel" in cve.description.lower():
             script_type = "c_exploit"
-        elif any(kw in cve.description.lower() for kw in ["hook", "intercept", "instrument"]):
+        elif any(
+            kw in cve.description.lower() for kw in ["hook", "intercept", "instrument"]
+        ):
             script_type = "frida"
 
         template = {
@@ -176,25 +203,25 @@ class NVDChallengeGenerator:
                 "device_context": {
                     "connection": "adb",
                     "task": "vulnerability_probing",
-                    "severity": cve.severity
-                }
+                    "severity": cve.severity,
+                },
             },
-            "expected_output": {
-                "must_contain": [cve.cve_id],
-                "expected_patterns": []
-            },
+            "expected_output": {"must_contain": [cve.cve_id], "expected_patterns": []},
             "scoring": {
                 "syntax_correct": 25,
                 "api_valid": 25,
                 "executes_successfully": 30,
-                "achieves_objective": 20
+                "achieves_objective": 20,
             },
-            "tags": ["nvd-generated", cve.cve_id.lower()] + [c.lower() for c in cve.cwe_ids]
+            "tags": ["nvd-generated", cve.cve_id.lower()]
+            + [c.lower() for c in cve.cwe_ids],
         }
 
         return template
 
-    def export_to_curriculum(self, template: Dict[str, Any], curriculum_dir: Path = Path("dojo/curriculum")):
+    def export_to_curriculum(
+        self, template: Dict[str, Any], curriculum_dir: Path = Path("dojo/curriculum")
+    ):
         """Append the generated challenge to the appropriate belt's challenges.yaml."""
         belt_name = template["belt"]
         yaml_path = curriculum_dir / f"{belt_name}_belt" / "challenges.yaml"
@@ -216,6 +243,7 @@ class NVDChallengeGenerator:
             yaml.dump(data, f, sort_keys=False, default_flow_style=False)
 
         logger.info(f"Exported {template['id']} to {yaml_path}")
+
 
 if __name__ == "__main__":
     # Quick Test

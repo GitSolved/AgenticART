@@ -190,7 +190,9 @@ class Sensei:
             new_dpo_pairs = self.exporter.create_dpo_pairs(examples)
             added_dpo = self.master_refinery.sync_dpo(new_dpo_pairs)
 
-            print(f"Master Dataset Sync: +{added_alpaca} SFT, {updated_alpaca} Upgraded, +{added_discovery} Discovery, +{added_dpo} DPO pairs")
+            print(
+                f"Master Dataset Sync: +{added_alpaca} SFT, {updated_alpaca} Upgraded, +{added_discovery} Discovery, +{added_dpo} DPO pairs"
+            )
 
         # 3. Get current progress
         progress = self.progress_tracker.get_progress(model_id)
@@ -300,7 +302,9 @@ class Sensei:
         elif next_belt:
             remaining = 5 - progress.challenges_attempted
             if remaining > 0:
-                lines.append(f"Complete {remaining} more challenges for promotion eligibility")
+                lines.append(
+                    f"Complete {remaining} more challenges for promotion eligibility"
+                )
             else:
                 needed_rate = 80.0 - progress.pass_rate
                 lines.append(f"Need {needed_rate:.1f}% higher pass rate for promotion")

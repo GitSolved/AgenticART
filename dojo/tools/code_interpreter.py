@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 @dataclass
 class CodeExecutionResult:
     """Result of a Python code execution."""
+
     success: bool
     stdout: str
     stderr: str
@@ -34,7 +35,9 @@ class CodeInterpreter:
             "base64": __import__("base64"),
         }
 
-    def execute(self, code: str, external_tools: Optional[Dict[str, Any]] = None) -> CodeExecutionResult:
+    def execute(
+        self, code: str, external_tools: Optional[Dict[str, Any]] = None
+    ) -> CodeExecutionResult:
         """
         Executes Python code and captures all outputs and generated artifacts.
 
@@ -59,7 +62,10 @@ class CodeInterpreter:
         error_type = None
 
         try:
-            with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
+            with (
+                contextlib.redirect_stdout(stdout_buf),
+                contextlib.redirect_stderr(stderr_buf),
+            ):
                 # We use exec() to run the multi-line block
                 exec(code, exec_globals, exec_locals)
             success = True
@@ -82,5 +88,5 @@ class CodeInterpreter:
             stdout=stdout_buf.getvalue(),
             stderr=stderr_buf.getvalue(),
             artifacts=artifacts,
-            error_type=error_type
+            error_type=error_type,
         )

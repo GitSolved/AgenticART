@@ -17,6 +17,7 @@ from dojo.tools.code_interpreter import CodeInterpreter
 
 class LLMClient(Protocol):
     """Protocol for LLM client interface."""
+
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Generate a response from the LLM."""
         ...
@@ -25,6 +26,7 @@ class LLMClient(Protocol):
 @dataclass
 class AttemptRecord:
     """Record of a single challenge attempt."""
+
     attempt_number: int
     prompt_used: str
     model_output: str
@@ -40,7 +42,9 @@ class AttemptRecord:
             "prompt_used": self.prompt_used,
             "model_output": self.model_output,
             "execution_result": self.execution_result.to_dict(),
-            "error_context": self.error_context.to_dict() if self.error_context else None,
+            "error_context": (
+                self.error_context.to_dict() if self.error_context else None
+            ),
             "diagnostics": self.diagnostics,
             "timestamp": self.timestamp.isoformat(),
         }
@@ -49,6 +53,7 @@ class AttemptRecord:
 @dataclass
 class ChallengeSession:
     """Complete record of a challenge session with all attempts."""
+
     challenge: Challenge
     attempts: list[AttemptRecord] = field(default_factory=list)
     started_at: datetime = field(default_factory=datetime.now)
@@ -93,7 +98,15 @@ class ChallengeSession:
 class Challenger:
     """Orchestrate challenge attempts."""
 
-    def __init__(self, llm_client: LLMClient, executor: Executor, error_extractor: Optional[ErrorExtractor] = None, context_injector: Optional[ContextInjector] = None, max_retries: int = 3, on_attempt: Optional[Callable[[AttemptRecord], None]] = None):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        executor: Executor,
+        error_extractor: Optional[ErrorExtractor] = None,
+        context_injector: Optional[ContextInjector] = None,
+        max_retries: int = 3,
+        on_attempt: Optional[Callable[[AttemptRecord], None]] = None,
+    ):
         """Initialize."""
         self.llm = llm_client
         self.executor = executor
@@ -107,6 +120,7 @@ class Challenger:
         """Check for external pause/stop signals from the dashboard."""
         import json
         import time
+
         state_path = Path("dojo_output/engine_state.json")
         if not state_path.exists():
             return
@@ -121,9 +135,9 @@ class Challenger:
                     print("🛑 Engine Stop Signal Received.")
                     raise InterruptedError("Engine stopped by user")
                 if status == "paused":
-                    time.sleep(2) # Wait and check again
+                    time.sleep(2)  # Wait and check again
                     continue
-                break # Running
+                break  # Running
             except (json.JSONDecodeError, PermissionError):
                 time.sleep(1)
                 continue
@@ -144,7 +158,13 @@ class Challenger:
             if not exec_result.success:
                 error_ctx = self.error_extractor.extract(exec_result, model_output)
 
-            attempt = AttemptRecord(attempt_number=attempt_num, prompt_used=prompt, model_output=model_output, execution_result=exec_result, error_context=error_ctx)
+            attempt = AttemptRecord(
+                attempt_number=attempt_num,
+                prompt_used=prompt,
+                model_output=model_output,
+                execution_result=exec_result,
+                error_context=error_ctx,
+            )
             session.attempts.append(attempt)
             if self.on_attempt:
                 self.on_attempt(attempt)
@@ -152,12 +172,16 @@ class Challenger:
                 break
 
             if attempt_num < self.max_retries and error_ctx:
-                prompt = self.context_injector.build_retry_prompt(challenge, model_output, error_ctx, attempt_num + 1)
+                prompt = self.context_injector.build_retry_prompt(
+                    challenge, model_output, error_ctx, attempt_num + 1
+                )
 
         session.completed_at = datetime.now()
         return session
 
-    def run_exploration(self, target: str, goal: str = "Probe", depth: int = 5) -> ChallengeSession:
+    def run_exploration(
+        self, target: str, goal: str = "Probe", depth: int = 5
+    ) -> ChallengeSession:
         """Probing mode."""
         exploration_challenge = Challenge(
             id=f"explor_{datetime.now().strftime('%H%M%S')}",
@@ -165,8 +189,10 @@ class Challenger:
             description=f"Target: {target}\nGoal: {goal}",
             belt=Belt.BLACK,
             difficulty=5,
-            inputs=ChallengeInput(device_context={"target_package": target, "mode": "exploration"}),
-            expected_output=ExpectedOutput(script_type=ScriptType.FRIDA)
+            inputs=ChallengeInput(
+                device_context={"target_package": target, "mode": "exploration"}
+            ),
+            expected_output=ExpectedOutput(script_type=ScriptType.FRIDA),
         )
         session = ChallengeSession(challenge=exploration_challenge)
         system_prompt = self.context_injector.build_system_prompt(exploration_challenge)
@@ -178,9 +204,21 @@ class Challenger:
             model_output = self._clean_output(model_output)
 
             if "import " in model_output or "def " in model_output:
-                tools = {"adb": self.executor.execute_adb, "frida": self.executor.execute_frida}
-                code_res = self.code_interpreter.execute(model_output, external_tools=tools)
-                exec_result = ExecutionResult(success=code_res.success, exit_code=0 if code_res.success else 1, stdout=code_res.stdout, stderr=code_res.stderr, duration=0, command="python_analysis")
+                tools = {
+                    "adb": self.executor.execute_adb,
+                    "frida": self.executor.execute_frida,
+                }
+                code_res = self.code_interpreter.execute(
+                    model_output, external_tools=tools
+                )
+                exec_result = ExecutionResult(
+                    success=code_res.success,
+                    exit_code=0 if code_res.success else 1,
+                    stdout=code_res.stdout,
+                    stderr=code_res.stderr,
+                    duration=0,
+                    command="python_analysis",
+                )
             else:
                 exec_result = self.executor.execute(exploration_challenge, model_output)
 
@@ -196,7 +234,9 @@ class Challenger:
             if exec_result.success:
                 prompt = f"DISCOVERY:\n{exec_result.stdout}\nNEXT STEP: Refine probe."
             elif error_ctx:
-                prompt = self.context_injector.build_retry_prompt(exploration_challenge, model_output, error_ctx, i + 1)
+                prompt = self.context_injector.build_retry_prompt(
+                    exploration_challenge, model_output, error_ctx, i + 1
+                )
             else:
                 prompt = "Probe failed. Try an alternative script."
 
@@ -222,14 +262,22 @@ class Challenger:
             else:
                 output = output.replace("```", "")
 
-        code_starts = ["Java.perform", "Interceptor.attach", "var ", "#include", "shell "]
+        code_starts = [
+            "Java.perform",
+            "Interceptor.attach",
+            "var ",
+            "#include",
+            "shell ",
+        ]
         for p in code_starts:
             idx = output.lower().find(p.lower())
             if idx != -1:
                 return output[idx:].strip()
         return output
 
-    def run_belt(self, belt: Belt, loader: ChallengeLoader, limit: Optional[int] = None) -> list[ChallengeSession]:
+    def run_belt(
+        self, belt: Belt, loader: ChallengeLoader, limit: Optional[int] = None
+    ) -> list[ChallengeSession]:
         """Run challenges for a belt level."""
         challenges = loader.load_belt(belt)
         if limit:
