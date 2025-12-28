@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional, Protocol
+from typing import TYPE_CHECKING, Callable, Optional, Protocol
 
 from dojo.curriculum.context_injector import ContextInjector
 from dojo.curriculum.error_extractor import ErrorContext, ErrorExtractor
@@ -13,6 +13,9 @@ from dojo.curriculum.executor import ExecutionResult, Executor
 from dojo.curriculum.loader import ChallengeLoader
 from dojo.models import Belt, Challenge, ChallengeInput, ExpectedOutput, ScriptType
 from dojo.tools.code_interpreter import CodeInterpreter
+
+if TYPE_CHECKING:
+    from dojo.sensei.event_logger import EventLogger
 
 
 class LLMClient(Protocol):
@@ -106,6 +109,7 @@ class Challenger:
         context_injector: Optional[ContextInjector] = None,
         max_retries: int = 3,
         on_attempt: Optional[Callable[[AttemptRecord], None]] = None,
+        event_logger: Optional["EventLogger"] = None,
     ):
         """Initialize."""
         self.llm = llm_client
@@ -115,6 +119,7 @@ class Challenger:
         self.code_interpreter = CodeInterpreter()
         self.max_retries = max_retries
         self.on_attempt = on_attempt
+        self.event_logger = event_logger
 
     def _check_control_state(self):
         """Check for external pause/stop signals from the dashboard."""
@@ -166,6 +171,28 @@ class Challenger:
                 error_context=error_ctx,
             )
             session.attempts.append(attempt)
+
+            # Log structured event if logger is configured
+            if self.event_logger:
+                eval_label = "POSITIVE" if exec_result.success else "NEGATIVE"
+                if error_ctx:
+                    eval_label = "ERROR"
+                self.event_logger.log_event(
+                    challenge_id=challenge.id,
+                    attempt_number=attempt_num,
+                    prompt=prompt,
+                    model_output=model_output,
+                    eval_label=eval_label,
+                    reference_output=challenge.kata_solution,
+                    system_context=system_prompt,
+                    execution_success=exec_result.success,
+                    error_type=error_ctx.error_type if error_ctx else None,
+                    error_message=error_ctx.error_message if error_ctx else None,
+                    duration_seconds=exec_result.duration,
+                    belt=challenge.belt.value,
+                    description=challenge.description,
+                )
+
             if self.on_attempt:
                 self.on_attempt(attempt)
             if exec_result.success:

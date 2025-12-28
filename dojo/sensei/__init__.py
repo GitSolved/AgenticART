@@ -4,6 +4,7 @@ Dojo Sensei Module - Phase 3
 Grading, training data extraction, and export functionality.
 """
 
+from dojo.sensei.event_logger import EventLogger, EventRecord, generate_config_hash
 from dojo.sensei.exporter import DPOPair, ExportFormat, TrainingDataExporter
 from dojo.sensei.grader import Grader, GradingCriteria, GradingResult
 from dojo.sensei.progress_tracker import ProgressTracker
@@ -27,4 +28,8 @@ __all__ = [
     "DPOPair",
     # Progress
     "ProgressTracker",
+    # Event Logging
+    "EventLogger",
+    "EventRecord",
+    "generate_config_hash",
 ]

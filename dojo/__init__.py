@@ -56,8 +56,11 @@ from dojo.models import (
 # Sensei imports (Phase 3)
 from dojo.sensei import (
     DPOPair,
+    EventLogger,
+    EventRecord,
     ExportFormat,
     ExtractionConfig,
+    generate_config_hash,
     Grader,
     GradingCriteria,
     GradingResult,
@@ -120,6 +123,10 @@ __all__ = [
     "ExportFormat",
     "DPOPair",
     "ProgressTracker",
+    # Event Logging
+    "EventLogger",
+    "EventRecord",
+    "generate_config_hash",
     # Fine-tuning (Phase 4)
     "TrainingPackager",
     "FinetuneConfig",
