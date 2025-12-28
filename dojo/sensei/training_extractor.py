@@ -199,12 +199,16 @@ class TrainingExtractor:
 
         # Guard: Skip if corrected_output is actually an infrastructure error
         if self._is_infrastructure_error(assessment.corrected_output):
-            self.grader_errors.append({
-                "challenge_id": session.challenge.id,
-                "status": "grader_error",
-                "reason": "corrected_output contains infrastructure error",
-                "raw_output": assessment.corrected_output[:200],  # Truncate for logging
-            })
+            self.grader_errors.append(
+                {
+                    "challenge_id": session.challenge.id,
+                    "status": "grader_error",
+                    "reason": "corrected_output contains infrastructure error",
+                    "raw_output": assessment.corrected_output[
+                        :200
+                    ],  # Truncate for logging
+                }
+            )
             return None
 
         challenge = session.challenge

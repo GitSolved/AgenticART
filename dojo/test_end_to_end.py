@@ -65,7 +65,9 @@ def set_engine_state(status: str):
                 start_dt = datetime.fromisoformat(str(start_time_str))
                 raw_acc = current.get("accumulated_seconds", 0.0)
                 # Ensure it's a float
-                accumulated = float(raw_acc) if isinstance(raw_acc, (int, float, str)) else 0.0
+                accumulated = (
+                    float(raw_acc) if isinstance(raw_acc, (int, float, str)) else 0.0
+                )
                 accumulated += (now - start_dt).total_seconds()
             except Exception:
                 pass
@@ -230,29 +232,18 @@ class MockLLMClient:
 
 
 class MLXLLMClient:
-
-
     """Native MLX client for high-performance benchmarking on Apple Silicon."""
-
-
-
-
 
     def __init__(self, model_path: str):
         from mlx_lm import load
+
         print(f"🚀 Loading Native MLX Brain: {model_path}...")
         # Capture all returned values to be version-agnostic
         results = load(model_path)
         self.model = results[0]
         self.tokenizer = results[1]
 
-
-
-
-
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-
-
 
         from mlx_lm import generate
 

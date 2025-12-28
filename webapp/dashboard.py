@@ -392,10 +392,17 @@ if selected_stage == "EXECUTION":
 
         # Get unique values for filters
         all_labels = sorted(set(e["_eval_label"] for e in raw_entries))
-        all_challenge_ids = sorted(set(e.get("metadata", {}).get("source_challenge_id", "unknown") for e in raw_entries))
+        all_challenge_ids = sorted(
+            set(
+                e.get("metadata", {}).get("source_challenge_id", "unknown")
+                for e in raw_entries
+            )
+        )
 
         # Extract belt prefixes from challenge IDs
-        belt_prefixes = sorted(set(cid.split("_")[0] for cid in all_challenge_ids if "_" in cid))
+        belt_prefixes = sorted(
+            set(cid.split("_")[0] for cid in all_challenge_ids if "_" in cid)
+        )
 
         # Filter controls
         st.markdown("**🔍 Filters**")
@@ -403,23 +410,21 @@ if selected_stage == "EXECUTION":
 
         with filter_cols[0]:
             selected_label = st.selectbox(
-                "Eval Label",
-                ["ALL"] + all_labels,
-                help="Filter by evaluation result"
+                "Eval Label", ["ALL"] + all_labels, help="Filter by evaluation result"
             )
 
         with filter_cols[1]:
             selected_prefix = st.selectbox(
                 "KATA Prefix",
                 ["ALL"] + belt_prefixes,
-                help="Filter by belt/challenge prefix (e.g., white, yellow)"
+                help="Filter by belt/challenge prefix (e.g., white, yellow)",
             )
 
         with filter_cols[2]:
             command_pattern = st.text_input(
                 "Command Pattern",
                 placeholder="e.g., shell ip, pm path, dumpsys",
-                help="Filter by command pattern in output"
+                help="Filter by command pattern in output",
             )
 
         st.markdown("---")
@@ -428,18 +433,24 @@ if selected_stage == "EXECUTION":
         filtered_entries = raw_entries
 
         if selected_label != "ALL":
-            filtered_entries = [e for e in filtered_entries if e["_eval_label"] == selected_label]
-
-        if selected_prefix != "ALL":
             filtered_entries = [
-                e for e in filtered_entries
-                if e.get("metadata", {}).get("source_challenge_id", "").startswith(selected_prefix + "_")
+                e for e in filtered_entries if e["_eval_label"] == selected_label
+            ]
+
+        if selected_prefix and selected_prefix != "ALL":
+            filtered_entries = [
+                e
+                for e in filtered_entries
+                if e.get("metadata", {})
+                .get("source_challenge_id", "")
+                .startswith(str(selected_prefix) + "_")
             ]
 
         if command_pattern.strip():
             pattern_lower = command_pattern.strip().lower()
             filtered_entries = [
-                e for e in filtered_entries
+                e
+                for e in filtered_entries
                 if pattern_lower in str(e.get("output", "")).lower()
                 or pattern_lower in str(e.get("instruction", "")).lower()
             ]
@@ -524,8 +535,17 @@ if selected_stage == "EXECUTION":
                     st.markdown("**📊 Metadata:**")
                     meta_cols = st.columns(3)
                     meta_cols[0].metric("Belt", meta.get("belt", "?"))
-                    meta_cols[1].metric("Timestamp", meta.get("timestamp", "?")[11:19] if meta.get("timestamp") else "?")
-                    meta_cols[2].metric("Model", safe_split(meta.get("model_id", "?"), "/", -1, "?"))
+                    meta_cols[1].metric(
+                        "Timestamp",
+                        (
+                            meta.get("timestamp", "?")[11:19]
+                            if meta.get("timestamp")
+                            else "?"
+                        ),
+                    )
+                    meta_cols[2].metric(
+                        "Model", safe_split(meta.get("model_id", "?"), "/", -1, "?")
+                    )
 
 elif selected_stage == "CURATION":
     st.subheader("🧪 Quality Curation")
