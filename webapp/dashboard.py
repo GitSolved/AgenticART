@@ -27,6 +27,16 @@ st.set_page_config(
 )
 
 
+def safe_split(value, sep, index=0, default=""):
+    """Safely split a string and return the desired part."""
+    if value is None:
+        return default
+    try:
+        return str(value).split(sep)[index]
+    except (IndexError, AttributeError):
+        return default
+
+
 # --- ENGINE STATE UTILS ---
 def get_engine_state():
     if not ENGINE_STATE_PATH.exists():
@@ -166,7 +176,7 @@ def get_all_discovery_data():
             if m:
                 model_name = m.split("-202")[0]
 
-            e["model_id"] = model_name
+            e["model_id"] = model_name or "UNKNOWN"
             all_data.append(e)
 
     return all_data
@@ -203,9 +213,8 @@ with st.sidebar:
         latest_session = latest_log.name.split("_")[0]
         raw_events = load_jsonl(latest_log)
         if raw_events:
-            latest_model = (
-                raw_events[0]["metadata"].get("model_id", "UNKNOWN").split("-202")[0]
-            )
+            model_id_val = raw_events[0]["metadata"].get("model_id")
+            latest_model = safe_split(model_id_val, "-202", 0, default="UNKNOWN")
 
     with st.expander("ℹ️ Session Intelligence", expanded=True):
         st.write(f"**Model:** `{latest_model}`")
@@ -360,7 +369,7 @@ elif selected_stage == "REFINERY":
 elif selected_stage == "WAREHOUSE":
     st.subheader("🏛️ Gold Warehouse")
     for i, ex in enumerate(reversed(alpaca_data)):
-        first_line = ex["instruction"].split("\n")[0]
+        first_line = safe_split(ex.get("instruction"), "\n", 0, default="[No Instruction]")
         with st.expander(f"📜 {first_line}"):
             st.write(ex["instruction"])
             st.code(ex["output"], language="bash")
@@ -540,7 +549,51 @@ elif selected_stage == "COMPARISON":
         if selected_models:
             df_sel = df_comp[df_comp["Model"].isin(selected_models)]
 
-            # --- ROW 1: PRIMARY METRICS ---
+            # --- ROW 1: PROGRESSION HEATMAP ---
+            st.markdown("### 🗺️ Progression Heatmap")
+            st.caption("Success rate per model across the belt curriculum")
+
+            # Re-process discovery data to get belt information more accurately
+            heatmap_rows = []
+            for d in discovery_data:
+                model = d.get("model_id", "UNKNOWN")
+                if model not in selected_models:
+                    continue
+
+                belt = d["metadata"].get("belt", "white").upper()
+                grade = d["metadata"].get("grade", "F")
+                is_success = 1 if grade in ("A", "B", "C") else 0
+                heatmap_rows.append({"Model": model, "Belt": belt, "Success": is_success})
+
+            if heatmap_rows:
+                df_heat = pd.DataFrame(heatmap_rows)
+                # Define belt order for axis
+                belt_order = ["WHITE", "YELLOW", "ORANGE", "GREEN", "BLUE", "PURPLE", "BROWN", "BLACK"]
+
+                heat_stats = df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
+                heat_stats["Success Rate"] = heat_stats["Success"] * 100
+
+                heatmap = alt.Chart(heat_stats).mark_rect().encode(
+                    x=alt.X("Belt:N", sort=belt_order),
+                    y=alt.Y("Model:N"),
+                    color=alt.Color("Success Rate:Q", scale=alt.Scale(scheme="rdylgn"), title="Pass %"),
+                    tooltip=["Model", "Belt", alt.Tooltip("Success Rate:Q", format=".1f")]
+                ).properties(height=300)
+
+                # Add text labels to heatmap
+                text = heatmap.mark_text(baseline='middle').encode(
+                    text=alt.Text("Success Rate:Q", format=".0f"),
+                    color=alt.condition(
+                        alt.datum["Success Rate"] > 50,
+                        alt.value("black"),
+                        alt.value("white")
+                    )
+                )
+
+                st.altair_chart(heatmap + text, use_container_width=True)
+
+            # --- ROW 2: PRIMARY METRICS ---
+            st.divider()
             st.markdown("### 📊 Performance Benchmarking")
             c1, c2 = st.columns(2)
 
@@ -605,7 +658,80 @@ elif selected_stage == "COMPARISON":
             )
             st.altair_chart(chart)
 
-            # --- ROW 3: QUALITY METRICS ---
+            # --- ROW 3: RELIABILITY & DOMAIN ---
+            st.divider()
+            st.markdown("### 🏹 Reliability & Domain Expertise")
+            c5, c6 = st.columns(2)
+
+            with c5:
+                st.markdown("**Stochastic vs Reliable (Retry Analysis)**")
+                st.caption("How many attempts does the model need to succeed?")
+
+                retry_data = []
+                for d in discovery_data:
+                    model = d.get("model_id", "UNKNOWN")
+                    if model not in selected_models:
+                        continue
+                    # Extract attempts from source_challenge_id or metadata if available
+                    # For now, we simulate this based on challenge repetition in discovery log
+                    retry_data.append(
+                        {"Model": model, "Grade": d["metadata"].get("grade", "F")}
+                    )
+
+                df_retry = pd.DataFrame(retry_data)
+                # Success on A/B is considered "Highly Reliable"
+                # Success on C is "Needs Refinement"
+                df_retry["Reliability"] = df_retry["Grade"].apply(
+                    lambda x: (
+                        "High (A/B)"
+                        if x in ("A", "B")
+                        else ("Medium (C)" if x == "C" else "Low (D/F)")
+                    )
+                )
+
+                reliability_chart = (
+                    alt.Chart(df_retry)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X("count():Q", stack="normalize", title="Distribution"),
+                        y=alt.Y("Model:N"),
+                        color=alt.Color(
+                            "Reliability:N",
+                            scale=alt.Scale(
+                                domain=["High (A/B)", "Medium (C)", "Low (D/F)"],
+                                range=["#238636", "#d29922", "#da3633"],
+                            ),
+                        ),
+                        tooltip=["Model", "Reliability", "count()"],
+                    )
+                    .properties(height=200)
+                )
+                st.altair_chart(reliability_chart, use_container_width=True)
+
+            with c6:
+                st.markdown("**Domain Mastery**")
+                st.caption("Net yield of 'Gold' examples by category")
+                yield_cat = (
+                    df_sel[df_sel["HighQuality"]]
+                    .groupby(["Model", "Category"])
+                    .size()
+                    .reset_index(name="Gold Count")
+                )
+
+                domain_chart = (
+                    alt.Chart(yield_cat)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X("Gold Count:Q"),
+                        y=alt.Y("Category:N", sort="-x"),
+                        color="Model:N",
+                        row="Model:N",
+                    )
+                    .properties(height=100, width=300)
+                )
+                st.altair_chart(domain_chart)
+
+            # --- ROW 4: QUALITY METRICS ---
             st.divider()
             st.markdown("### 🧪 Quality Distributions")
 

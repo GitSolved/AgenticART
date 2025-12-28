@@ -517,12 +517,27 @@ class ModelProgress:
         if assessment.grade.is_passing:
             self.challenges_passed += 1
 
-    def check_promotion_eligibility(self, required_pass_rate: float = 80.0, required_challenges: int = 5) -> bool:
-        """Check if model is eligible for belt promotion."""
-        return (
-            self.challenges_attempted >= required_challenges
-            and self.pass_rate >= required_pass_rate
-        )
+    def check_promotion_eligibility(
+        self, required_pass_rate: float = 80.0, required_challenges: int = 5
+    ) -> bool:
+        """
+        Check if model is eligible for belt promotion based on a tiered proficiency gate.
+        Uses provided defaults but enforces higher standards for advanced belts.
+        - White/Yellow: 80% (or required_pass_rate)
+        - Orange/Green: 90%
+        - Blue+: 100%
+        """
+        if self.challenges_attempted < required_challenges:
+            return False
+
+        # Tiered requirements (enforce minimums based on belt risk)
+        tier_pass_rate = required_pass_rate
+        if self.current_belt in (Belt.ORANGE, Belt.GREEN):
+            tier_pass_rate = max(required_pass_rate, 90.0)
+        elif self.current_belt >= Belt.BLUE:
+            tier_pass_rate = max(required_pass_rate, 100.0)
+
+        return self.pass_rate >= tier_pass_rate
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
