@@ -1,0 +1,62 @@
+{
+  "project": "AgenticART Dojo",
+  "milestone": "Android 11 Recursive Distillation Success",
+  "date": "2025-12-28",
+  "hardware": {
+    "device_model": "Mac15,9",
+    "processor": "Apple M3 Max",
+    "gpu_cores": 40,
+    "memory_type": "Unified",
+    "os": "Darwin (macOS) 14.x+",
+    "architecture": "ARM64"
+  },
+  "software_stack": {
+    "python_version": "3.11.9",
+    "mlx_lm_version": "0.30.0",
+    "adb_version": "1.0.41",
+    "orchestrator": "AgenticART Dojo v1.0",
+    "teacher_engine": "Ollama"
+  },
+  "experiment_setup": {
+    "student_model": "WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B",
+    "student_quantization": "4-bit (MLX)",
+    "teacher_model": "Llama-3.1-70B (Ollama)",
+    "target_environment": "Android 11 (API 30)",
+    "training_method": "MLX LoRA Fine-Tuning",
+    "iterations": 500,
+    "batch_size": 1
+  },
+  "benchmarks": {
+    "baseline_7b": {
+      "pass_rate": "20.0%",
+      "challenges_passed": 1,
+      "challenges_attempted": 5,
+      "failure_modes": [
+        "Incorrect shell prefix (missing 'shell ')",
+        "Hallucinated command flags",
+        "Instruction repetition instead of execution"
+      ]
+    },
+    "teacher_70b": {
+      "pass_rate": "100.0%",
+      "challenges_passed": 5,
+      "challenges_attempted": 5,
+      "role": "Data Synthesis (Gold Trajectory Generation)"
+    },
+    "finetuned_7b": {
+      "pass_rate": "100.0%",
+      "challenges_passed": 5,
+      "challenges_attempted": 5,
+      "improvements": [
+        "Corrected ADB shell syntax alignment",
+        "Eliminated foundational hallucinations",
+        "Successfully distilled 70B reasoning into 7B footprint"
+      ]
+    }
+  },
+  "key_findings": {
+    "prompt_sensitivity": "Small models (7B) required explicit delimiter spacing (e.g., '### Response: ') to trigger correct generation patterns.",
+    "distillation_efficiency": "A 60% performance jump was achieved with only 10 high-quality Gold trajectories.",
+    "hallucination_control": "Manual stop tokens and output post-processing were necessary to reach 100% execution reliability."
+  }
+}
