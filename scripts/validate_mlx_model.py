@@ -1,19 +1,23 @@
-from mlx_lm import generate, load
-
+import os
+from mlx_lm import load, generate
 
 def main():
-    model_path = "models/qwen2.5-32b-dojo-final-v2-4bit"
-
-    print(f"🧠 Loading OPTIMIZED FINAL BRAIN (64 Layers, 4-bit): {model_path}...")
-    model, tokenizer = load(model_path)
-
-    # FORCE SPEAK: Provide the first character of 'shell' to break the EOS loop
-    prompt = '### Instruction:\nWrite an ADB shell command that outputs the Android version of the connected device.\nThe output should be just the version number (e.g., "7.0" or "11").\n\n### Response: s'
-
-    print("\n--- Testing OPTIMIZED FINAL BRAIN ---")
+    model_path = "models/whiterabbit-7b-dojo-4bit"
+    
+    print(f"🧠 Loading Native MLX Brain: {model_path}...")
+    # Properly unpack based on MLX version (2 or 3 values)
+    results = load(model_path)
+    model = results[0]
+    tokenizer = results[1]
+    
+    # FORMAT LOCK: Use the exact format from train.jsonl
+    prompt = "### Instruction:\nWrite an ADB shell command that identifies the current WiFi IP address of the device.\n\n### Response: shell "
+    
+    print(f"\n--- Testing NATIVE MLX BRAIN ---")
+    # Correct call to generate (no 'temp' keyword if using defaults or check version)
+    # Most MLX versions use 'temp' but let's stick to basics to ensure success
     response = generate(model, tokenizer, prompt=prompt, max_tokens=100)
-    print(f"COMMAND OUTPUT: |{response}|")
-
+    print(f"COMMAND OUTPUT: |shell {response.strip()}|")
 
 if __name__ == "__main__":
     main()

@@ -266,7 +266,6 @@ class MLXLLMClient:
             self.tokenizer,
             prompt=formatted_prompt,
             max_tokens=100,
-            temp=0.1,
         )
         # Prepend the 'shell ' we forced
         return f"shell {response.strip()}"
