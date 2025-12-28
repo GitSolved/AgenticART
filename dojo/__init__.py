@@ -60,7 +60,6 @@ from dojo.sensei import (
     EventRecord,
     ExportFormat,
     ExtractionConfig,
-    generate_config_hash,
     Grader,
     GradingCriteria,
     GradingResult,
@@ -69,6 +68,7 @@ from dojo.sensei import (
     TrainingCycleResult,
     TrainingDataExporter,
     TrainingExtractor,
+    generate_config_hash,
 )
 
 __version__ = "0.3.0"
