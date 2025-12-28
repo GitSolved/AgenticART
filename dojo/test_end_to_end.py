@@ -257,6 +257,7 @@ class MLXLLMClient:
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         import re
+
         from mlx_lm import generate
 
         # IGNORE system_prompt to match training data distribution (which was SFT on concise tasks)

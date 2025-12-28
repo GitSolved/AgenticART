@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from mlx_lm import generate, load
+
 
 def main():
     model_path = "models/whiterabbit-7b-dojo-4bit"

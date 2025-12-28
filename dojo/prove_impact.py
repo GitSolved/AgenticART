@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from mlx_lm import generate, load
+
 
 def run_inference(model, tokenizer, task_name, instruction, input_context):
     prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{input_context}\n\n### Response: "
