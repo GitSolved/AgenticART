@@ -40,8 +40,12 @@ from dojo.models import (
     Challenge,
     ChallengeInput,
     ChallengeResult,
+    EnvMetadata,
+    EvalLabel,
     ExpectedOutput,
     Grade,
+    GraderStatus,
+    LiveFeedEntry,
     ModelProgress,
     ScoringRubric,
     ScriptType,
@@ -78,6 +82,11 @@ __all__ = [
     "SenseiAssessment",
     "TrainingExample",
     "ModelProgress",
+    # Live Feed (new)
+    "LiveFeedEntry",
+    "EvalLabel",
+    "GraderStatus",
+    "EnvMetadata",
     # Config
     "DojoConfig",
     # Exceptions

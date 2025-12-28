@@ -579,3 +579,196 @@ class ModelProgress:
             f"({self.pass_rate:.1f}%)\n"
             f"Average Score: {self.average_score:.1f}/100"
         )
+
+
+class GraderStatus(Enum):
+    """Status of the grading process itself."""
+
+    SUCCESS = "success"  # Grading completed normally
+    INFRASTRUCTURE_ERROR = "infrastructure_error"  # Upstream service failed
+    TIMEOUT = "timeout"  # Grading timed out
+    INVALID_OUTPUT = "invalid_output"  # Output couldn't be parsed
+    SKIPPED = "skipped"  # Grading was skipped
+
+
+class EvalLabel(Enum):
+    """Evaluation label for a challenge attempt."""
+
+    PASS = "pass"  # Model output was correct
+    FAIL = "fail"  # Model output was incorrect
+    PARTIAL = "partial"  # Partially correct
+    ERROR = "error"  # Execution error
+    GRADER_ERROR = "grader_error"  # Grading infrastructure failed
+
+
+@dataclass
+class EnvMetadata:
+    """Environment metadata for reproducibility."""
+
+    device_id: Optional[str] = None
+    android_version: Optional[str] = None
+    api_level: Optional[int] = None
+    security_patch: Optional[str] = None
+    model_name: Optional[str] = None
+    model_version: Optional[str] = None
+    timestamp: datetime = field(default_factory=datetime.now)
+    execution_host: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary."""
+        return {
+            "device_id": self.device_id,
+            "android_version": self.android_version,
+            "api_level": self.api_level,
+            "security_patch": self.security_patch,
+            "model_name": self.model_name,
+            "model_version": self.model_version,
+            "timestamp": self.timestamp.isoformat(),
+            "execution_host": self.execution_host,
+        }
+
+
+@dataclass
+class LiveFeedEntry:
+    """
+    Explicit data model for live feed entries (e.g., yellow_001).
+
+    Consolidates all relevant fields for dashboard display and analysis.
+    """
+
+    # Core identifiers
+    challenge_id: str
+    attempt_number: int
+
+    # Prompt and outputs
+    prompt: str
+    model_output: str
+    reference_output: Optional[str] = None  # Kata/gold solution if available
+
+    # Evaluation
+    eval_label: EvalLabel = EvalLabel.FAIL
+    score: int = 0
+    grade: Optional[Grade] = None
+
+    # Error information
+    error_type: Optional[str] = None  # e.g., "syntax_error", "permission_denied"
+    error_message: Optional[str] = None
+
+    # Grader status
+    grader_status: GraderStatus = GraderStatus.SUCCESS
+
+    # Environment
+    env_metadata: Optional[EnvMetadata] = None
+
+    # Metadata
+    belt: Optional[Belt] = None
+    model_id: Optional[str] = None
+    timestamp: datetime = field(default_factory=datetime.now)
+    duration_seconds: float = 0.0
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for serialization."""
+        return {
+            "challenge_id": self.challenge_id,
+            "attempt_number": self.attempt_number,
+            "prompt": self.prompt,
+            "model_output": self.model_output,
+            "reference_output": self.reference_output,
+            "eval_label": self.eval_label.value,
+            "score": self.score,
+            "grade": self.grade.value if self.grade else None,
+            "error_type": self.error_type,
+            "error_message": self.error_message,
+            "grader_status": self.grader_status.value,
+            "env_metadata": self.env_metadata.to_dict() if self.env_metadata else None,
+            "belt": self.belt.value if self.belt else None,
+            "model_id": self.model_id,
+            "timestamp": self.timestamp.isoformat(),
+            "duration_seconds": self.duration_seconds,
+        }
+
+    @classmethod
+    def from_attempt(
+        cls,
+        challenge: "Challenge",
+        attempt: "AttemptRecord",
+        assessment: Optional["SenseiAssessment"] = None,
+        model_id: Optional[str] = None,
+        env_metadata: Optional[EnvMetadata] = None,
+    ) -> "LiveFeedEntry":
+        """
+        Create a LiveFeedEntry from an AttemptRecord.
+
+        Args:
+            challenge: The challenge being attempted.
+            attempt: The attempt record.
+            assessment: Optional grading assessment.
+            model_id: The model identifier.
+            env_metadata: Optional environment metadata.
+
+        Returns:
+            LiveFeedEntry instance.
+        """
+        # Determine eval_label
+        if attempt.execution_result.success:
+            eval_label = EvalLabel.PASS
+        elif attempt.error_context:
+            eval_label = EvalLabel.ERROR
+        else:
+            eval_label = EvalLabel.FAIL
+
+        # Extract error info
+        error_type = None
+        error_message = None
+        if attempt.error_context:
+            error_type = attempt.error_context.error_type
+            error_message = attempt.error_context.error_message
+
+        # Get score and grade from assessment if available
+        score = 0
+        grade = None
+        grader_status = GraderStatus.SUCCESS
+
+        if assessment:
+            score = assessment.score
+            grade = assessment.grade
+            # Check if assessment has infrastructure error
+            if assessment.corrected_output and cls._is_infrastructure_error(
+                assessment.corrected_output
+            ):
+                grader_status = GraderStatus.INFRASTRUCTURE_ERROR
+                eval_label = EvalLabel.GRADER_ERROR
+
+        return cls(
+            challenge_id=challenge.id,
+            attempt_number=attempt.attempt_number,
+            prompt=attempt.prompt_used,
+            model_output=attempt.model_output,
+            reference_output=challenge.kata_solution,
+            eval_label=eval_label,
+            score=score,
+            grade=grade,
+            error_type=error_type,
+            error_message=error_message,
+            grader_status=grader_status,
+            env_metadata=env_metadata,
+            belt=challenge.belt,
+            model_id=model_id,
+            timestamp=attempt.timestamp,
+            duration_seconds=attempt.execution_result.duration,
+        )
+
+    @staticmethod
+    def _is_infrastructure_error(output: str) -> bool:
+        """Check if output contains infrastructure error patterns."""
+        if not output:
+            return False
+        error_patterns = [
+            "[ERROR:",
+            "Traceback (most recent call last)",
+            "TypeError:",
+            "ValueError:",
+            "got an unexpected keyword argument",
+        ]
+        output_lower = output.lower()
+        return any(p.lower() in output_lower for p in error_patterns)
