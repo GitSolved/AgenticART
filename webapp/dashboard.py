@@ -353,27 +353,106 @@ st.divider()
 if selected_stage == "EXECUTION":
     st.subheader("📡 Execution Feed")
     st.markdown(
-        "<div style='font-size:11px;color:#8b949e;margin-bottom:15px;'><span class='status-badge badge-success'>✅ KATA</span> Training Quality | <span class='status-badge badge-success'>✨ REFINED</span> Improved | <span class='status-badge badge-fail'>❌ NEGATIVE</span> Rejected | <span class='status-badge badge-recovery'>⚠️ RECOVERY</span> Self-Heal</div>",
+        "<div style='font-size:11px;color:#8b949e;margin-bottom:15px;'>"
+        "<span class='status-badge badge-success'>✅ KATA</span> Training Quality | "
+        "<span class='status-badge badge-success'>✨ REFINED</span> Improved | "
+        "<span class='status-badge badge-fail'>❌ NEGATIVE</span> Rejected | "
+        "<span class='status-badge badge-recovery'>⚠️ RECOVERY</span> Self-Heal | "
+        "<span class='status-badge' style='background-color:#6e40c9;color:white;'>🔧 GRADER_ERROR</span> Infrastructure"
+        "</div>",
         unsafe_allow_html=True,
     )
     if log_files:
         curr_id = None
         for e in reversed(load_jsonl(latest_log, limit=30)):
-            meta = e["metadata"]
+            meta = e.get("metadata", {})
             cid = meta.get("source_challenge_id", "unknown")
             etype = meta.get("example_type", "unknown")
-            style = {
-                "positive": "feed-refined",
-                "kata": "feed-refined",
-                "negative": "feed-negative",
-                "error_recovery": "feed-recovery",
-            }.get(etype, "feed-exploration")
+            grade = meta.get("grade", "?")
+            grader_status = meta.get("grader_status", "success")
+
+            # Determine eval label and style
+            if grader_status == "infrastructure_error" or "ERROR:" in str(e.get("output", "")):
+                eval_label = "GRADER_ERROR"
+                style = ""
+                badge_style = "background-color:#6e40c9;color:white;"
+            elif etype in ("positive", "kata"):
+                eval_label = "POSITIVE"
+                style = "feed-refined"
+                badge_style = "background-color:#238636;color:white;"
+            elif etype == "negative":
+                eval_label = "NEGATIVE"
+                style = "feed-negative"
+                badge_style = "background-color:#da3633;color:white;"
+            elif etype == "error_recovery":
+                eval_label = "RECOVERY"
+                style = "feed-recovery"
+                badge_style = "background-color:#d29922;color:black;"
+            else:
+                eval_label = etype.upper()
+                style = "feed-exploration"
+                badge_style = "background-color:#1f6feb;color:white;"
+
             indent = "indent-1" if cid == curr_id else ""
             curr_id = cid
-            st.markdown(
-                f"<div class='feed-entry {style} {indent}'><b>{cid}</b> | {etype.upper()}<br><code>{e['output']}</code></div>",
-                unsafe_allow_html=True,
-            )
+
+            # Summary line for expander
+            output_preview = str(e.get("output", ""))[:60].replace("\n", " ")
+            expander_title = f"{cid} | {eval_label} | Grade: {grade}"
+
+            with st.expander(expander_title, expanded=False):
+                # Eval Label Badge
+                st.markdown(
+                    f"<span class='status-badge' style='{badge_style}'>{eval_label}</span> "
+                    f"<span style='color:#8b949e;'>Grade: {grade} | Type: {etype}</span>",
+                    unsafe_allow_html=True,
+                )
+
+                st.markdown("---")
+
+                # 1. Full Prompt and System Context
+                st.markdown("**📝 Prompt / Instruction:**")
+                instruction = e.get("instruction", "[No instruction available]")
+                st.code(instruction, language="text")
+
+                input_context = e.get("input", "")
+                if input_context:
+                    st.markdown("**🔧 Input Context:**")
+                    st.code(input_context, language="text")
+
+                st.markdown("---")
+
+                # 2. Raw Model Output
+                st.markdown("**🤖 Model Output:**")
+                model_output = e.get("output", "[No output]")
+                st.code(model_output, language="bash")
+
+                # 3. Reference Output (if available in metadata or from kata)
+                reference = meta.get("reference_output") or meta.get("kata_solution")
+                if reference:
+                    st.markdown("**📚 Reference (Kata) Solution:**")
+                    st.code(reference, language="bash")
+
+                    # Show diff if outputs differ
+                    if model_output.strip() != reference.strip():
+                        st.markdown("**🔍 Diff:**")
+                        st.markdown(
+                            f"<pre style='background:#1a1a1a;padding:10px;border-radius:4px;font-size:11px;'>"
+                            f"<span style='color:#da3633;'>- {model_output.strip()[:100]}</span>\n"
+                            f"<span style='color:#238636;'>+ {reference.strip()[:100]}</span>"
+                            f"</pre>",
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.success("✅ Output matches reference")
+
+                # 4. Additional Metadata
+                with st.container():
+                    st.markdown("**📊 Metadata:**")
+                    meta_cols = st.columns(3)
+                    meta_cols[0].metric("Belt", meta.get("belt", "?"))
+                    meta_cols[1].metric("Timestamp", meta.get("timestamp", "?")[11:19] if meta.get("timestamp") else "?")
+                    meta_cols[2].metric("Model", safe_split(meta.get("model_id", "?"), "/", -1, "?"))
 
 elif selected_stage == "CURATION":
     st.subheader("🧪 Quality Curation")
