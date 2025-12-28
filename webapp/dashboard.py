@@ -14,8 +14,11 @@ from streamlit_autorefresh import st_autorefresh
 sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     from dojo.sensei.event_logger import EventLogger
+
+    _event_logger_available = True
 except ImportError:
-    EventLogger = None  # Graceful fallback if dojo not installed
+    EventLogger = None  # type: ignore[misc,assignment]
+    _event_logger_available = False
 
 # --- CONFIGURATION ---
 APP_DIR = Path(__file__).parent.parent
@@ -366,7 +369,7 @@ with st.sidebar:
         if st.button("📥 Export", use_container_width=True):
             selected_run = available_runs[selected_run_idx]
             try:
-                if EventLogger is not None:
+                if _event_logger_available and EventLogger is not None:
                     # Use EventLogger for proper export
                     logger = EventLogger(
                         output_dir=EVENT_LOG_DIR,
@@ -382,26 +385,26 @@ with st.sidebar:
                         st.success(f"✅ Exported: {export_path.name}")
 
                         # Provide download button
-                        with open(export_path, "rb") as f:
-                            st.download_button(
-                                "⬇️ Download JSONL",
-                                f.read(),
-                                file_name=export_path.name,
-                                mime="application/json",
-                            )
+                        jsonl_data = export_path.read_bytes()
+                        st.download_button(
+                            "⬇️ Download JSONL",
+                            jsonl_data,
+                            file_name=export_path.name,
+                            mime="application/json",
+                        )
 
                     elif export_format == "Parquet":
                         try:
                             export_path = logger.export_parquet()
                             st.success(f"✅ Exported: {export_path.name}")
 
-                            with open(export_path, "rb") as f:
-                                st.download_button(
-                                    "⬇️ Download Parquet",
-                                    f.read(),
-                                    file_name=export_path.name,
-                                    mime="application/octet-stream",
-                                )
+                            parquet_data = export_path.read_bytes()
+                            st.download_button(
+                                "⬇️ Download Parquet",
+                                parquet_data,
+                                file_name=export_path.name,
+                                mime="application/octet-stream",
+                            )
                         except ImportError:
                             st.error(
                                 "Parquet export requires pandas and pyarrow. "
@@ -615,12 +618,12 @@ if selected_stage == "EXECUTION":
 
         # Display filtered entries
         curr_id = None
-        for e in reversed(filtered_entries[-30:]):  # Limit display to 30
-            meta = e.get("metadata", {})
+        for entry in reversed(filtered_entries[-30:]):  # Limit display to 30
+            meta = entry.get("metadata", {})
             cid = meta.get("source_challenge_id", "unknown")
             etype = meta.get("example_type", "unknown")
             grade = meta.get("grade", "?")
-            eval_label = e["_eval_label"]
+            eval_label = entry["_eval_label"]
 
             # Determine style based on eval_label
             style_map = {
@@ -636,7 +639,7 @@ if selected_stage == "EXECUTION":
             curr_id = cid
 
             # Summary line for expander
-            output_preview = str(e.get("output", ""))[:60].replace("\n", " ")
+            output_preview = str(entry.get("output", ""))[:60].replace("\n", " ")
             expander_title = f"{cid} | {eval_label} | Grade: {grade}"
 
             with st.expander(expander_title, expanded=False):
@@ -651,10 +654,10 @@ if selected_stage == "EXECUTION":
 
                 # 1. Full Prompt and System Context
                 st.markdown("**📝 Prompt / Instruction:**")
-                instruction = e.get("instruction", "[No instruction available]")
+                instruction = entry.get("instruction", "[No instruction available]")
                 st.code(instruction, language="text")
 
-                input_context = e.get("input", "")
+                input_context = entry.get("input", "")
                 if input_context:
                     st.markdown("**🔧 Input Context:**")
                     st.code(input_context, language="text")
@@ -663,7 +666,7 @@ if selected_stage == "EXECUTION":
 
                 # 2. Raw Model Output
                 st.markdown("**🤖 Model Output:**")
-                model_output = e.get("output", "[No output]")
+                model_output = entry.get("output", "[No output]")
                 st.code(model_output, language="bash")
 
                 # 3. Reference Output (if available in metadata or from kata)
