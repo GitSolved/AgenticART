@@ -8,12 +8,9 @@ Usage:
 
 from __future__ import annotations
 
-import json
 import logging
 import os
-import re
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -22,11 +19,6 @@ import yaml
 
 from dojo.models import (
     Belt,
-    Challenge,
-    ChallengeInput,
-    ExpectedOutput,
-    ScoringRubric,
-    ScriptType,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,16 +56,16 @@ class NVDChallengeGenerator:
             "keywordSearch": query,
             "resultsPerPage": str(limit)
         }
-        
+
         try:
             response = self.session.get(self.BASE_URL, params=params, timeout=30)
             if response.status_code != 200:
                 logger.error(f"NVD API error: {response.status_code}")
                 return []
-            
+
             data = response.json()
             vulnerabilities = data.get("vulnerabilities", [])
-            
+
             cves = []
             for v in vulnerabilities:
                 cve = self._parse_cve(v)
@@ -90,7 +82,7 @@ class NVDChallengeGenerator:
             cve_item = v_data.get("cve", {})
             cve_id = cve_item.get("id")
             published = cve_item.get("published")
-            
+
             # Description
             desc_list = cve_item.get("descriptions", [])
             description = ""
@@ -98,20 +90,20 @@ class NVDChallengeGenerator:
                 if d.get("lang") == "en":
                     description = d.get("value")
                     break
-            
+
             # Metrics (CVSS 3.1 preferred)
             metrics = cve_item.get("metrics", {})
             cvss_score = 0.0
             severity = "UNKNOWN"
             attack_vector = "NETWORK"
-            
+
             cvss_31 = metrics.get("cvssMetricV31", [])
             if cvss_31:
                 data = cvss_31[0].get("cvssData", {})
                 cvss_score = data.get("baseScore", 0.0)
                 severity = data.get("baseSeverity", "UNKNOWN")
                 attack_vector = data.get("attackVector", "NETWORK")
-            
+
             # CWEs
             cwes = []
             for w in cve_item.get("weaknesses", []):
@@ -134,19 +126,19 @@ class NVDChallengeGenerator:
     def classify_belt(self, cve: LiveCVE) -> Belt:
         """Semantic classification based on vulnerability type and complexity."""
         desc = cve.description.lower()
-        
+
         # 1. Critical Kernel/Driver Path (Black/Brown)
         if any(kw in desc for kw in ["kernel", "use-after-free", "race condition", "uaf", "binder"]):
             return Belt.BLACK if cve.attack_vector == "NETWORK" else Belt.BROWN
-            
+
         # 2. Native Code / Memory Path (Blue)
         if any(kw in desc for kw in ["buffer overflow", "integer overflow", "out-of-bounds", "memory corruption"]):
             return Belt.BLUE
-            
+
         # 3. IPC / App Logic Path (Orange)
         if any(kw in desc for kw in ["intent", "content provider", "permission bypass", "exported", "broadcast"]):
             return Belt.ORANGE
-            
+
         # 4. Information / Recon Path (Yellow)
         if any(kw in desc for kw in ["information disclosure", "leak", "logcat", "sensitive"]):
             return Belt.YELLOW
@@ -164,7 +156,7 @@ class NVDChallengeGenerator:
     def create_challenge_template(self, cve: LiveCVE) -> Dict[str, Any]:
         """Generate a YAML-compatible challenge dictionary."""
         belt = self.classify_belt(cve)
-        
+
         # Determine script type based on description keywords
         script_type = "adb"
         if "kernel" in cve.description.lower():
@@ -199,30 +191,30 @@ class NVDChallengeGenerator:
             },
             "tags": ["nvd-generated", cve.cve_id.lower()] + [c.lower() for c in cve.cwe_ids]
         }
-        
+
         return template
 
     def export_to_curriculum(self, template: Dict[str, Any], curriculum_dir: Path = Path("dojo/curriculum")):
         """Append the generated challenge to the appropriate belt's challenges.yaml."""
         belt_name = template["belt"]
         yaml_path = curriculum_dir / f"{belt_name}_belt" / "challenges.yaml"
-        
+
         if not yaml_path.exists():
             data = {"challenges": []}
         else:
             with open(yaml_path, "r") as f:
                 data = yaml.safe_load(f) or {"challenges": []}
-        
+
         # Check for duplicates
         if any(c["id"] == template["id"] for c in data["challenges"]):
             logger.info(f"Challenge {template['id']} already exists. Skipping.")
             return
-            
+
         data["challenges"].append(template)
-        
+
         with open(yaml_path, "w") as f:
             yaml.dump(data, f, sort_keys=False, default_flow_style=False)
-        
+
         logger.info(f"Exported {template['id']} to {yaml_path}")
 
 if __name__ == "__main__":
@@ -230,7 +222,7 @@ if __name__ == "__main__":
     gen = NVDChallengeGenerator()
     print("Fetching recent Android 14 CVEs...")
     cves = gen.fetch_recent_android_cves(android_version="14", limit=2)
-    
+
     for cve in cves:
         print(f"\nProcessing {cve.cve_id} (CVSS: {cve.cvss_score})")
         template = gen.create_challenge_template(cve)
