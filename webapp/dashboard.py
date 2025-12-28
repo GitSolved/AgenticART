@@ -592,7 +592,7 @@ elif selected_stage == "COMPARISON":
                 heatmap = base.mark_rect().encode(
                     color=alt.Color(
                         "Success_Rate:Q",
-                        scale=alt.Scale(scheme="rdylgn"),
+                        scale=alt.Scale(scheme="redyellowgreen"),
                         title="Pass %",
                     ),
                     tooltip=[
