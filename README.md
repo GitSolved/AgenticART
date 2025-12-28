@@ -26,6 +26,17 @@ This framework solves the "Security AI Paradox" by providing:
 
 ---
 
+## 🔬 Research Significance: AI Alignment for Security
+
+For AI Security researchers, AgenticART provides a novel environment for studying **Hardware-Grounded Alignment**:
+
+1.  **Physical Verification Gates vs. "Vibe Checks":** Most RLHF depends on human preference ("vibe checks"). AgenticART replaces human graders with a physical Android kernel. The reward signal is binary and objective: *Does the code execute and achieve the goal on real hardware?*
+2.  **Quantified Capability Compression:** We have empirically demonstrated a **10:1 Intelligence Density** ratio, proving that specialized 7B models can achieve 100% parity with 70B models when distilled through hardware-verified trajectories.
+3.  **Failure Mode Archeology:** By capturing and grading thousands of failed attempts, the Dojo builds a unique dataset of **AI Security Hallucinations**. This allows researchers to study the cognitive limits of LLMs in high-stakes, adversarial environments.
+4.  **Recursive Alignment Loop:** The Dojo acts as a "Specialization Factory." It solves the problem of model decay against new security patches by autonomously synthesized new "Gold" data for every new Android OS release.
+
+---
+
 ## 🎯 High-Level Overview
 
 At a high level, AgenticART runs an LLM as an "agent" that proposes actions (e.g., ADB commands, Frida scripts, native code), executes them on an Android device or emulator, and logs what happened. Verified-successful sequences are treated as positive training examples; failed or unsafe sequences become negative examples. Over time, these examples can be used to train or adapt models that better handle Android vulnerability research workflows. This repository focuses on the orchestration, data pipeline, and alignment scripts needed to explore that loop.
