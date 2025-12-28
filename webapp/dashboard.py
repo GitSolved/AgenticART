@@ -606,10 +606,11 @@ elif selected_stage == "BENCHMARKING":
                 meta = d.get("metadata", {})
                 belt = meta.get("belt", "white").upper()
                 grade = meta.get("grade", "F")
-                is_success = 1 if grade in ("A", "B", "C") else 0
+                is_success = grade in ("A", "B", "C")
                 heatmap_rows.append(
                     {"Model": model, "Belt": belt, "Success": is_success}
                 )
+                
 
             if heatmap_rows:
                 df_heat = pd.DataFrame(heatmap_rows)

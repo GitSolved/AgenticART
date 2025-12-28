@@ -200,7 +200,7 @@ class NVDChallengeGenerator:
         yaml_path = curriculum_dir / f"{belt_name}_belt" / "challenges.yaml"
 
         if not yaml_path.exists():
-            data = {"challenges": []}
+            data: Dict[str, Any] = {"challenges": []}
         else:
             with open(yaml_path, "r") as f:
                 data = yaml.safe_load(f) or {"challenges": []}
