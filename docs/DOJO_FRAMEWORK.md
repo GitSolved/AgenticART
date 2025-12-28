@@ -555,10 +555,10 @@ class ScriptGenerator:
 │  Model: WhiteRabbitNeo-ART-v1.2         Current Belt: 🟩 Green      │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ Challenge Pass Rate (Last 7 Days)                            │    │
+│  │ Challenge Pass Rate (Last 7 Days) [capped at 95%]             │    │
 │  │                                                               │    │
-│  │  White:  ████████████████████ 100%                           │    │
-│  │  Yellow: ████████████████████ 100%                           │    │
+│  │  White:  ███████████████████░  95%  (capped)                 │    │
+│  │  Yellow: ███████████████████░  95%  (capped)                 │    │
 │  │  Orange: ██████████████████░░  92%                           │    │
 │  │  Green:  ██████████████░░░░░░  73%  ← Current                │    │
 │  │  Blue:   ████████░░░░░░░░░░░░  41%  (Preview)                │    │
@@ -588,11 +588,52 @@ class ScriptGenerator:
 
 ---
 
+## 8. Reliability Safeguards
+
+The framework includes several safeguards to prevent training on unreliable data:
+
+### Pass Rate Cap (95%)
+
+Pass rates are capped at 95% to account for potential false positives in automated verification. This prevents overconfidence when a model appears to achieve 100% success.
+
+```python
+# In dojo/models.py - ModelProgress.pass_rate
+raw_rate = (challenges_passed / challenges_attempted) * 100
+return min(raw_rate, 95.0)  # Cap at 95%
+```
+
+### Kata Verification
+
+Kata (golden example) solutions are verified by execution before being included in training data. This ensures training examples are actually functional.
+
+```python
+# In dojo/sensei/training_extractor.py
+if self.executor:
+    result = self.executor.execute(challenge, challenge.kata_solution)
+    if not result.success:
+        return None  # Skip failing kata
+```
+
+### Feedback Loop Fallback
+
+When structured error extraction fails, the system falls back to raw stderr to maintain the retry loop:
+
+```python
+# In dojo/curriculum/challenger.py
+if error_ctx:
+    prompt = context_injector.build_retry_prompt(...)
+else:
+    # Fallback: use raw stderr when extraction fails
+    prompt = context_injector.build_raw_failure_prompt(...)
+```
+
+---
+
 ## Next Steps
 
-1. **Create `dojo/` directory structure**
-2. **Define initial White Belt challenges**
-3. **Implement Sensei grading logic**
+1. ~~Create `dojo/` directory structure~~ (Done)
+2. ~~Define initial White Belt challenges~~ (Done)
+3. ~~Implement Sensei grading logic~~ (Done)
 4. **Extend export-training-data.py with Dojo formats**
 5. **Set up MLX fine-tuning pipeline for M3 Max**
 6. **Run first training cycle**

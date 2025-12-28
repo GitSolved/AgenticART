@@ -65,9 +65,22 @@ To facilitate high-throughput local experimentation, the framework implements a 
 
 ### Prerequisites
 
+* Python 3.10+
 * Android SDK / Platform Tools (ADB)
 * Ollama (Local Inference Engine)
-* MLX / MLX-LM (M-series Optimization)
+* MLX / MLX-LM (M-series Optimization, optional)
+
+### Installation
+
+```bash
+# Clone and install dependencies
+git clone https://github.com/GitSolved/AgenticART.git
+cd AgenticART
+pip install -r requirements.txt
+
+# Install as editable package (optional, for development)
+pip install -e .
+```
 
 ### Execution Pipeline
 
