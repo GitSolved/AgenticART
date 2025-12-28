@@ -87,3 +87,4 @@ dojo_finetune_package/
 *.ab
 *.js
 dojo_finetune_package/
+models/

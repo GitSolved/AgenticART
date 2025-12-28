@@ -46,10 +46,10 @@ class Grader:
 
     # Common syntax error patterns
     SYNTAX_PATTERNS = {
-        "unclosed_quote": r'["\'][^"\']*$',
-        "unclosed_paren": r"\([^)]*$",
-        "unclosed_bracket": r"\[[^\]]*$",
-        "unclosed_brace": r"\{[^}]*$",
+        "unclosed_quote": r"(['\"])(?:(?!\1).)*$",
+        "unclosed_paren": r"\([^)\n]*$",
+        "unclosed_bracket": r"\[[^\]\n]*$",
+        "unclosed_brace": r"\{[^}\n]*$",
         "double_operator": r"[&|]{3,}",
         "empty_command": r"^\s*$",
     }

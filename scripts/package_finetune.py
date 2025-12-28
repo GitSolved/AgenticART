@@ -3,13 +3,13 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+# Add project root to path before local imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 # Local imports
 from dojo.finetune.config import FinetuneConfig
 from dojo.finetune.packager import TrainingPackager
-
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
 
 
 def main():
@@ -22,13 +22,13 @@ def main():
         print(f"Error: SFT data not found at {alpaca_path}")
         return
 
-    # 2. Configure for Qwen 2.5 Coder 32B (Non-gated, better for ADB)
+    # 2. Configure for WhiteRabbitNeo 7B (Optimized for Security & High Plasticity)
     config = FinetuneConfig(
-        huggingface_model="Qwen/Qwen2.5-Coder-32B-Instruct",
-        output_name="Qwen2.5-Coder-32B-ADB-Dojo",
-        num_epochs=3,
-        batch_size=1,
-        gradient_accumulation_steps=4,  # 32B can use smaller accumulation than 70B
+        huggingface_model="WhiteRabbitNeo/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B",
+        output_name="WhiteRabbitNeo-7B-ADB-Dojo",
+        num_epochs=5,  # More epochs for 7B to ensure learning
+        batch_size=4,  # 7B can handle larger batches
+        gradient_accumulation_steps=1,
         use_4bit=True,
     )
 
@@ -40,12 +40,12 @@ def main():
         config=config,
     )
 
-    print("\nSuccessfully prepared fine-tuning package for 70B model!")
+    print("\nSuccessfully prepared fine-tuning package for 7B model!")
     print(f"Location: {package_path}")
     print("\nTo start training on a GPU machine:")
     print(f"  cd {package_path}")
     print("  pip install -r requirements.txt")
-    print("  python train.py")
+    print("  python mlx_train.py")
 
 
 if __name__ == "__main__":

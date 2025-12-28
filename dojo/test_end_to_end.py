@@ -21,6 +21,7 @@ from typing import Any, Optional
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+import json
 from dojo import (
     # Phase 2
     Belt,
@@ -34,6 +35,44 @@ from dojo import (
     # Phase 3
     Sensei,
 )
+
+# --- ENGINE STATE UTILS ---
+def set_engine_state(status: str):
+    """Update the engine state file for the dashboard."""
+    output_dir = Path(project_root) / "dojo_output"
+    state_path = output_dir / "engine_state.json"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    current = {"status": "idle", "accumulated_seconds": 0, "start_time": None}
+    if state_path.exists():
+        try:
+            with open(state_path, "r") as f:
+                current = json.load(f)
+        except Exception:
+            pass
+
+    now = datetime.now()
+    start_time_str = current.get("start_time")
+    accumulated = current.get("accumulated_seconds", 0)
+
+    if status == "running":
+        start_time_str = now.isoformat()
+    else:
+        if current.get("status") == "running" and start_time_str:
+            try:
+                start_dt = datetime.fromisoformat(start_time_str)
+                accumulated += (now - start_dt).total_seconds()
+            except Exception:
+                pass
+        start_time_str = None
+
+    with open(state_path, "w") as f:
+        json.dump({
+            "status": status,
+            "start_time": start_time_str,
+            "accumulated_seconds": accumulated,
+            "last_update": now.isoformat()
+        }, f)
 
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)
@@ -181,6 +220,30 @@ class MockLLMClient:
         return "shell echo 'unknown challenge'"
 
 
+class MLXLLMClient:
+    """Native MLX client for high-performance benchmarking on Apple Silicon."""
+
+    def __init__(self, model_path: str):
+        from mlx_lm import load
+        print(f"🚀 Loading Native MLX Brain: {model_path}...")
+        self.model, self.tokenizer = load(model_path)
+
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        from mlx_lm import generate
+        full_instruction = f"{system_prompt}\n{prompt}" if system_prompt else prompt
+        formatted_prompt = f"### Instruction:\n{full_instruction}\n\n### Response: shell "
+        
+        response = generate(
+            self.model, 
+            self.tokenizer, 
+            prompt=formatted_prompt, 
+            max_tokens=100,
+            temp=0.1
+        )
+        # Prepend the 'shell ' we forced
+        return f"shell {response.strip()}"
+
+
 class OllamaLLMClient:
     """Real LLM client using Ollama HTTP API."""
 
@@ -239,7 +302,7 @@ def run_end_to_end(
     model: Optional[str] = None,
 ) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
-
+    set_engine_state("running")
     belt_enum = Belt.from_string(belt)
 
     print("\n" + "=" * 70)
@@ -265,6 +328,14 @@ def run_end_to_end(
     if mode == "mock":
         llm = MockLLMClient()
         print("LLM: Mock (returns expected answers)")
+    elif mode == "mlx":
+        try:
+            model_path = model or "models/whiterabbit-7b-dojo-4bit"
+            llm = MLXLLMClient(model_path=model_path)
+            print(f"LLM: Native MLX ({model_path})")
+        except Exception as e:
+            print(f"ERROR: {e}")
+            return 1
     elif mode == "live":
         try:
             model_name = (
@@ -279,6 +350,7 @@ def run_end_to_end(
             llm = MockLLMClient()
     else:
         print(f"Unknown mode: {mode}")
+        set_engine_state("idle")
         return 1
 
     print()
@@ -297,6 +369,7 @@ def run_end_to_end(
     # Check device connection
     if not executor.check_device_connected():
         print("ERROR: Device not connected. Is the emulator running?")
+        set_engine_state("idle")
         return 1
 
     device_info = executor.get_device_info()
@@ -446,6 +519,7 @@ def run_end_to_end(
         print(f"Input: {alpaca['input'][:100] if alpaca['input'] else '(none)'}...")
         print(f"Output: {alpaca['output'][:100]}...")
 
+    set_engine_state("idle")
     return 0
 
 
@@ -458,9 +532,9 @@ def main():
     parser = argparse.ArgumentParser(description="End-to-End Test")
     parser.add_argument(
         "--mode",
-        choices=["mock", "live"],
+        choices=["mock", "live", "mlx"],
         default="mock",
-        help="LLM mode: mock (expected answers) or live (Ollama)",
+        help="LLM mode: mock (expected answers), live (Ollama), or mlx (Native Mac)",
     )
     parser.add_argument(
         "--device",

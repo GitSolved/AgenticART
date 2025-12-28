@@ -155,7 +155,7 @@ if __name__ == "__main__": main()
         script = """import json, os
 
 def main():
-    model_path = "mlx-community/Qwen2.5-Coder-32B-Instruct-4bit"
+    model_path = "WhiteRabbitNeo/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B"
     dataset_path = "data"
     output_adapter = "mlx_adapters"
 
@@ -173,7 +173,7 @@ def main():
     def write_jsonl(data, filename):
         with open(os.path.join(dataset_path, filename), "w") as f:
             for item in data:
-                f.write(json.dumps({"prompt": f"### Instruction:\n{item['instruction']}\n\n### Response:", "completion": item['output']}) + "\n")
+                f.write(json.dumps({"prompt": f"### Instruction:\\n{item['instruction']}\\n\\n### Response:", "completion": item['output']}) + "\\n")
 
     write_jsonl(train_data, "train.jsonl")
     write_jsonl(valid_data, "valid.jsonl")
@@ -186,6 +186,7 @@ def main():
         f"--data {dataset_path} "
         f"--iters 500 "
         f"--batch-size 4 "
+        f"--num-layers -1 "
         f"--adapter-path {output_adapter}"
     )
     os.system(command)
