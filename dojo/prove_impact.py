@@ -1,11 +1,8 @@
-import os
-import sys
-from pathlib import Path
-from mlx_lm import load, generate
+from mlx_lm import generate, load
 
 def run_inference(model, tokenizer, task_name, instruction, input_context):
     prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{input_context}\n\n### Response: "
-    
+
     print(f"\n--- Running Task: {task_name} ---")
     response = generate(
         model,
@@ -19,7 +16,7 @@ def run_inference(model, tokenizer, task_name, instruction, input_context):
 def main():
     model_path = "models/whiterabbit-7b-dojo-4bit"
     adapter_path = "models/whiterabbit-7b-adapters"
-    
+
     # Challenge details (white_002 - Package Listing)
     instruction = "Write an ADB command that lists all installed packages on the device.\nUse the package manager to enumerate applications."
     input_context = "Device Context:\n- connection: adb\n- task: list installed packages\n- device_id: emulator-5554\n\n## Hints\n- Use the 'pm' (package manager) command\n- The list packages subcommand shows all packages"
@@ -33,7 +30,7 @@ def main():
     model_base, tokenizer_base = load(model_path)
     result_base = run_inference(model_base, tokenizer_base, "Package Listing", instruction, input_context)
     print(f"BASELINE OUTPUT: '{result_base}'")
-    
+
     # Check if it looks like a valid command
     if "shell pm list packages" in result_base.lower():
         print("RESULT: SUCCESS (Wait, baseline passed? This might be a fluke or cached weight.)")
@@ -46,7 +43,7 @@ def main():
     model_ft, tokenizer_ft = load(model_path, adapter_path=adapter_path)
     result_ft = run_inference(model_ft, tokenizer_ft, "Package Listing", instruction, input_context)
     print(f"FINE-TUNED OUTPUT: '{result_ft}'")
-    
+
     if "shell pm list packages" in result_ft.lower():
         print("RESULT: SUCCESS (The model successfully distilled the knowledge!)")
     else:

@@ -15,7 +15,6 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import argparse
-import os
 import shutil
 import sys
 from datetime import datetime
@@ -89,11 +88,9 @@ def set_engine_state(status: str):
             f,
         )
 
-
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)
 # ============================================================================
-
 
 def find_adb_path() -> str:
     """Find the ADB executable path."""
@@ -118,11 +115,9 @@ def find_adb_path() -> str:
 
     return "adb"
 
-
 # ============================================================================
 # LLM Clients (from test_phase2.py)
 # ============================================================================
-
 
 class MockLLMClient:
     """Mock LLM that returns expected answers for testing."""
@@ -237,33 +232,19 @@ class MockLLMClient:
 
 
 class MLXLLMClient:
-
-
     """Native MLX client for high-performance benchmarking on Apple Silicon."""
 
-
-
-
-
     def __init__(self, model_path: str, adapter_path: Optional[str] = None):
-
+        from pathlib import Path
 
         from mlx_lm import load
 
-
-        from pathlib import Path
-
-
         # Convert to absolute path to force local loading
-
-
         abs_path = str(Path(model_path).resolve())
-
 
         print(f"🚀 Loading Native MLX Brain: {abs_path}...")
         if adapter_path:
             print(f"   + Adapter: {adapter_path}")
-
 
         # Capture all returned values to be version-agnostic
         if adapter_path:
@@ -271,21 +252,15 @@ class MLXLLMClient:
         else:
             results = load(abs_path)
 
-
         self.model = results[0]
-
-
         self.tokenizer = results[1]
-
-
-
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         import re
         from mlx_lm import generate
 
         # IGNORE system_prompt to match training data distribution (which was SFT on concise tasks)
-        
+
         # Parse the prompt to extract Instruction and Input
         # Format expected in prompt:
         # ...
@@ -295,14 +270,14 @@ class MLXLLMClient:
         # ## Device Context
         # <Context>
         # ...
-        
+
         instruction = ""
         input_context = ""
 
         # 1. Extract Input (starting from ## Device Context)
         # Note: Training data used "Device Context:", inference has "## Device Context"
         # We will normalize to "Device Context:" for the model
-        
+
         input_match = re.search(r"## Device Context", prompt)
         if input_match:
             input_start = input_match.start()
@@ -310,10 +285,10 @@ class MLXLLMClient:
             raw_input = prompt[input_start:]
             # Clean up the header to match training: "Device Context: ..."
             input_context = raw_input.replace("## Device Context", "Device Context:")
-            
+
             # 2. Extract Instruction (Text before Device Context)
             pre_input = prompt[:input_start].strip()
-            
+
             # Try to clean up metadata like Belt Level/Difficulty if present
             # Look for "Difficulty: X/5"
             diff_match = re.search(r"Difficulty: \d+/\d+", pre_input)
@@ -324,7 +299,7 @@ class MLXLLMClient:
         else:
             # Fallback: Treat whole prompt as instruction
             instruction = prompt.strip()
-        
+
         # Construct the aligned prompt
         if input_context:
             formatted_prompt = (
@@ -346,13 +321,13 @@ class MLXLLMClient:
             prompt=formatted_prompt,
             max_tokens=100,
         )
-        
+
         # Post-processing to handle hallucinations (e.g. "107 characters\nshell ...")
         clean_response = response.strip()
         for line in clean_response.split('\n'):
             if line.strip().startswith('shell '):
                 return line.strip()
-                
+
         return clean_response
 
 
@@ -380,7 +355,6 @@ class OllamaLLMClient:
             )
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-
         import requests
 
         payload = {
@@ -401,11 +375,9 @@ class OllamaLLMClient:
         except Exception as e:
             return f"[ERROR: {e}]"
 
-
 # ============================================================================
 # End-to-End Runner
 # ============================================================================
-
 
 def run_end_to_end(
     mode: str = "mock",
@@ -635,11 +607,9 @@ def run_end_to_end(
     set_engine_state("idle")
     return 0
 
-
 # ============================================================================
 # Entry Point
 # ============================================================================
-
 
 def main():
     parser = argparse.ArgumentParser(description="End-to-End Test")
@@ -689,7 +659,6 @@ def main():
         adapter=args.adapter,
     )
     sys.exit(exit_code)
-
 
 if __name__ == "__main__":
     main()

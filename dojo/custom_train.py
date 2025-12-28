@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 def main():
     # Configuration
@@ -8,18 +7,18 @@ def main():
     data_source = "dojo_output/training_data/llama3.1-70b-20251228_071557_20251228_071557_alpaca.json"
     dataset_dir = "models/adapter-data"
     adapter_output = "models/whiterabbit-7b-adapters"
-    
-    print(f"🔧 Configuring training...")
+
+    print("🔧 Configuring training...")
     print(f"  Model: {model_path}")
     print(f"  Data: {data_source}")
-    
+
     os.makedirs(dataset_dir, exist_ok=True)
     os.makedirs(adapter_output, exist_ok=True)
 
     # 1. Load Data
     with open(data_source, "r") as f:
         data = json.load(f)
-    
+
     print(f"  Loaded {len(data)} examples.")
 
     # 2. Format for MLX (including Input field)
@@ -27,7 +26,7 @@ def main():
     split_idx = max(1, int(len(data) * 0.9))
     train_data = data[:split_idx]
     valid_data = data[split_idx:]
-    
+
     # If valid is empty (e.g. only 1 example), copy the last one
     if not valid_data:
         valid_data = [data[-1]]
@@ -39,12 +38,12 @@ def main():
                 # Construct prompt with input if present
                 instruction = item.get('instruction', '')
                 inp = item.get('input', '')
-                
+
                 if inp:
                     prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{inp}\n\n### Response:"
                 else:
                     prompt = f"### Instruction:\n{instruction}\n\n### Response:"
-                
+
                 entry = {"prompt": prompt, "completion": item['output']}
                 f.write(json.dumps(entry) + "\n")
         print(f"  Wrote {len(items)} items to {path}")
@@ -55,7 +54,7 @@ def main():
     # 3. Run MLX LoRA Training
     # We use the subprocess to run the module
     print("\n🚀 IGNITING MLX LoRA FINE-TUNING (500 iters)...")
-    
+
     # Adjust learning rate or rank if needed, but defaults are usually fine for a start.
     # We point to our prepared data directory.
     cmd = (
@@ -70,10 +69,10 @@ def main():
         f"--steps-per-eval 50 "
         f"--save-every 100"
     )
-    
+
     print(f"  Command: {cmd}")
     os.system(cmd)
-    
+
     print("\n✅ Fine-tuning complete.")
     print(f"  Adapters saved to: {adapter_output}")
 

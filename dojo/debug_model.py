@@ -1,15 +1,14 @@
-import argparse
-from mlx_lm import load, generate
+from mlx_lm import generate, load
 
 def main():
     model_path = "models/whiterabbit-7b-dojo-4bit"
     adapter_path = "models/whiterabbit-7b-adapters"
-    
+
     print(f"Loading model: {model_path}")
     print(f"Loading adapter: {adapter_path}")
-    
+
     model, tokenizer = load(model_path, adapter_path=adapter_path)
-    
+
     prompt = """### Instruction:
 Write an ADB shell command that outputs the Android version of the connected device.
 The output should be just the version number (e.g., "7.0" or "11").
