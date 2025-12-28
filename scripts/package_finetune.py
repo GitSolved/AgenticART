@@ -3,13 +3,13 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Add project root to path before local imports
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
 # Local imports
 from dojo.finetune.config import FinetuneConfig
 from dojo.finetune.packager import TrainingPackager
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 
 def main():

@@ -22,6 +22,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 import json
+
 from dojo import (
     # Phase 2
     Belt,
@@ -36,13 +37,14 @@ from dojo import (
     Sensei,
 )
 
+
 # --- ENGINE STATE UTILS ---
 def set_engine_state(status: str):
     """Update the engine state file for the dashboard."""
     output_dir = Path(project_root) / "dojo_output"
     state_path = output_dir / "engine_state.json"
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     current = {"status": "idle", "accumulated_seconds": 0, "start_time": None}
     if state_path.exists():
         try:
@@ -60,19 +62,26 @@ def set_engine_state(status: str):
     else:
         if current.get("status") == "running" and start_time_str:
             try:
-                start_dt = datetime.fromisoformat(start_time_str)
+                start_dt = datetime.fromisoformat(str(start_time_str))
+                raw_acc = current.get("accumulated_seconds", 0.0)
+                # Ensure it's a float
+                accumulated = float(raw_acc) if isinstance(raw_acc, (int, float, str)) else 0.0
                 accumulated += (now - start_dt).total_seconds()
             except Exception:
                 pass
         start_time_str = None
 
     with open(state_path, "w") as f:
-        json.dump({
-            "status": status,
-            "start_time": start_time_str,
-            "accumulated_seconds": accumulated,
-            "last_update": now.isoformat()
-        }, f)
+        json.dump(
+            {
+                "status": status,
+                "start_time": start_time_str,
+                "accumulated_seconds": accumulated,
+                "last_update": now.isoformat(),
+            },
+            f,
+        )
+
 
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)
@@ -221,24 +230,43 @@ class MockLLMClient:
 
 
 class MLXLLMClient:
+
+
     """Native MLX client for high-performance benchmarking on Apple Silicon."""
+
+
+
+
 
     def __init__(self, model_path: str):
         from mlx_lm import load
         print(f"🚀 Loading Native MLX Brain: {model_path}...")
-        self.model, self.tokenizer = load(model_path)
+        # Capture all returned values to be version-agnostic
+        results = load(model_path)
+        self.model = results[0]
+        self.tokenizer = results[1]
+
+
+
+
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+
+
+
         from mlx_lm import generate
+
         full_instruction = f"{system_prompt}\n{prompt}" if system_prompt else prompt
-        formatted_prompt = f"### Instruction:\n{full_instruction}\n\n### Response: shell "
-        
+        formatted_prompt = (
+            f"### Instruction:\n{full_instruction}\n\n### Response: shell "
+        )
+
         response = generate(
-            self.model, 
-            self.tokenizer, 
-            prompt=formatted_prompt, 
+            self.model,
+            self.tokenizer,
+            prompt=formatted_prompt,
             max_tokens=100,
-            temp=0.1
+            temp=0.1,
         )
         # Prepend the 'shell ' we forced
         return f"shell {response.strip()}"

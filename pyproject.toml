@@ -47,7 +47,7 @@ packages = ["dojo"]
 
 [tool.ruff]
 line-length = 100
-exclude = ["dojo_finetune_package"]
+exclude = ["dojo_finetune_package", "models"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
@@ -66,4 +66,5 @@ ignore_missing_imports = true
 exclude = [
     "dojo_output/",
     "dojo_finetune_package/",
+    "models/",
 ]
