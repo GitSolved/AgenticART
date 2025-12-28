@@ -108,15 +108,3 @@ Progress is tracked via the **Dojo Benchmarking Dashboard**, which evaluates:
 * This framework is a research prototype and should not be treated as a production-ready pentesting tool.
 * Automated exploit generation and execution can cause instability (e.g., crashes, data loss) on test devices; use only in controlled environments you own and have permission to test.
 * The system does not guarantee discovery of new vulnerabilities; its primary purpose is to study agentic workflows and alignment in Android security contexts.
-
----
-
-## 📄 License
-
-MIT
-
----
-
-## 🙏 Acknowledgments
-
-This research was developed with assistance from Claude (Anthropic) for code review, documentation, and experiment design.
