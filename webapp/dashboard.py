@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -8,6 +9,13 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
+
+# Add parent directory to path for dojo imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from dojo.sensei.event_logger import EventLogger
+except ImportError:
+    EventLogger = None  # Graceful fallback if dojo not installed
 
 # --- CONFIGURATION ---
 APP_DIR = Path(__file__).parent.parent
@@ -302,6 +310,153 @@ with st.sidebar:
         if st.button("No, Cancel"):
             st.session_state.confirm_stop = False
             st.rerun()
+
+    # 4. Export Run Control
+    st.divider()
+    st.markdown("### 📦 Export Run")
+
+    # Check for available event logs
+    EVENT_LOG_DIR = OUTPUT_DIR / "event_logs"
+    available_runs = []
+
+    if EVENT_LOG_DIR.exists():
+        for log_file in EVENT_LOG_DIR.glob("*.jsonl"):
+            if log_file.name.endswith("_export.jsonl"):
+                continue
+            run_id = log_file.stem
+            try:
+                with open(log_file, "r", encoding="utf-8") as f:
+                    first_line = f.readline()
+                    if first_line:
+                        first_event = json.loads(first_line)
+                        available_runs.append(
+                            {
+                                "run_id": run_id,
+                                "model_id": first_event.get("model_id", "unknown"),
+                                "log_file": log_file,
+                                "size_kb": log_file.stat().st_size / 1024,
+                            }
+                        )
+            except (json.JSONDecodeError, KeyError):
+                available_runs.append(
+                    {
+                        "run_id": run_id,
+                        "model_id": "unknown",
+                        "log_file": log_file,
+                        "size_kb": log_file.stat().st_size / 1024,
+                    }
+                )
+
+    if available_runs:
+        run_options = [f"{r['run_id']} ({r['model_id']})" for r in available_runs]
+        selected_run_idx = st.selectbox(
+            "Select Run",
+            range(len(run_options)),
+            format_func=lambda i: run_options[i],
+            help="Choose a run to export",
+        )
+
+        export_format = st.radio(
+            "Format",
+            ["JSONL", "Parquet", "Full Bundle"],
+            horizontal=True,
+            help="JSONL: line-delimited JSON | Parquet: columnar analytics | Bundle: all formats + config",
+        )
+
+        if st.button("📥 Export", use_container_width=True):
+            selected_run = available_runs[selected_run_idx]
+            try:
+                if EventLogger is not None:
+                    # Use EventLogger for proper export
+                    logger = EventLogger(
+                        output_dir=EVENT_LOG_DIR,
+                        run_id=selected_run["run_id"],
+                        model_id=selected_run["model_id"],
+                    )
+
+                    export_dir = EVENT_LOG_DIR / "exports"
+                    export_dir.mkdir(parents=True, exist_ok=True)
+
+                    if export_format == "JSONL":
+                        export_path = logger.export_jsonl()
+                        st.success(f"✅ Exported: {export_path.name}")
+
+                        # Provide download button
+                        with open(export_path, "rb") as f:
+                            st.download_button(
+                                "⬇️ Download JSONL",
+                                f.read(),
+                                file_name=export_path.name,
+                                mime="application/json",
+                            )
+
+                    elif export_format == "Parquet":
+                        try:
+                            export_path = logger.export_parquet()
+                            st.success(f"✅ Exported: {export_path.name}")
+
+                            with open(export_path, "rb") as f:
+                                st.download_button(
+                                    "⬇️ Download Parquet",
+                                    f.read(),
+                                    file_name=export_path.name,
+                                    mime="application/octet-stream",
+                                )
+                        except ImportError:
+                            st.error(
+                                "Parquet export requires pandas and pyarrow. "
+                                "Install with: pip install pandas pyarrow"
+                            )
+
+                    else:  # Full Bundle
+                        exported = logger.export_run_bundle()
+                        st.success(
+                            f"✅ Exported {len(exported)} files to exports/"
+                        )
+                        for fmt, path in exported.items():
+                            st.caption(f"  • {fmt}: {path.name}")
+                else:
+                    st.warning("EventLogger not available. Using fallback export.")
+                    # Fallback: just copy the raw log file
+                    import shutil
+
+                    export_dir = EVENT_LOG_DIR / "exports"
+                    export_dir.mkdir(parents=True, exist_ok=True)
+                    dest = export_dir / f"{selected_run['run_id']}_export.jsonl"
+                    shutil.copy(selected_run["log_file"], dest)
+                    st.success(f"✅ Copied to: {dest.name}")
+
+            except Exception as e:
+                st.error(f"Export failed: {e}")
+
+        # Show schema documentation link
+        with st.expander("📖 Schema Documentation"):
+            st.markdown(
+                """
+**EventRecord Schema v1.0**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `run_id` | string | Unique run identifier |
+| `model_id` | string | Model name |
+| `config_hash` | string | 8-char config hash |
+| `challenge_id` | string | KATA challenge ID |
+| `eval_label` | enum | POSITIVE/NEGATIVE/ERROR/RECOVERY/GRADER_ERROR |
+| `grade` | string | A/B/C/D/F |
+| `task_tags` | array | Inferred task tags |
+| `execution_success` | bool | Execution result |
+
+**Notebook Example:**
+```python
+import pandas as pd
+df = pd.read_parquet("run_xxx.parquet")
+df.groupby("eval_label").size()
+```
+                """
+            )
+    else:
+        st.info("No event logs available yet.")
+        st.caption("Event logs are created when running KATA challenges with EventLogger enabled.")
 
     st.divider()
     selected_stage = st.radio(

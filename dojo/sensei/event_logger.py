@@ -2,6 +2,60 @@
 
 Provides persistent, queryable records for each training event,
 separate from the live UI feed.
+
+Schema Documentation
+--------------------
+EventRecord fields for offline analysis:
+
+Experiment Identifiers:
+  - run_id: str - Unique identifier for the training run
+  - model_id: str - Model identifier (e.g., "qwen2.5-coder-7b")
+  - config_hash: str - 8-char SHA256 hash of experiment config
+
+Challenge Identifiers:
+  - challenge_id: str - KATA challenge ID (e.g., "white_shell_ip_001")
+  - attempt_number: int - Attempt number within challenge (1-indexed)
+
+Prompt/Context:
+  - prompt: str - Full prompt sent to model
+  - system_context: str|null - System prompt if any
+  - input_context: str|null - Additional input context
+
+Outputs:
+  - model_output: str - Raw model output
+  - reference_output: str|null - Kata/gold solution if available
+
+Evaluation:
+  - eval_label: str - POSITIVE|NEGATIVE|ERROR|RECOVERY|GRADER_ERROR|UNKNOWN
+  - grade: str|null - Letter grade (A, B, C, D, F)
+  - score: int - Numeric score (0-100)
+
+Task Classification:
+  - task_tags: list[str] - Inferred task tags (e.g., android.shell.network)
+
+Execution Details:
+  - execution_success: bool - Whether execution succeeded
+  - error_type: str|null - Error classification if failed
+  - error_message: str|null - Error details if failed
+  - duration_seconds: float - Execution duration
+
+Environment:
+  - device_id: str|null - Target device identifier
+  - android_version: str|null - Android version
+  - belt: str|null - Belt level (white, yellow, etc.)
+
+Metadata:
+  - event_id: str - UUID for this event
+  - timestamp: str - ISO 8601 timestamp
+
+Export Formats:
+  - JSONL: Line-delimited JSON, one record per line
+  - Parquet: Columnar format for efficient analytics (requires pyarrow)
+
+Example notebook usage:
+  import pandas as pd
+  df = pd.read_parquet("run_20241228_123456.parquet")
+  df.groupby("eval_label").size()
 """
 
 from __future__ import annotations
@@ -447,3 +501,355 @@ class EventLogger:
     def event_count(self) -> int:
         """Get total event count for this run."""
         return self._event_count
+
+    # -------------------------------------------------------------------------
+    # Export Methods
+    # -------------------------------------------------------------------------
+
+    def export_jsonl(self, output_path: Optional[Path] = None) -> Path:
+        """
+        Export all events to a JSONL file with config metadata.
+
+        Args:
+            output_path: Optional output path. Defaults to exports directory.
+
+        Returns:
+            Path to the exported file.
+        """
+        export_dir = self.output_dir / "exports"
+        export_dir.mkdir(parents=True, exist_ok=True)
+
+        if output_path is None:
+            output_path = export_dir / f"{self.run_id}_export.jsonl"
+
+        events = self.load_events()
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            # Write config header as first line
+            header = {
+                "_type": "run_config",
+                "run_id": self.run_id,
+                "model_id": self.model_id,
+                "config": self.config,
+                "config_hash": self.config_hash,
+                "exported_at": datetime.now().isoformat(),
+                "total_events": len(events),
+                "schema_version": "1.0",
+            }
+            f.write(json.dumps(header) + "\n")
+
+            # Write all events
+            for event in events:
+                f.write(event.to_json() + "\n")
+
+        return output_path
+
+    def export_parquet(self, output_path: Optional[Path] = None) -> Path:
+        """
+        Export all events to a Parquet file for efficient analytics.
+
+        Requires pandas and pyarrow to be installed.
+
+        Args:
+            output_path: Optional output path. Defaults to exports directory.
+
+        Returns:
+            Path to the exported file.
+
+        Raises:
+            ImportError: If pandas is not available.
+        """
+        try:
+            import pandas as pd
+        except ImportError as e:
+            raise ImportError(
+                "pandas is required for Parquet export. "
+                "Install with: pip install pandas pyarrow"
+            ) from e
+
+        export_dir = self.output_dir / "exports"
+        export_dir.mkdir(parents=True, exist_ok=True)
+
+        if output_path is None:
+            output_path = export_dir / f"{self.run_id}_export.parquet"
+
+        events = self.load_events()
+
+        if not events:
+            # Create empty DataFrame with schema
+            df = pd.DataFrame(columns=list(EventRecord.__dataclass_fields__.keys()))
+        else:
+            # Convert events to DataFrame
+            records = [e.to_dict() for e in events]
+            df = pd.DataFrame(records)
+
+            # Convert task_tags list to JSON string for Parquet compatibility
+            if "task_tags" in df.columns:
+                df["task_tags"] = df["task_tags"].apply(json.dumps)
+
+        # Add run metadata as DataFrame attributes (stored in Parquet metadata)
+        df.attrs["run_id"] = self.run_id
+        df.attrs["model_id"] = self.model_id
+        df.attrs["config_hash"] = self.config_hash
+        df.attrs["exported_at"] = datetime.now().isoformat()
+
+        # Write to Parquet
+        df.to_parquet(output_path, index=False, engine="auto")
+
+        return output_path
+
+    def export_run_bundle(self, output_dir: Optional[Path] = None) -> Dict[str, Path]:
+        """
+        Export a complete run bundle with all formats and metadata.
+
+        Creates:
+          - {run_id}_export.jsonl - Events in JSONL format
+          - {run_id}_export.parquet - Events in Parquet format (if pandas available)
+          - {run_id}_config.json - Full configuration and summary
+
+        Args:
+            output_dir: Optional output directory. Defaults to exports directory.
+
+        Returns:
+            Dictionary mapping format names to file paths.
+        """
+        if output_dir is None:
+            output_dir = self.output_dir / "exports"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        exported_files: Dict[str, Path] = {}
+
+        # Export JSONL
+        jsonl_path = self.export_jsonl(output_dir / f"{self.run_id}_export.jsonl")
+        exported_files["jsonl"] = jsonl_path
+
+        # Export Parquet (if pandas available)
+        try:
+            parquet_path = self.export_parquet(
+                output_dir / f"{self.run_id}_export.parquet"
+            )
+            exported_files["parquet"] = parquet_path
+        except ImportError:
+            pass  # Skip Parquet if pandas not available
+
+        # Export config and summary
+        summary = self.get_run_summary()
+        config_data = {
+            "run_id": self.run_id,
+            "model_id": self.model_id,
+            "config": self.config,
+            "config_hash": self.config_hash,
+            "exported_at": datetime.now().isoformat(),
+            "summary": summary,
+            "schema_version": "1.0",
+            "schema_docs": get_schema_documentation(),
+        }
+
+        config_path = output_dir / f"{self.run_id}_config.json"
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(config_data, f, indent=2, default=str)
+        exported_files["config"] = config_path
+
+        return exported_files
+
+    @staticmethod
+    def list_available_runs(output_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
+        """
+        List all available runs in the output directory.
+
+        Args:
+            output_dir: Directory containing event logs.
+
+        Returns:
+            List of run metadata dictionaries.
+        """
+        if output_dir is None:
+            output_dir = Path("./dojo_output/event_logs")
+
+        if not output_dir.exists():
+            return []
+
+        runs = []
+        for log_file in output_dir.glob("*.jsonl"):
+            if log_file.name.endswith("_export.jsonl"):
+                continue  # Skip export files
+
+            run_id = log_file.stem
+            try:
+                # Read first line for metadata if available
+                with open(log_file, "r", encoding="utf-8") as f:
+                    first_line = f.readline()
+                    if first_line:
+                        first_event = json.loads(first_line)
+                        runs.append(
+                            {
+                                "run_id": run_id,
+                                "model_id": first_event.get("model_id", "unknown"),
+                                "config_hash": first_event.get("config_hash", ""),
+                                "log_file": log_file,
+                                "size_bytes": log_file.stat().st_size,
+                                "modified": datetime.fromtimestamp(
+                                    log_file.stat().st_mtime
+                                ).isoformat(),
+                            }
+                        )
+            except (json.JSONDecodeError, KeyError):
+                runs.append(
+                    {
+                        "run_id": run_id,
+                        "model_id": "unknown",
+                        "log_file": log_file,
+                        "size_bytes": log_file.stat().st_size,
+                    }
+                )
+
+        return sorted(runs, key=lambda x: x.get("modified", ""), reverse=True)
+
+
+def get_schema_documentation() -> Dict[str, Any]:
+    """
+    Get the EventRecord schema as a structured dictionary.
+
+    Returns:
+        Schema documentation suitable for JSON export.
+    """
+    return {
+        "schema_version": "1.0",
+        "description": "AgenticART KATA Event Log Schema",
+        "fields": {
+            "run_id": {
+                "type": "string",
+                "description": "Unique identifier for the training run",
+                "example": "run_20241228_143052_a1b2c3",
+            },
+            "model_id": {
+                "type": "string",
+                "description": "Model identifier",
+                "example": "qwen2.5-coder-7b",
+            },
+            "config_hash": {
+                "type": "string",
+                "description": "8-character SHA256 hash of experiment config",
+                "example": "a1b2c3d4",
+            },
+            "challenge_id": {
+                "type": "string",
+                "description": "KATA challenge identifier",
+                "example": "white_shell_ip_001",
+            },
+            "attempt_number": {
+                "type": "integer",
+                "description": "Attempt number within challenge (1-indexed)",
+                "example": 1,
+            },
+            "prompt": {
+                "type": "string",
+                "description": "Full prompt sent to model",
+            },
+            "system_context": {
+                "type": "string|null",
+                "description": "System prompt if any",
+            },
+            "input_context": {
+                "type": "string|null",
+                "description": "Additional input context",
+            },
+            "model_output": {
+                "type": "string",
+                "description": "Raw model output",
+            },
+            "reference_output": {
+                "type": "string|null",
+                "description": "Kata/gold solution if available",
+            },
+            "eval_label": {
+                "type": "string",
+                "description": "Evaluation label",
+                "enum": [
+                    "POSITIVE",
+                    "NEGATIVE",
+                    "ERROR",
+                    "RECOVERY",
+                    "GRADER_ERROR",
+                    "UNKNOWN",
+                ],
+            },
+            "grade": {
+                "type": "string|null",
+                "description": "Letter grade",
+                "enum": ["A", "B", "C", "D", "F", None],
+            },
+            "score": {
+                "type": "integer",
+                "description": "Numeric score (0-100)",
+            },
+            "task_tags": {
+                "type": "array[string]",
+                "description": "Inferred task classification tags",
+                "examples": [
+                    "android",
+                    "android.shell",
+                    "android.shell.network",
+                    "android.frida",
+                    "belt.white",
+                ],
+            },
+            "execution_success": {
+                "type": "boolean",
+                "description": "Whether execution succeeded",
+            },
+            "error_type": {
+                "type": "string|null",
+                "description": "Error classification if failed",
+            },
+            "error_message": {
+                "type": "string|null",
+                "description": "Error details if failed",
+            },
+            "duration_seconds": {
+                "type": "float",
+                "description": "Execution duration in seconds",
+            },
+            "device_id": {
+                "type": "string|null",
+                "description": "Target device identifier",
+            },
+            "android_version": {
+                "type": "string|null",
+                "description": "Android version",
+            },
+            "belt": {
+                "type": "string|null",
+                "description": "Belt level",
+                "enum": [
+                    "white",
+                    "yellow",
+                    "orange",
+                    "green",
+                    "blue",
+                    "purple",
+                    "brown",
+                    "black",
+                ],
+            },
+            "event_id": {
+                "type": "string",
+                "description": "UUID for this event",
+            },
+            "timestamp": {
+                "type": "string",
+                "description": "ISO 8601 timestamp",
+            },
+        },
+        "file_formats": {
+            "jsonl": {
+                "description": "Line-delimited JSON, first line is run config header",
+                "extension": ".jsonl",
+            },
+            "parquet": {
+                "description": "Apache Parquet columnar format for analytics",
+                "extension": ".parquet",
+                "note": "task_tags stored as JSON string",
+            },
+        },
+    }

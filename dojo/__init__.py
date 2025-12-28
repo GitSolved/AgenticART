@@ -69,6 +69,7 @@ from dojo.sensei import (
     TrainingDataExporter,
     TrainingExtractor,
     generate_config_hash,
+    get_schema_documentation,
 )
 
 __version__ = "0.3.0"
@@ -127,6 +128,7 @@ __all__ = [
     "EventLogger",
     "EventRecord",
     "generate_config_hash",
+    "get_schema_documentation",
     # Fine-tuning (Phase 4)
     "TrainingPackager",
     "FinetuneConfig",
