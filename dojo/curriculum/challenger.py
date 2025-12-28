@@ -171,10 +171,16 @@ class Challenger:
             if exec_result.success:
                 break
 
-            if attempt_num < self.max_retries and error_ctx:
-                prompt = self.context_injector.build_retry_prompt(
-                    challenge, model_output, error_ctx, attempt_num + 1
-                )
+            if attempt_num < self.max_retries:
+                if error_ctx:
+                    prompt = self.context_injector.build_retry_prompt(
+                        challenge, model_output, error_ctx, attempt_num + 1
+                    )
+                else:
+                    # Fallback: use raw stderr when error extraction fails
+                    prompt = self.context_injector.build_raw_failure_prompt(
+                        challenge, model_output, exec_result.stderr, attempt_num + 1
+                    )
 
         session.completed_at = datetime.now()
         return session
@@ -238,7 +244,10 @@ class Challenger:
                     exploration_challenge, model_output, error_ctx, i + 1
                 )
             else:
-                prompt = "Probe failed. Try an alternative script."
+                # Fallback: use raw stderr when error extraction fails
+                prompt = self.context_injector.build_raw_failure_prompt(
+                    exploration_challenge, model_output, exec_result.stderr, i + 1
+                )
 
         session.completed_at = datetime.now()
         return session

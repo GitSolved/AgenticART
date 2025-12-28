@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from dojo.curriculum import ChallengeSession, ErrorContext
+from dojo.curriculum.executor import Executor
 from dojo.models import (
     Belt,
     Challenge,
@@ -39,14 +40,20 @@ class TrainingExtractor:
         "no explanations or markdown."
     )
 
-    def __init__(self, config: Optional[ExtractionConfig] = None):
+    def __init__(
+        self,
+        config: Optional[ExtractionConfig] = None,
+        executor: Optional[Executor] = None,
+    ):
         """
         Initialize the extractor.
 
         Args:
             config: Extraction configuration.
+            executor: Optional executor for verifying kata solutions before use.
         """
         self.config = config or ExtractionConfig()
+        self.executor = executor
 
     def extract_from_session(
         self,
@@ -278,6 +285,9 @@ class TrainingExtractor:
         """
         Extract kata (golden) example from challenge definition.
 
+        If an executor is configured, verifies the kata solution executes
+        successfully before including it in training data.
+
         Args:
             session: The challenge session.
 
@@ -288,6 +298,13 @@ class TrainingExtractor:
 
         if not challenge.kata_solution:
             return None
+
+        # Verify kata solution if executor is available
+        if self.executor:
+            result = self.executor.execute(challenge, challenge.kata_solution)
+            if not result.success:
+                # Skip unverified/failing kata solutions to prevent training on bad data
+                return None
 
         return TrainingExample(
             instruction=self._build_instruction(challenge),

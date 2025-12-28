@@ -44,6 +44,26 @@ Suggested fix: {primary_suggestion}
 
 Please provide a corrected command. Output only the command, no explanation."""
 
+    RAW_FAILURE_TEMPLATE = """Your previous attempt failed with an unrecognized error.
+
+## ORIGINAL TASK
+{original_task}
+
+## YOUR PREVIOUS OUTPUT
+```
+{previous_output}
+```
+
+## RAW ERROR OUTPUT
+```
+{raw_stderr}
+```
+
+## INSTRUCTIONS
+Analyze the error output above and provide a corrected version.
+This is attempt {attempt_number} of {max_attempts}.
+Output only the command/script, no explanations."""
+
     def __init__(self, max_attempts: int = 3, verbose: bool = True):
         """
         Initialize context injector.
@@ -150,6 +170,41 @@ Please provide a corrected command. Output only the command, no explanation."""
             return "- Review the error message and adjust your approach"
 
         return "\n".join(f"- {s}" for s in suggestions)
+
+    def build_raw_failure_prompt(
+        self,
+        challenge: Challenge,
+        previous_output: str,
+        raw_stderr: str,
+        attempt_number: int,
+    ) -> str:
+        """
+        Build a retry prompt when no structured error context is available.
+
+        This fallback ensures the feedback loop always provides some context,
+        even when the error doesn't match known patterns.
+
+        Args:
+            challenge: The original challenge.
+            previous_output: The model's failed output.
+            raw_stderr: Raw stderr from execution.
+            attempt_number: Current attempt number (1-indexed).
+
+        Returns:
+            New prompt with raw error for retry.
+        """
+        # Truncate very long stderr to avoid prompt bloat
+        max_stderr_len = 500
+        if len(raw_stderr) > max_stderr_len:
+            raw_stderr = raw_stderr[:max_stderr_len] + "\n... [truncated]"
+
+        return self.RAW_FAILURE_TEMPLATE.format(
+            original_task=challenge.description,
+            previous_output=previous_output.strip(),
+            raw_stderr=raw_stderr.strip() or "[No error output captured]",
+            attempt_number=attempt_number,
+            max_attempts=self.max_attempts,
+        )
 
     def build_initial_prompt(self, challenge: Challenge) -> str:
         """

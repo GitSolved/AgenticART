@@ -507,10 +507,12 @@ class ModelProgress:
 
     @property
     def pass_rate(self) -> float:
-        """Calculate pass rate as percentage."""
+        """Calculate pass rate as percentage, capped at 95% to prevent overconfidence."""
         if self.challenges_attempted == 0:
             return 0.0
-        return (self.challenges_passed / self.challenges_attempted) * 100
+        raw_rate = (self.challenges_passed / self.challenges_attempted) * 100
+        # Cap at 95% to account for potential false positives in automated verification
+        return min(raw_rate, 95.0)
 
     @property
     def average_score(self) -> float:
