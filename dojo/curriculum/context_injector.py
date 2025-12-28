@@ -75,50 +75,75 @@ class ContextInjector:
     Instructions are context-aware based on error type to align with suggestions.
     """
 
-    # Error-type-specific instruction templates
-    # These align with the suggestions from ErrorExtractor
+    # Error-type-specific instruction templates with explicit constraints
+    # Each template has: CONSTRAINT (what you must/must not do) + ACTION (what to output)
     ERROR_INSTRUCTIONS: Dict[str, str] = {
         "permission_denied": (
-            "STOP trying to access this protected path directly.\n"
-            "PIVOT your strategy: use the reconnaissance approaches in SUGGESTIONS above.\n"
-            "Output a command that gathers information without requiring elevated privileges."
+            "CONSTRAINT: You MUST NOT retry the same command or any variation that reads "
+            "the same protected path. Blindly re-running 'cat', 'ls', or similar on "
+            "/data/*, /proc/kallsyms, or other protected paths will fail again.\n\n"
+            "ACTION: You MUST pivot strategy as described in SUGGESTIONS. Output ONE "
+            "replacement command that either:\n"
+            "  - Uses an unprivileged alternative (e.g., 'getprop' instead of reading files)\n"
+            "  - Searches for privilege escalation vectors (SUID binaries, kernel info)\n"
+            "  - Uses 'run-as <pkg>' if targeting app-specific data"
         ),
         "command_not_found": (
-            "The tool you tried does not exist on this Android device.\n"
-            "Use an ALTERNATIVE command from the SUGGESTIONS above.\n"
-            "Output a command using available Android utilities (toybox/toolbox)."
+            "CONSTRAINT: The binary you tried does NOT exist on Android. You MUST NOT "
+            "retry with the same tool name or assume it will appear.\n\n"
+            "ACTION: You MUST choose an existing Android binary. Output ONE replacement "
+            "command using:\n"
+            "  - Toybox/toolbox equivalents (check /system/bin)\n"
+            "  - Shell builtins (printf, echo, test)\n"
+            "  - Alternative tools listed in SUGGESTIONS"
         ),
         "device_offline": (
-            "The device is not reachable.\n"
-            "DO NOT retry the same command - it will fail again.\n"
-            "First verify device connectivity, then retry the original task."
+            "CONSTRAINT: The device is unreachable. You MUST NOT retry the original "
+            "command - it will fail immediately.\n\n"
+            "ACTION: You MUST first verify connectivity. Output ONE command that:\n"
+            "  - Checks device status ('adb devices')\n"
+            "  - Restarts ADB server if needed ('adb kill-server && adb start-server')\n"
+            "  - Only after connectivity is confirmed, retry the original task"
         ),
         "timeout": (
-            "Your command is too slow or the device is unresponsive.\n"
-            "SIMPLIFY your approach: break the task into smaller steps.\n"
-            "Output a faster, more targeted command."
+            "CONSTRAINT: Your command took too long. You MUST NOT retry the same "
+            "long-running command.\n\n"
+            "ACTION: You MUST simplify. Output ONE replacement command that:\n"
+            "  - Targets a smaller scope (fewer files, specific path)\n"
+            "  - Adds limits (head, tail, timeout prefix)\n"
+            "  - Breaks the task into a single focused step"
         ),
         "syntax_error": (
-            "Your command has a syntax error.\n"
-            "FIX the syntax issue identified in the ERROR block.\n"
-            "Output a syntactically correct command."
+            "CONSTRAINT: Your command has invalid syntax. You MUST fix the specific "
+            "syntax issue, not change the overall approach.\n\n"
+            "ACTION: You MUST correct the syntax. Output ONE replacement command that:\n"
+            "  - Fixes quoting/escaping issues\n"
+            "  - Corrects flag usage for Android's limited toolset\n"
+            "  - Maintains the original intent with valid syntax"
         ),
         "connection_refused": (
-            "The target service is not accepting connections.\n"
-            "VERIFY the service is running before retrying.\n"
-            "Consider an alternative approach to achieve the goal."
+            "CONSTRAINT: The target port/service rejected the connection. You MUST NOT "
+            "blindly retry the same connection.\n\n"
+            "ACTION: You MUST verify the target. Output ONE command that:\n"
+            "  - Checks if the service is running (ps, netstat)\n"
+            "  - Verifies the correct port number\n"
+            "  - Uses an alternative approach if the service is down"
         ),
         "segfault": (
-            "The command crashed - this indicates incompatibility or a bug.\n"
-            "DO NOT retry the same command.\n"
-            "Use a different tool or approach to achieve the goal."
+            "CONSTRAINT: The binary crashed. This is a compatibility issue. You MUST NOT "
+            "retry the same command - it will crash again.\n\n"
+            "ACTION: You MUST use a different approach. Output ONE replacement command that:\n"
+            "  - Uses a different binary to achieve the same goal\n"
+            "  - Avoids the problematic operation entirely\n"
+            "  - Gathers information about the crash if needed for debugging"
         ),
     }
 
     # Default instruction for unknown error types
     DEFAULT_INSTRUCTION = (
-        "Analyze the error and apply the SUGGESTIONS above.\n"
-        "Output a corrected command that avoids the previous failure."
+        "CONSTRAINT: The previous command failed. You MUST NOT blindly retry it.\n\n"
+        "ACTION: Analyze the ERROR block and apply SUGGESTIONS. Output ONE replacement "
+        "command that directly addresses the failure cause."
     )
 
     def __init__(self, max_attempts: int = 3, verbose: bool = True):
