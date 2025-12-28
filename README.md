@@ -11,7 +11,7 @@ We have successfully demonstrated the "Dojo Flywheel" by distilling data-center 
 *   **Student:** WhiteRabbitNeo 2.5 7B (MLX 4-bit)
 *   **Teacher:** Llama 3.1 70B
 *   **Target:** Android 11 (API 30)
-*   **Result:** The student model's pass rate on foundational security tasks increased from **20% to 100%** (+80% improvement) after 500 iterations of LoRA fine-tuning on teacher-generated "Gold" trajectories.
+*   **Result:** The student model's pass rate on foundational security tasks increased from **20% to 100%** (+80 percentage points) after 500 iterations of LoRA fine-tuning on teacher-generated "Gold" trajectories.
 
 ---
 
@@ -21,7 +21,7 @@ This framework solves the "Security AI Paradox" by providing:
 
 1.  **Capability Compression (Distillation):** High-end reasoning from 70B+ models is compressed into 7B models that run natively on local workstations/laptops.
 2.  **Air-Gapped Privacy:** 100% offline execution. No exploit trajectories are ever sent to cloud APIs, making it safe for sensitive vulnerability research.
-3.  **Hardware-Grounded Truth:** Unlike general LLMs that hallucinate code, AgenticART models are trained on **verified execution traces** from real Android devices. They know what *actually* works.
+3.  **Execution-Verified Truth:** Unlike general LLMs that hallucinate code, AgenticART models are trained on **verified execution traces** from Android devices or emulators. They know what *actually* works.
 4.  **Automated Specialization:** The framework acts as a "factory" for security brains. Point it at a new Android version or device, and it autonomously trains a specialized agent for that specific target.
 
 ---
@@ -43,7 +43,7 @@ At a high level, AgenticART runs an LLM as an "agent" that proposes actions (e.g
 
 ---
 
-## 🔬 Core Methodology: Hardware-Grounded RLHF
+## 🔬 Core Methodology: Execution-Verified RLHF
 
 The framework operates on the hypothesis that security-specific capabilities depend on verified execution history, not only on static pre-training. This repository provides tooling to test that hypothesis; full empirical evaluation is ongoing.
 
@@ -53,7 +53,7 @@ The system generates candidate exploit trajectories across three primary executi
 
 * **CLI/ADB Layer:** Shell-level reconnaissance and intent manipulation logic.
 * **Dynamic Instrumentation (Frida):** Runtime memory inspection and API hooking.
-* **Kernel Interface (C/Native):** Low-level interaction with system drivers and the Linux kernel.
+* **Kernel Interface (C/Native):** Low-level interaction with system drivers and the Linux kernel. *(Currently syntax-validation only; on-device execution requires NDK integration.)*
 
 ### 2. Automated Data Provenance (The Refinery)
 
@@ -68,7 +68,7 @@ AgenticART includes an automated grading component that attempts to classify raw
 Model refinement is achieved through Direct Preference Optimization:
 
 * **Chosen Trajectories ($y_w$):** Verified successful executions.
-* **Rejected Trajectories ($y_l$):** Failed attempts exhibiting common security-specific failure modes (e.g., syntax errors, permission denied states, or kernel panics).
+* **Rejected Trajectories ($y_l$):** Failed attempts exhibiting common security-specific failure modes (e.g., syntax errors, permission denied states, or execution crashes).
 * **Reward Modeling:** This phase is intended to encode security-relevant preferences by penalizing trajectories that consistently lead to failed or unsafe states (e.g., repeated permission errors, crashes). We have not yet quantified how much this improves real-world exploit performance; that is future work.
 
 ---
@@ -89,7 +89,7 @@ The research environment is partitioned into discrete belts to measure model gen
 To facilitate high-throughput local experimentation, the framework implements a native **MLX-LM** training path optimized for Apple's M-series Unified Memory:
 
 * **Quantization:** 4-bit NormalFloat (NF4) quantization for high-parameter models (32B+).
-* **LoRA Integration:** Low-Rank Adaptation targeting the $W_q$ and $y_v$ projections to minimize memory overhead while maintaining alignment stability.
+* **LoRA Integration:** Low-Rank Adaptation targeting the $W_q$ and $W_v$ projections to minimize memory overhead while maintaining alignment stability.
 * **Compute:** Direct utilization of the 40-core GPU via Metal Performance Shaders (MPS). In local testing on M-series hardware, this configuration has provided substantial speedups in tokens-per-second during alignment experiments, compared to unoptimized baselines.
 
 ---
@@ -140,7 +140,7 @@ Progress is tracked via the **Dojo Benchmarking Dashboard**, which evaluates:
 ### Currently implemented:
 
 *   **[VERIFIED]** End-to-end distillation loop: 70B Teacher → 7B Student via MLX LoRA.
-*   **[VERIFIED]** 80% performance boost on Android 11 foundational benchmarks (reaching 100% parity with teacher).
+*   **[VERIFIED]** +80 percentage point improvement on Android 11 foundational benchmarks (20% → 100%, reaching parity with teacher).
 *   End-to-end orchestration for generating Android security challenges from NVD data.
 *   Initial grading and curriculum logic (belt tiers) based on CVSS and heuristic classification.
 
