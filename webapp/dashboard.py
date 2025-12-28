@@ -582,39 +582,34 @@ elif selected_stage == "COMPARISON":
                 heat_stats = (
                     df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
                 )
-                heat_stats["Success_Rate"] = heat_stats["Success"] * 100
+                heat_stats["Success_Rate"] = (heat_stats["Success"] * 100).fillna(0)
 
-                heatmap = (
-                    alt.Chart(heat_stats)
-                    .mark_rect()
-                    .encode(
-                        x=alt.X("Belt:N", sort=belt_order),
-                        y=alt.Y("Model:N"),
-                        color=alt.Color(
-                            "Success_Rate:Q",
-                            scale=alt.Scale(scheme="rdylgn"),
-                            title="Pass %",
-                        ),
-                        tooltip=[
-                            "Model",
-                            "Belt",
-                            alt.Tooltip("Success_Rate:Q", format=".1f"),
-                        ],
-                    )
-                    .properties(height=300)
+                base = alt.Chart(heat_stats).encode(
+                    x=alt.X("Belt:N", sort=belt_order),
+                    y=alt.Y("Model:N"),
+                ).properties(height=300)
+
+                heatmap = base.mark_rect().encode(
+                    color=alt.Color(
+                        "Success_Rate:Q",
+                        scale=alt.Scale(scheme="rdylgn"),
+                        title="Pass %",
+                    ),
+                    tooltip=[
+                        "Model",
+                        "Belt",
+                        alt.Tooltip("Success_Rate:Q", format=".1f"),
+                    ],
                 )
 
                 # Add text labels to heatmap
-                text = (
-                    heatmap.mark_text(baseline="middle")
-                    .encode(
-                        text=alt.Text("Success_Rate:Q", format=".0f"),
-                        color=alt.condition(
-                            alt.datum.Success_Rate > 50,
-                            alt.value("black"),
-                            alt.value("white"),
-                        ),
-                    )
+                text = base.mark_text(baseline="middle").encode(
+                    text=alt.Text("Success_Rate:Q", format=".0f"),
+                    color=alt.condition(
+                        alt.datum["Success_Rate"] > 50,
+                        alt.value("black"),
+                        alt.value("white"),
+                    ),
                 )
 
                 st.altair_chart(heatmap + text, use_container_width=True)
