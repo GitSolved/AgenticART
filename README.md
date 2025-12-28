@@ -80,4 +80,4 @@ python3 mlx_train.py
 ---
 
 ## ⚖️ The Unique Value
-AgenticART creates a **"Data Moat."** By running this engine, you manufacture the intelligence required to automate vulnerability research at scale. You are building the world's most precise model for Android exploitation, grounded in real-world hardware execution.
+AgenticART is intended to log successful exploit attempts executed against real Android devices or emulators, creating a dataset of on-device–validated ADB, Frida, and kernel exploit traces that can be used for further model training and analysis. If the system reliably identifies and records such successful trajectories, this dataset may serve as a proprietary resource for studying and improving automated vulnerability discovery workflows in Android environments.
