@@ -146,6 +146,52 @@ class ContextInjector:
         "command that directly addresses the failure cause."
     )
 
+    # Script-type-specific output format templates
+    OUTPUT_FORMAT_TEMPLATES: Dict[str, str] = {
+        "shell": (
+            "FORMAT: Return a single ADB shell command on ONE line.\n"
+            "START WITH: 'shell ' prefix (e.g., 'shell ls /sdcard')\n"
+            "NO EXTRA TEXT: No explanations, no comments, no markdown."
+        ),
+        "frida": (
+            "FORMAT: Return a complete Frida JavaScript snippet.\n"
+            "STRUCTURE: Must include Java.perform() or Interceptor.attach() as appropriate.\n"
+            "NO EXTRA TEXT: No explanations, no markdown code blocks."
+        ),
+        "c_exploit": (
+            "FORMAT: Return complete C source code.\n"
+            "STRUCTURE: Must include necessary #include headers and main() or exploit function.\n"
+            "NO EXTRA TEXT: No explanations, no markdown code blocks."
+        ),
+        "python": (
+            "FORMAT: Return a complete Python script.\n"
+            "STRUCTURE: Must be directly executable with python3.\n"
+            "NO EXTRA TEXT: No explanations, no markdown code blocks."
+        ),
+    }
+
+    # Default format template
+    DEFAULT_FORMAT_TEMPLATE = (
+        "FORMAT: Return the command/script on a single output.\n"
+        "NO EXTRA TEXT: No explanations, no comments, no markdown."
+    )
+
+    # Do/Don't block - explicit behavioral constraints
+    DO_DONT_BLOCK = """
+DO:
+  ✓ Output ONLY the executable command/script
+  ✓ Change only what is necessary to fix the issue
+  ✓ Follow the format specified in OUTPUT_FORMAT
+  ✓ Use commands/APIs available on Android 7.0
+
+DON'T:
+  ✗ Add explanations or commentary
+  ✗ Wrap output in quotes, backticks, or markdown
+  ✗ Propose privilege escalation beyond what HINTS suggest
+  ✗ Include multiple alternative commands (pick ONE)
+  ✗ Add comments inside the command/script
+""".strip()
+
     def __init__(self, max_attempts: int = 3, verbose: bool = True):
         """
         Initialize context injector.
@@ -200,19 +246,17 @@ class ContextInjector:
             hint_lines = [f"- {hint}" for hint in challenge.hints]
             blocks.append(self.build_block(BlockType.HINTS, "\n".join(hint_lines)))
 
-        # Output format block
+        # Output format block - script-type-specific
         script_type = challenge.expected_output.script_type.value
-        format_instruction = (
-            f"Output Type: {script_type}\n"
-            f"Requirements: Provide only the {script_type} command/script.\n"
-            f"No explanations, no markdown, no code blocks."
+        format_template = self.OUTPUT_FORMAT_TEMPLATES.get(
+            script_type, self.DEFAULT_FORMAT_TEMPLATE
         )
-        blocks.append(self.build_block(BlockType.OUTPUT_FORMAT, format_instruction))
+        blocks.append(self.build_block(BlockType.OUTPUT_FORMAT, format_template))
 
-        # Instructions block
+        # Instructions block with Do/Don't
         instructions = (
-            "Generate the requested command/script.\n"
-            "Output must be syntactically correct and ready for direct execution."
+            "Generate the requested command/script.\n\n"
+            f"{self.DO_DONT_BLOCK}"
         )
         blocks.append(self.build_block(BlockType.INSTRUCTIONS, instructions))
 
@@ -382,15 +426,11 @@ class ContextInjector:
         reference_content = self._get_reference_content(script_type)
         blocks.append(self.build_block(BlockType.REFERENCE, reference_content))
 
-        # Output format block with critical rules
-        output_rules = (
-            f"1. Output ONLY the {script_type} code/command OR a Python script\n"
-            "2. NO explanations, NO markdown, NO code blocks\n"
-            "3. For ADB: Use 'shell' prefix for on-device commands\n"
-            "4. For FRIDA/C: Provide the full script/program\n"
-            "5. Never wrap output in quotes or backticks\n"
-            "6. Logic must be syntactically correct and ready for execution"
+        # Output format block - script-type-specific with Do/Don't
+        format_template = self.OUTPUT_FORMAT_TEMPLATES.get(
+            script_type, self.DEFAULT_FORMAT_TEMPLATE
         )
+        output_rules = f"{format_template}\n\n{self.DO_DONT_BLOCK}"
         blocks.append(self.build_block(BlockType.OUTPUT_FORMAT, output_rules))
 
         # Attempt info with belt/difficulty
