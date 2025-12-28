@@ -362,36 +362,109 @@ if selected_stage == "EXECUTION":
         "</div>",
         unsafe_allow_html=True,
     )
+
+    # --- FILTERS ---
     if log_files:
+        # Load all entries first
+        raw_entries = load_jsonl(latest_log, limit=100)
+
+        # Pre-compute eval_label for each entry
+        def get_eval_label(entry):
+            meta = entry.get("metadata", {})
+            etype = meta.get("example_type", "unknown")
+            grader_status = meta.get("grader_status", "success")
+            output = str(entry.get("output", ""))
+
+            if grader_status == "infrastructure_error" or "[ERROR:" in output:
+                return "GRADER_ERROR"
+            elif etype in ("positive", "kata"):
+                return "POSITIVE"
+            elif etype == "negative":
+                return "NEGATIVE"
+            elif etype == "error_recovery":
+                return "RECOVERY"
+            else:
+                return "OTHER"
+
+        # Add eval_label to each entry for filtering
+        for entry in raw_entries:
+            entry["_eval_label"] = get_eval_label(entry)
+
+        # Get unique values for filters
+        all_labels = sorted(set(e["_eval_label"] for e in raw_entries))
+        all_challenge_ids = sorted(set(e.get("metadata", {}).get("source_challenge_id", "unknown") for e in raw_entries))
+
+        # Extract belt prefixes from challenge IDs
+        belt_prefixes = sorted(set(cid.split("_")[0] for cid in all_challenge_ids if "_" in cid))
+
+        # Filter controls
+        st.markdown("**🔍 Filters**")
+        filter_cols = st.columns([1, 1, 2])
+
+        with filter_cols[0]:
+            selected_label = st.selectbox(
+                "Eval Label",
+                ["ALL"] + all_labels,
+                help="Filter by evaluation result"
+            )
+
+        with filter_cols[1]:
+            selected_prefix = st.selectbox(
+                "KATA Prefix",
+                ["ALL"] + belt_prefixes,
+                help="Filter by belt/challenge prefix (e.g., white, yellow)"
+            )
+
+        with filter_cols[2]:
+            command_pattern = st.text_input(
+                "Command Pattern",
+                placeholder="e.g., shell ip, pm path, dumpsys",
+                help="Filter by command pattern in output"
+            )
+
+        st.markdown("---")
+
+        # Apply filters
+        filtered_entries = raw_entries
+
+        if selected_label != "ALL":
+            filtered_entries = [e for e in filtered_entries if e["_eval_label"] == selected_label]
+
+        if selected_prefix != "ALL":
+            filtered_entries = [
+                e for e in filtered_entries
+                if e.get("metadata", {}).get("source_challenge_id", "").startswith(selected_prefix + "_")
+            ]
+
+        if command_pattern.strip():
+            pattern_lower = command_pattern.strip().lower()
+            filtered_entries = [
+                e for e in filtered_entries
+                if pattern_lower in str(e.get("output", "")).lower()
+                or pattern_lower in str(e.get("instruction", "")).lower()
+            ]
+
+        # Show filter results count
+        st.caption(f"Showing {len(filtered_entries)} of {len(raw_entries)} entries")
+
+        # Display filtered entries
         curr_id = None
-        for e in reversed(load_jsonl(latest_log, limit=30)):
+        for e in reversed(filtered_entries[-30:]):  # Limit display to 30
             meta = e.get("metadata", {})
             cid = meta.get("source_challenge_id", "unknown")
             etype = meta.get("example_type", "unknown")
             grade = meta.get("grade", "?")
-            grader_status = meta.get("grader_status", "success")
+            eval_label = e["_eval_label"]
 
-            # Determine eval label and style
-            if grader_status == "infrastructure_error" or "ERROR:" in str(e.get("output", "")):
-                eval_label = "GRADER_ERROR"
-                style = ""
-                badge_style = "background-color:#6e40c9;color:white;"
-            elif etype in ("positive", "kata"):
-                eval_label = "POSITIVE"
-                style = "feed-refined"
-                badge_style = "background-color:#238636;color:white;"
-            elif etype == "negative":
-                eval_label = "NEGATIVE"
-                style = "feed-negative"
-                badge_style = "background-color:#da3633;color:white;"
-            elif etype == "error_recovery":
-                eval_label = "RECOVERY"
-                style = "feed-recovery"
-                badge_style = "background-color:#d29922;color:black;"
-            else:
-                eval_label = etype.upper()
-                style = "feed-exploration"
-                badge_style = "background-color:#1f6feb;color:white;"
+            # Determine style based on eval_label
+            style_map = {
+                "GRADER_ERROR": ("", "background-color:#6e40c9;color:white;"),
+                "POSITIVE": ("feed-refined", "background-color:#238636;color:white;"),
+                "NEGATIVE": ("feed-negative", "background-color:#da3633;color:white;"),
+                "RECOVERY": ("feed-recovery", "background-color:#d29922;color:black;"),
+                "OTHER": ("feed-exploration", "background-color:#1f6feb;color:white;"),
+            }
+            style, badge_style = style_map.get(eval_label, style_map["OTHER"])
 
             indent = "indent-1" if cid == curr_id else ""
             curr_id = cid
