@@ -167,14 +167,17 @@ def get_all_discovery_data():
     for log_file in log_files:
         # Heuristic for model name from filename
         # Format: {model_or_session}_YYYYMMDD_HHMMSS_jsonl.jsonl
-        model_name = log_file.name.split("_202")[0]
+        model_name = safe_split(log_file.name, "_202", 0, default="UNKNOWN")
 
         events = load_jsonl(log_file)
         for e in events:
+            if not e or not isinstance(e, dict):
+                continue
             # Prefer model_id from metadata if present (future-proofing)
-            m = e["metadata"].get("model_id")
+            meta = e.get("metadata", {})
+            m = meta.get("model_id") if meta else None
             if m:
-                model_name = m.split("-202")[0]
+                model_name = safe_split(m, "-202", 0, default=model_name)
 
             e["model_id"] = model_name or "UNKNOWN"
             all_data.append(e)
@@ -506,8 +509,11 @@ elif selected_stage == "COMPARISON":
         # Prepare Comparison DataFrame
         comp_rows = []
         for d in discovery_data:
+            if not d or not isinstance(d, dict):
+                continue
             cmd = d.get("output", "")
-            grade = d["metadata"].get("grade", "F")
+            meta = d.get("metadata", {})
+            grade = meta.get("grade", "F")
             model = d.get("model_id", "UNKNOWN")
             is_success = grade in ("A", "B", "C")  # passing grade
             is_high_quality = grade in ("A", "B")  # gold/refined
@@ -556,12 +562,15 @@ elif selected_stage == "COMPARISON":
             # Re-process discovery data to get belt information more accurately
             heatmap_rows = []
             for d in discovery_data:
+                if not d or not isinstance(d, dict):
+                    continue
                 model = d.get("model_id", "UNKNOWN")
                 if model not in selected_models:
                     continue
 
-                belt = d["metadata"].get("belt", "white").upper()
-                grade = d["metadata"].get("grade", "F")
+                meta = d.get("metadata", {})
+                belt = meta.get("belt", "white").upper()
+                grade = meta.get("grade", "F")
                 is_success = 1 if grade in ("A", "B", "C") else 0
                 heatmap_rows.append({"Model": model, "Belt": belt, "Success": is_success})
 
@@ -570,23 +579,41 @@ elif selected_stage == "COMPARISON":
                 # Define belt order for axis
                 belt_order = ["WHITE", "YELLOW", "ORANGE", "GREEN", "BLUE", "PURPLE", "BROWN", "BLACK"]
 
-                heat_stats = df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
-                heat_stats["Success Rate"] = heat_stats["Success"] * 100
+                heat_stats = (
+                    df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
+                )
+                heat_stats["Success_Rate"] = heat_stats["Success"] * 100
 
-                heatmap = alt.Chart(heat_stats).mark_rect().encode(
-                    x=alt.X("Belt:N", sort=belt_order),
-                    y=alt.Y("Model:N"),
-                    color=alt.Color("Success Rate:Q", scale=alt.Scale(scheme="rdylgn"), title="Pass %"),
-                    tooltip=["Model", "Belt", alt.Tooltip("Success Rate:Q", format=".1f")]
-                ).properties(height=300)
+                heatmap = (
+                    alt.Chart(heat_stats)
+                    .mark_rect()
+                    .encode(
+                        x=alt.X("Belt:N", sort=belt_order),
+                        y=alt.Y("Model:N"),
+                        color=alt.Color(
+                            "Success_Rate:Q",
+                            scale=alt.Scale(scheme="rdylgn"),
+                            title="Pass %",
+                        ),
+                        tooltip=[
+                            "Model",
+                            "Belt",
+                            alt.Tooltip("Success_Rate:Q", format=".1f"),
+                        ],
+                    )
+                    .properties(height=300)
+                )
 
                 # Add text labels to heatmap
-                text = heatmap.mark_text(baseline='middle').encode(
-                    text=alt.Text("Success Rate:Q", format=".0f"),
-                    color=alt.condition(
-                        alt.datum["Success Rate"] > 50,
-                        alt.value("black"),
-                        alt.value("white")
+                text = (
+                    heatmap.mark_text(baseline="middle")
+                    .encode(
+                        text=alt.Text("Success_Rate:Q", format=".0f"),
+                        color=alt.condition(
+                            alt.datum.Success_Rate > 50,
+                            alt.value("black"),
+                            alt.value("white"),
+                        ),
                     )
                 )
 
@@ -669,14 +696,16 @@ elif selected_stage == "COMPARISON":
 
                 retry_data = []
                 for d in discovery_data:
+                    if not d or not isinstance(d, dict):
+                        continue
                     model = d.get("model_id", "UNKNOWN")
                     if model not in selected_models:
                         continue
                     # Extract attempts from source_challenge_id or metadata if available
                     # For now, we simulate this based on challenge repetition in discovery log
-                    retry_data.append(
-                        {"Model": model, "Grade": d["metadata"].get("grade", "F")}
-                    )
+                    meta = d.get("metadata", {})
+                    grade = meta.get("grade", "F")
+                    retry_data.append({"Model": model, "Grade": grade})
 
                 df_retry = pd.DataFrame(retry_data)
                 # Success on A/B is considered "Highly Reliable"
