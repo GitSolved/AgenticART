@@ -210,6 +210,7 @@ with st.sidebar:
 
     latest_model = "UNKNOWN"
     latest_session = "IDLE"
+    active_belt = None
     log_files = list(Path(OUTPUT_DIR / "training_data").glob("*_jsonl.jsonl"))
     if log_files:
         latest_log = max(log_files, key=os.path.getmtime)
@@ -218,6 +219,8 @@ with st.sidebar:
         if raw_events:
             model_id_val = raw_events[0]["metadata"].get("model_id")
             latest_model = safe_split(model_id_val, "-202", 0, default="UNKNOWN")
+            # Extract active belt from the most recent event
+            active_belt = raw_events[-1]["metadata"].get("belt")
 
     with st.expander("ℹ️ Session Intelligence", expanded=True):
         st.write(f"**Model:** `{latest_model}`")
@@ -227,17 +230,40 @@ with st.sidebar:
     # 2. Progression
     st.divider()
     st.markdown("### 🏆 Rank & Progression")
+
+    # Define belt emojis and labels
+    belt_map = {
+        "white": "⬜ WHITE",
+        "yellow": "🟨 YELLOW",
+        "orange": "🟧 ORANGE",
+        "green": "🟩 GREEN",
+        "blue": "🟦 BLUE",
+        "purple": "🟪 PURPLE",
+        "brown": "🟫 BROWN",
+        "black": "⬛ BLACK",
+    }
+
     count = len(alpaca_data)
-    if count >= 40:
-        rank, progress = "🟧 ORANGE", 0.8
-    elif count >= 20:
-        rank, progress = "🟨 YELLOW", 0.5
-    elif count >= 10:
-        rank, progress = "⬜ WHITE", 0.3
+
+    # Determine display rank: use active belt if available, otherwise use milestone-based rank
+    if active_belt and active_belt.lower() in belt_map:
+        rank = belt_map[active_belt.lower()]
     else:
-        rank, progress = "🥚 NOVICE", 0.1
+        if count >= 40:
+            rank = "🟧 ORANGE"
+        elif count >= 20:
+            rank = "🟨 YELLOW"
+        elif count >= 10:
+            rank = "⬜ WHITE"
+        else:
+            rank = "🥚 NOVICE"
+
     st.markdown(f"<div class='belt-badge'>{rank}</div>", unsafe_allow_html=True)
+
+    # Simple progress calculation for the bar
+    progress = min(count / 50, 1.0)
     st.progress(progress)
+
     with st.expander("🎯 Milestones", expanded=True):
         st.write(f"Warehouse: {count}/50")
         st.progress(min(count / 50, 1.0))
@@ -280,7 +306,14 @@ with st.sidebar:
     st.divider()
     selected_stage = st.radio(
         "🕹️ Stage",
-        ["MINE", "REFINERY", "WAREHOUSE", "INTELLIGENCE", "ANALYTICS", "COMPARISON"],
+        [
+            "EXECUTION",
+            "CURATION",
+            "PLAYBOOK",
+            "REINFORCEMENT",
+            "METRICS",
+            "BENCHMARKING",
+        ],
         index=st.session_state.get("operating_stage_index", 0),
     )
 
@@ -302,7 +335,7 @@ recent = [
     if datetime.fromisoformat(d["metadata"]["timestamp"]) > (now - timedelta(hours=1))
 ]
 m1, m2, m3, m4 = st.columns(4)
-m1.metric("Warehouse Yield", len(alpaca_data), help="Lifetime Successes")
+m1.metric("Playbook Yield", len(alpaca_data), help="Lifetime Successes")
 m2.metric(
     "Discovery Archive",
     len(discovery_data),
@@ -314,8 +347,8 @@ m4.metric("Engine Status", current_status.upper())
 st.divider()
 
 # --- DISPLAY LOGIC ---
-if selected_stage == "MINE":
-    st.subheader("📡 Trajectory Feed")
+if selected_stage == "EXECUTION":
+    st.subheader("📡 Execution Feed")
     st.markdown(
         "<div style='font-size:11px;color:#8b949e;margin-bottom:15px;'><span class='status-badge badge-success'>✅ KATA</span> Training Quality | <span class='status-badge badge-success'>✨ REFINED</span> Improved | <span class='status-badge badge-fail'>❌ NEGATIVE</span> Rejected | <span class='status-badge badge-recovery'>⚠️ RECOVERY</span> Self-Heal</div>",
         unsafe_allow_html=True,
@@ -339,7 +372,7 @@ if selected_stage == "MINE":
                 unsafe_allow_html=True,
             )
 
-elif selected_stage == "REFINERY":
+elif selected_stage == "CURATION":
     st.subheader("🧪 Quality Curation")
     st.markdown(
         "<div style='font-size:11px;color:#8b949e;margin-bottom:15px;'>A=Perfect, B=Minor, C=Marginal, D=Poor, F=Failed</div>",
@@ -369,16 +402,18 @@ elif selected_stage == "REFINERY":
             df = df[df["Logic"].str.contains(query, case=False)]
         st.dataframe(df.sort_values("Time", ascending=False), use_container_width=True)
 
-elif selected_stage == "WAREHOUSE":
-    st.subheader("🏛️ Gold Warehouse")
+elif selected_stage == "PLAYBOOK":
+    st.subheader("🏛️ Playbook")
     for i, ex in enumerate(reversed(alpaca_data)):
-        first_line = safe_split(ex.get("instruction"), "\n", 0, default="[No Instruction]")
+        first_line = safe_split(
+            ex.get("instruction"), "\n", 0, default="[No Instruction]"
+        )
         with st.expander(f"📜 {first_line}"):
             st.write(ex["instruction"])
             st.code(ex["output"], language="bash")
 
-elif selected_stage == "INTELLIGENCE":
-    st.subheader("🧠 Boundary Analytics")
+elif selected_stage == "REINFORCEMENT":
+    st.subheader("🧠 Reinforcement Analytics")
     for p in reversed(dpo_data[-10:]):
         with st.expander(
             f"Boundary: {p.get('metadata', {}).get('challenge_id', 'Exploration')}"
@@ -392,8 +427,8 @@ elif selected_stage == "INTELLIGENCE":
             c2.error("❌ REJECTED")
             c2.code(p["rejected"])
 
-elif selected_stage == "ANALYTICS":
-    st.subheader("📈 Performance Analytics")
+elif selected_stage == "METRICS":
+    st.subheader("📈 Performance Metrics")
     if discovery_data:
         df_a = pd.DataFrame(discovery_data)
 
@@ -404,7 +439,7 @@ elif selected_stage == "ANALYTICS":
             df_a = df_a[df_a["model_id"] == sel_model]
 
         df_a["dt"] = pd.to_datetime(df_a["metadata"].apply(lambda x: x["timestamp"]))
-        st.markdown("#### Cumulative Warehouse Yield (Last 6 Hours)")
+        st.markdown("#### Cumulative Playbook Yield (Last 6 Hours)")
         l6 = df_a[df_a["dt"] > (now - timedelta(hours=6))].copy()
         if not l6.empty:
             l6["is_success"] = l6["metadata"].apply(
@@ -500,8 +535,8 @@ elif selected_stage == "ANALYTICS":
             top_cmds.columns = ["Command", "Attempts"]
             st.table(top_cmds)
 
-elif selected_stage == "COMPARISON":
-    st.subheader("🏁 Model Benchmarking & Comparison")
+elif selected_stage == "BENCHMARKING":
+    st.subheader("🏁 Model Benchmarking")
 
     if not discovery_data:
         st.warning("No data available for comparison.")
@@ -572,22 +607,37 @@ elif selected_stage == "COMPARISON":
                 belt = meta.get("belt", "white").upper()
                 grade = meta.get("grade", "F")
                 is_success = 1 if grade in ("A", "B", "C") else 0
-                heatmap_rows.append({"Model": model, "Belt": belt, "Success": is_success})
+                heatmap_rows.append(
+                    {"Model": model, "Belt": belt, "Success": is_success}
+                )
 
             if heatmap_rows:
                 df_heat = pd.DataFrame(heatmap_rows)
                 # Define belt order for axis
-                belt_order = ["WHITE", "YELLOW", "ORANGE", "GREEN", "BLUE", "PURPLE", "BROWN", "BLACK"]
+                belt_order = [
+                    "WHITE",
+                    "YELLOW",
+                    "ORANGE",
+                    "GREEN",
+                    "BLUE",
+                    "PURPLE",
+                    "BROWN",
+                    "BLACK",
+                ]
 
                 heat_stats = (
                     df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
                 )
                 heat_stats["Success_Rate"] = (heat_stats["Success"] * 100).fillna(0)
 
-                base = alt.Chart(heat_stats).encode(
-                    x=alt.X("Belt:N", sort=belt_order),
-                    y=alt.Y("Model:N"),
-                ).properties(height=300)
+                base = (
+                    alt.Chart(heat_stats)
+                    .encode(
+                        x=alt.X("Belt:N", sort=belt_order),
+                        y=alt.Y("Model:N"),
+                    )
+                    .properties(height=300)
+                )
 
                 heatmap = base.mark_rect().encode(
                     color=alt.Color(
@@ -637,7 +687,7 @@ elif selected_stage == "COMPARISON":
                 st.altair_chart(chart, use_container_width=True)
 
             with c2:
-                st.markdown("**Warehouse Yield (Total High-Quality Examples)**")
+                st.markdown("**Playbook Yield (Total High-Quality Examples)**")
                 yield_stats = df_sel.groupby("Model")["HighQuality"].sum().reset_index()
                 chart = (
                     alt.Chart(yield_stats)
