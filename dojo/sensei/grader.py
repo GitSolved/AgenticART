@@ -132,6 +132,11 @@ class Grader:
                 syntax_issues + api_errors + exec_issues + obj_issues,
             )
 
+            # Guard: Don't treat infrastructure errors as valid corrections
+            if corrected_output and self._is_infrastructure_error(corrected_output):
+                corrected_output = None
+                correction_explanation = None
+
         # Get execution output for reference
         exec_output = None
         if session.attempts:
@@ -319,6 +324,43 @@ class Grader:
                 issues.append(f"Security concern: {issue_name.replace('_', ' ')}")
 
         return issues
+
+    def _is_infrastructure_error(self, output: str) -> bool:
+        """
+        Detect if output contains infrastructure/runtime errors rather than valid code.
+
+        This prevents exceptions from upstream services from being treated as
+        valid "correct" solutions in training data.
+
+        Args:
+            output: The output string to check.
+
+        Returns:
+            True if this appears to be an error, not a valid solution.
+        """
+        if not output:
+            return False
+
+        error_patterns = [
+            "[ERROR:",
+            "Traceback (most recent call last)",
+            "TypeError:",
+            "ValueError:",
+            "AttributeError:",
+            "KeyError:",
+            "RuntimeError:",
+            "Exception:",
+            "got an unexpected keyword argument",
+            "missing required positional argument",
+            "object has no attribute",
+        ]
+
+        output_lower = output.lower()
+        for pattern in error_patterns:
+            if pattern.lower() in output_lower:
+                return True
+
+        return False
 
     def _generate_correction(
         self,
