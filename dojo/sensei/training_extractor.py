@@ -54,6 +54,7 @@ class TrainingExtractor:
         """
         self.config = config or ExtractionConfig()
         self.executor = executor
+        self.grader_errors: list[dict] = []  # Track infrastructure errors
 
     def extract_from_session(
         self,
@@ -194,6 +195,16 @@ class TrainingExtractor:
             TrainingExample or None.
         """
         if not assessment.corrected_output:
+            return None
+
+        # Guard: Skip if corrected_output is actually an infrastructure error
+        if self._is_infrastructure_error(assessment.corrected_output):
+            self.grader_errors.append({
+                "challenge_id": session.challenge.id,
+                "status": "grader_error",
+                "reason": "corrected_output contains infrastructure error",
+                "raw_output": assessment.corrected_output[:200],  # Truncate for logging
+            })
             return None
 
         challenge = session.challenge
@@ -401,6 +412,43 @@ class TrainingExtractor:
 
         return "\n".join(lines)
 
+    def _is_infrastructure_error(self, output: str) -> bool:
+        """
+        Detect if output contains infrastructure/runtime errors rather than valid code.
+
+        This is a second-layer defense to prevent error messages from upstream
+        services from being included as "correct" solutions in training data.
+
+        Args:
+            output: The output string to check.
+
+        Returns:
+            True if this appears to be an error, not a valid solution.
+        """
+        if not output:
+            return False
+
+        error_patterns = [
+            "[ERROR:",
+            "Traceback (most recent call last)",
+            "TypeError:",
+            "ValueError:",
+            "AttributeError:",
+            "KeyError:",
+            "RuntimeError:",
+            "Exception:",
+            "got an unexpected keyword argument",
+            "missing required positional argument",
+            "object has no attribute",
+        ]
+
+        output_lower = output.lower()
+        for pattern in error_patterns:
+            if pattern.lower() in output_lower:
+                return True
+
+        return False
+
     def get_extraction_summary(
         self,
         examples: list[TrainingExample],
@@ -429,4 +477,6 @@ class TrainingExtractor:
             "total": len(examples),
             "by_type": by_type,
             "by_belt": by_belt,
+            "grader_errors": len(self.grader_errors),
+            "grader_error_details": self.grader_errors,
         }
