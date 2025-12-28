@@ -37,14 +37,14 @@ Provide only the adb command/script. No explanations or markdown.
     print(f"Result: {response}")
 
     from mlx_lm import stream_generate
-    
+
     # Test 2: Prompt with space
     prompt_space = prompt + " "
     print("\nTest 2: Prompt with space")
-    
+
     stop_sequences = ["<|endoftext|>", "###", "Human:", "Assistant:"]
     response_text = ""
-    
+
     print("==========")
     for response in stream_generate(model, tokenizer, prompt=prompt_space, max_tokens=100):
         response_text += response.text
@@ -55,7 +55,7 @@ Provide only the adb command/script. No explanations or markdown.
                     response_text = response_text[:response_text.find(stop)]
             break
     print("\n==========")
-    
+
     print(f"Final Response: '{response_text.strip()}'")
 
 if __name__ == "__main__":
