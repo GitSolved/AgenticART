@@ -1,345 +1,1990 @@
-# Yellow Belt Challenges
-# Purpose: Intermediate ADB skills - app interaction, file operations, log analysis
-# Focus: Building on white belt fundamentals with more complex operations
-
 challenges:
-  # Challenge 1: Extract App Permissions
-  - id: yellow_001
-    name: "App Permission Extraction"
-    description: |
-      Write an ADB command that extracts and displays all permissions
-      requested by the Settings app (com.android.settings).
-
-      The output should show the permissions declared in the app's manifest.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "extract app permissions"
-        target_package: "com.android.settings"
-
-    validation:
-      type: output_contains
-      expected: "permission"
-
-    hints:
-      - "Use the 'dumpsys' command to get package information"
-      - "The package manager can show detailed app info"
-      - "Try 'pm dump' or 'dumpsys package' commands"
-
-    kata_solution: "shell dumpsys package com.android.settings | grep permission"
-
-    tags:
-      - permissions
-      - app-analysis
-      - dumpsys
-
-  # Challenge 2: Start Activity with Intent
-  - id: yellow_002
-    name: "Launch Activity via Intent"
-    description: |
-      Write an ADB command that launches the Android Settings app's
-      main activity using an explicit intent.
-
-      The command should start the Settings application.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "start activity with intent"
-        target_package: "com.android.settings"
-
-    validation:
-      type: output_contains
-      expected: "Starting"
-
-    hints:
-      - "Use 'am start' to start activities"
-      - "You can specify the component with -n flag"
-      - "The main Settings activity is com.android.settings/.Settings"
-
-    kata_solution: "shell am start -n com.android.settings/.Settings"
-
-    tags:
-      - intents
-      - activity-manager
-      - app-launch
-
-  # Challenge 3: Network Interface Information
-  - id: yellow_003
-    name: "Network Configuration"
-    description: |
-      Write an ADB command that displays the network interface
-      configuration, including IP addresses assigned to the device.
-
-      Show all network interfaces and their addresses.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "get network configuration"
-
-    validation:
-      type: regex_match
-      pattern: "\\d+\\.\\d+\\.\\d+\\.\\d+"
-
-    hints:
-      - "Standard Linux network commands work on Android"
-      - "Try 'ifconfig' or 'ip addr' commands"
-      - "Network info is also available via 'netcfg' on older Android"
-
-    kata_solution: "shell ip addr"
-
-    tags:
-      - networking
-      - device-info
-      - reconnaissance
-
-  # Challenge 4: Filtered Logcat Output
-  - id: yellow_004
-    name: "Log Analysis with Filters"
-    description: |
-      Write an ADB command that captures logcat output filtered to show
-      only ERROR level messages from the ActivityManager.
-
-      The command should exit after capturing (not run indefinitely).
-    belt: yellow
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "filter logcat output"
-        filter_tag: "ActivityManager"
-        filter_level: "E"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Logcat supports tag:priority filters"
-      - "Use -d flag to dump and exit instead of streaming"
-      - "Priority levels: V, D, I, W, E, F, S"
-      - "Silence other tags with *:S"
-
-    kata_solution: "shell logcat -d ActivityManager:E *:S"
-
-    tags:
-      - logcat
-      - debugging
-      - log-analysis
-
-  # Challenge 5: List Running Services
-  - id: yellow_005
-    name: "Running Services Enumeration"
-    description: |
-      Write an ADB command that lists all currently running services
-      on the Android device.
-
-      The output should show active Android services.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "enumerate running services"
-
-    validation:
-      type: output_contains
-      expected: "ServiceRecord"
-
-    hints:
-      - "Use 'dumpsys' to query system services"
-      - "The activity manager tracks running services"
-      - "Try 'dumpsys activity services'"
-
-    kata_solution: "shell dumpsys activity services"
-
-    tags:
-      - services
-      - enumeration
-      - dumpsys
-
-  # Challenge 6: Extract APK Path
-  - id: yellow_006
-    name: "APK Path Discovery"
-    description: |
-      Write an ADB command that finds the APK file path for the
-      Calculator app (com.android.calculator2).
-
-      The output should show the full path to the APK on the device.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "find APK path"
-        target_package: "com.android.calculator2"
-
-    validation:
-      type: output_contains
-      expected: ".apk"
-
-    hints:
-      - "Package manager can show the path to installed APKs"
-      - "Use 'pm path' command with the package name"
-
-    kata_solution: "shell pm path com.android.calculator2"
-
-    tags:
-      - apk-extraction
-      - package-manager
-      - app-analysis
-
-  # Challenge 7: Broadcast Intent
-  - id: yellow_007
-    name: "Send Broadcast Intent"
-    description: |
-      Write an ADB command that sends a broadcast intent to trigger
-      a connectivity change notification on the device.
-
-      Use the CONNECTIVITY_CHANGE action.
-    belt: yellow
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "send broadcast intent"
-        action: "android.net.conn.CONNECTIVITY_CHANGE"
-
-    validation:
-      type: output_contains
-      expected: "Broadcast completed"
-
-    hints:
-      - "Use 'am broadcast' to send broadcast intents"
-      - "Specify the action with -a flag"
-      - "Some broadcasts may require specific permissions"
-
-    kata_solution: "shell am broadcast -a android.net.conn.CONNECTIVITY_CHANGE"
-
-    tags:
-      - intents
-      - broadcast
-      - activity-manager
-
-  # Challenge 8: Screen Capture
-  - id: yellow_008
-    name: "Device Screenshot"
-    description: |
-      Write an ADB command that captures a screenshot of the device
-      screen and saves it to /sdcard/screenshot.png on the device.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "capture screenshot"
-        output_path: "/sdcard/screenshot.png"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use the 'screencap' command"
-      - "Specify the output path with -p flag for PNG format"
-      - "The file will be saved on the device, not host"
-
-    kata_solution: "shell screencap -p /sdcard/screenshot.png"
-
-    tags:
-      - screenshot
-      - device-interaction
-      - media
-
-  # Challenge 9: Input Text
-  - id: yellow_009
-    name: "Simulate Text Input"
-    description: |
-      Write an ADB command that simulates typing the text "hello"
-      into the currently focused text field on the device.
-    belt: yellow
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "simulate text input"
-        text: "hello"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use the 'input' command for simulating user input"
-      - "The 'text' subcommand sends keystrokes"
-      - "Special characters may need escaping"
-
-    kata_solution: "shell input text hello"
-
-    tags:
-      - input-simulation
-      - automation
-      - device-interaction
-
-  # Challenge 10: CPU Information
-  - id: yellow_010
-    name: "CPU Architecture Info"
-    description: |
-      Write an ADB command that retrieves the CPU architecture
-      and processor information from the device.
-
-      The output should show what CPU/processor the device uses.
-    belt: yellow
-    difficulty: 1
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "get CPU information"
-
-    validation:
-      type: output_contains
-      expected: "processor"
-
-    hints:
-      - "CPU info is available in the proc filesystem"
-      - "Try reading /proc/cpuinfo"
-      - "Use cat to read the file contents"
-
-    kata_solution: "shell cat /proc/cpuinfo"
-
-    tags:
-      - device-info
-      - hardware
-      - reconnaissance
+- id: yellow_001
+  name: App Permission Extraction
+  description: 'Write an ADB command that extracts and displays all permissions
+
+    requested by the Settings app (com.android.settings).
+
+
+    The output should show the permissions declared in the app''s manifest.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: extract app permissions
+      target_package: com.android.settings
+  validation:
+    type: output_contains
+    expected: permission
+  hints:
+  - Use the 'dumpsys' command to get package information
+  - The package manager can show detailed app info
+  - Try 'pm dump' or 'dumpsys package' commands
+  kata_solution: shell dumpsys package com.android.settings | grep permission
+  tags:
+  - permissions
+  - app-analysis
+  - dumpsys
+- id: yellow_002
+  name: Launch Activity via Intent
+  description: 'Write an ADB command that launches the Android Settings app''s
+
+    main activity using an explicit intent.
+
+
+    The command should start the Settings application.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: start activity with intent
+      target_package: com.android.settings
+  validation:
+    type: output_contains
+    expected: Starting
+  hints:
+  - Use 'am start' to start activities
+  - You can specify the component with -n flag
+  - The main Settings activity is com.android.settings/.Settings
+  kata_solution: shell am start -n com.android.settings/.Settings
+  tags:
+  - intents
+  - activity-manager
+  - app-launch
+- id: yellow_003
+  name: Network Configuration
+  description: 'Write an ADB command that displays the network interface
+
+    configuration, including IP addresses assigned to the device.
+
+
+    Show all network interfaces and their addresses.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: get network configuration
+  validation:
+    type: regex_match
+    pattern: \d+\.\d+\.\d+\.\d+
+  hints:
+  - Standard Linux network commands work on Android
+  - Try 'ifconfig' or 'ip addr' commands
+  - Network info is also available via 'netcfg' on older Android
+  kata_solution: shell ip addr
+  tags:
+  - networking
+  - device-info
+  - reconnaissance
+- id: yellow_004
+  name: Log Analysis with Filters
+  description: 'Write an ADB command that captures logcat output filtered to show
+
+    only ERROR level messages from the ActivityManager.
+
+
+    The command should exit after capturing (not run indefinitely).
+
+    '
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: filter logcat output
+      filter_tag: ActivityManager
+      filter_level: E
+  validation:
+    type: not_empty
+  hints:
+  - Logcat supports tag:priority filters
+  - Use -d flag to dump and exit instead of streaming
+  - 'Priority levels: V, D, I, W, E, F, S'
+  - Silence other tags with *:S
+  kata_solution: shell logcat -d ActivityManager:E *:S
+  tags:
+  - logcat
+  - debugging
+  - log-analysis
+- id: yellow_005
+  name: Running Services Enumeration
+  description: 'Write an ADB command that lists all currently running services
+
+    on the Android device.
+
+
+    The output should show active Android services.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: enumerate running services
+  validation:
+    type: output_contains
+    expected: ServiceRecord
+  hints:
+  - Use 'dumpsys' to query system services
+  - The activity manager tracks running services
+  - Try 'dumpsys activity services'
+  kata_solution: shell dumpsys activity services
+  tags:
+  - services
+  - enumeration
+  - dumpsys
+- id: yellow_006
+  name: APK Path Discovery
+  description: 'Write an ADB command that finds the APK file path for the
+
+    Calculator app (com.android.calculator2).
+
+
+    The output should show the full path to the APK on the device.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: find APK path
+      target_package: com.android.calculator2
+  validation:
+    type: output_contains
+    expected: .apk
+  hints:
+  - Package manager can show the path to installed APKs
+  - Use 'pm path' command with the package name
+  kata_solution: shell pm path com.android.calculator2
+  tags:
+  - apk-extraction
+  - package-manager
+  - app-analysis
+- id: yellow_007
+  name: Send Broadcast Intent
+  description: 'Write an ADB command that sends a broadcast intent to trigger
+
+    a connectivity change notification on the device.
+
+
+    Use the CONNECTIVITY_CHANGE action.
+
+    '
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: send broadcast intent
+      action: android.net.conn.CONNECTIVITY_CHANGE
+  validation:
+    type: output_contains
+    expected: Broadcast completed
+  hints:
+  - Use 'am broadcast' to send broadcast intents
+  - Specify the action with -a flag
+  - Some broadcasts may require specific permissions
+  kata_solution: shell am broadcast -a android.net.conn.CONNECTIVITY_CHANGE
+  tags:
+  - intents
+  - broadcast
+  - activity-manager
+- id: yellow_008
+  name: Device Screenshot
+  description: 'Write an ADB command that captures a screenshot of the device
+
+    screen and saves it to /sdcard/screenshot.png on the device.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: capture screenshot
+      output_path: /sdcard/screenshot.png
+  validation:
+    type: not_empty
+  hints:
+  - Use the 'screencap' command
+  - Specify the output path with -p flag for PNG format
+  - The file will be saved on the device, not host
+  kata_solution: shell screencap -p /sdcard/screenshot.png
+  tags:
+  - screenshot
+  - device-interaction
+  - media
+- id: yellow_009
+  name: Simulate Text Input
+  description: 'Write an ADB command that simulates typing the text "hello"
+
+    into the currently focused text field on the device.
+
+    '
+  belt: yellow
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: simulate text input
+      text: hello
+  validation:
+    type: not_empty
+  hints:
+  - Use the 'input' command for simulating user input
+  - The 'text' subcommand sends keystrokes
+  - Special characters may need escaping
+  kata_solution: shell input text hello
+  tags:
+  - input-simulation
+  - automation
+  - device-interaction
+- id: yellow_010
+  name: CPU Architecture Info
+  description: 'Write an ADB command that retrieves the CPU architecture
+
+    and processor information from the device.
+
+
+    The output should show what CPU/processor the device uses.
+
+    '
+  belt: yellow
+  difficulty: 1
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: get CPU information
+  validation:
+    type: output_contains
+    expected: processor
+  hints:
+  - CPU info is available in the proc filesystem
+  - Try reading /proc/cpuinfo
+  - Use cat to read the file contents
+  kata_solution: shell cat /proc/cpuinfo
+  tags:
+  - device-info
+  - hardware
+  - reconnaissance
+- id: yellow_cve_2014_0537
+  name: 'CVE Analysis: CVE-2014-0537'
+  description: 'Target: CVE-2014-0537
+
+
+    Adobe Flash Player before 13.0.0.231 and 14.x before 14.0.0.145 on Windows and
+    OS X and before 11.2.202.394 on Linux, Adobe AIR before 14.0.0.137 on Android,
+    Adobe AIR SDK before 14.0.0.137, and Adobe AIR SDK & Compiler before 14.0.0.137
+    allow attackers to bypass intended access restrictions via unspecified vectors,
+    a different vulnerability than CVE-2014-0539.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0537
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0537
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0537
+  - cwe-264
+- id: yellow_cve_2014_0539
+  name: 'CVE Analysis: CVE-2014-0539'
+  description: 'Target: CVE-2014-0539
+
+
+    Adobe Flash Player before 13.0.0.231 and 14.x before 14.0.0.145 on Windows and
+    OS X and before 11.2.202.394 on Linux, Adobe AIR before 14.0.0.137 on Android,
+    Adobe AIR SDK before 14.0.0.137, and Adobe AIR SDK & Compiler before 14.0.0.137
+    allow attackers to bypass intended access restrictions via unspecified vectors,
+    a different vulnerability than CVE-2014-0537.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0539
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0539
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0539
+  - cwe-264
+- id: yellow_cve_2014_4671
+  name: 'CVE Analysis: CVE-2014-4671'
+  description: 'Target: CVE-2014-4671
+
+
+    Adobe Flash Player before 13.0.0.231 and 14.x before 14.0.0.145 on Windows and
+    OS X and before 11.2.202.394 on Linux, Adobe AIR before 14.0.0.137 on Android,
+    Adobe AIR SDK before 14.0.0.137, and Adobe AIR SDK & Compiler before 14.0.0.137
+    do not properly restrict the SWF file format, which allows remote attackers to
+    conduct cross-site request forgery (CSRF) attacks against JSONP endpoints, and
+    obtain sensitive information, via a crafted OBJECT element with SWF content satisfying
+    the character-set requirements of a callback API.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-4671
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-4671
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-4671
+  - cwe-352
+- id: yellow_cve_2014_0538
+  name: 'CVE Analysis: CVE-2014-0538'
+  description: 'Target: CVE-2014-0538
+
+
+    Use-after-free vulnerability in Adobe Flash Player before 13.0.0.241 and 14.x
+    before 14.0.0.176 on Windows and OS X and before 11.2.202.400 on Linux, Adobe
+    AIR before 14.0.0.178 on Windows and OS X and before 14.0.0.179 on Android, Adobe
+    AIR SDK before 14.0.0.178, and Adobe AIR SDK & Compiler before 14.0.0.178 allows
+    attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0538
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0538
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0538
+- id: yellow_cve_2014_0540
+  name: 'CVE Analysis: CVE-2014-0540'
+  description: 'Target: CVE-2014-0540
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors, a different vulnerability than CVE-2014-0542, CVE-2014-0543,
+    CVE-2014-0544, and CVE-2014-0545.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0540
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0540
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0540
+  - cwe-264
+- id: yellow_cve_2014_0541
+  name: 'CVE Analysis: CVE-2014-0541'
+  description: 'Target: CVE-2014-0541
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 allow attackers to bypass intended
+    access restrictions via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0541
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0541
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0541
+  - cwe-264
+- id: yellow_cve_2014_0542
+  name: 'CVE Analysis: CVE-2014-0542'
+  description: 'Target: CVE-2014-0542
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors, a different vulnerability than CVE-2014-0540, CVE-2014-0543,
+    CVE-2014-0544, and CVE-2014-0545.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0542
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0542
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0542
+  - cwe-264
+- id: yellow_cve_2014_0543
+  name: 'CVE Analysis: CVE-2014-0543'
+  description: 'Target: CVE-2014-0543
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors, a different vulnerability than CVE-2014-0540, CVE-2014-0542,
+    CVE-2014-0544, and CVE-2014-0545.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0543
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0543
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0543
+  - cwe-264
+- id: yellow_cve_2014_0544
+  name: 'CVE Analysis: CVE-2014-0544'
+  description: 'Target: CVE-2014-0544
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors, a different vulnerability than CVE-2014-0540, CVE-2014-0542,
+    CVE-2014-0543, and CVE-2014-0545.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0544
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0544
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0544
+  - cwe-264
+- id: yellow_cve_2014_0545
+  name: 'CVE Analysis: CVE-2014-0545'
+  description: 'Target: CVE-2014-0545
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors, a different vulnerability than CVE-2014-0540, CVE-2014-0542,
+    CVE-2014-0543, and CVE-2014-0544.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0545
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0545
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0545
+  - cwe-264
+- id: yellow_cve_2014_5333
+  name: 'CVE Analysis: CVE-2014-5333'
+  description: 'Target: CVE-2014-5333
+
+
+    Adobe Flash Player before 13.0.0.241 and 14.x before 14.0.0.176 on Windows and
+    OS X and before 11.2.202.400 on Linux, Adobe AIR before 14.0.0.178 on Windows
+    and OS X and before 14.0.0.179 on Android, Adobe AIR SDK before 14.0.0.178, and
+    Adobe AIR SDK & Compiler before 14.0.0.178 do not properly restrict the SWF file
+    format, which allows remote attackers to conduct cross-site request forgery (CSRF)
+    attacks against JSONP endpoints, and obtain sensitive information, via a crafted
+    OBJECT element with SWF content satisfying the character-set requirements of a
+    callback API, in conjunction with a manipulation involving a ''$'' (dollar sign)
+    or ''('' (open parenthesis) character. NOTE: this issue exists because of an incomplete
+    fix for CVE-2014-4671.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-5333
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-5333
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-5333
+  - cwe-352
+- id: yellow_cve_2014_5588
+  name: 'CVE Analysis: CVE-2014-5588'
+  description: 'Target: CVE-2014-5588
+
+
+    The Free eBooks (aka com.bmfapps.freekindlebooks) application 14 for Android does
+    not verify X.509 certificates from SSL servers, which allows man-in-the-middle
+    attackers to spoof servers and obtain sensitive information via a crafted certificate.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-5588
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-5588
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-5588
+  - cwe-310
+- id: yellow_cve_2014_0547
+  name: 'CVE Analysis: CVE-2014-0547'
+  description: 'Target: CVE-2014-0547
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0549, CVE-2014-0550, CVE-2014-0551, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0547
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0547
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0547
+  - cwe-119
+- id: yellow_cve_2014_0548
+  name: 'CVE Analysis: CVE-2014-0548'
+  description: 'Target: CVE-2014-0548
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow remote attackers to bypass the
+    Same Origin Policy via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0548
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0548
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0548
+  - cwe-264
+- id: yellow_cve_2014_0549
+  name: 'CVE Analysis: CVE-2014-0549'
+  description: 'Target: CVE-2014-0549
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0550, CVE-2014-0551, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0549
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0549
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0549
+  - cwe-119
+- id: yellow_cve_2014_0550
+  name: 'CVE Analysis: CVE-2014-0550'
+  description: 'Target: CVE-2014-0550
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0551, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0550
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0550
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0550
+  - cwe-119
+- id: yellow_cve_2014_0551
+  name: 'CVE Analysis: CVE-2014-0551'
+  description: 'Target: CVE-2014-0551
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0551
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0551
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0551
+  - cwe-119
+- id: yellow_cve_2014_0552
+  name: 'CVE Analysis: CVE-2014-0552'
+  description: 'Target: CVE-2014-0552
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550, CVE-2014-0551,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0552
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0552
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0552
+  - cwe-119
+- id: yellow_cve_2014_0553
+  name: 'CVE Analysis: CVE-2014-0553'
+  description: 'Target: CVE-2014-0553
+
+
+    Use-after-free vulnerability in Adobe Flash Player before 13.0.0.244 and 14.x
+    and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on Linux,
+    Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android,
+    Adobe AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249
+    allows attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0553
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0553
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0553
+- id: yellow_cve_2014_0555
+  name: 'CVE Analysis: CVE-2014-0555'
+  description: 'Target: CVE-2014-0555
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550, CVE-2014-0551,
+    and CVE-2014-0552.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0555
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0555
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0555
+  - cwe-119
+- id: yellow_cve_2014_0556
+  name: 'CVE Analysis: CVE-2014-0556'
+  description: 'Target: CVE-2014-0556
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.244 and 14.x and
+    15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on Linux, Adobe
+    AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe
+    AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2014-0559.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0556
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0556
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0556
+  - cwe-119
+- id: yellow_cve_2014_0557
+  name: 'CVE Analysis: CVE-2014-0557'
+  description: 'Target: CVE-2014-0557
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0557
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0557
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0557
+  - cwe-264
+- id: yellow_cve_2014_0559
+  name: 'CVE Analysis: CVE-2014-0559'
+  description: 'Target: CVE-2014-0559
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.244 and 14.x and
+    15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on Linux, Adobe
+    AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe
+    AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2014-0556.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0559
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0559
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0559
+  - cwe-119
+- id: yellow_cve_2014_0554
+  name: 'CVE Analysis: CVE-2014-0554'
+  description: 'Target: CVE-2014-0554
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to bypass intended
+    access restrictions via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2014-0554
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0554
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0554
+- id: yellow_cve_2015_0301
+  name: 'CVE Analysis: CVE-2015-0301'
+  description: 'Target: CVE-2015-0301
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 do not properly validate files,
+    which has unspecified impact and attack vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0301
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0301
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0301
+  - cwe-20
+- id: yellow_cve_2015_0302
+  name: 'CVE Analysis: CVE-2015-0302'
+  description: 'Target: CVE-2015-0302
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to obtain sensitive
+    keystroke information via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0302
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0302
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0302
+- id: yellow_cve_2015_0303
+  name: 'CVE Analysis: CVE-2015-0303'
+  description: 'Target: CVE-2015-0303
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2015-0306.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0303
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0303
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0303
+- id: yellow_cve_2015_0304
+  name: 'CVE Analysis: CVE-2015-0304'
+  description: 'Target: CVE-2015-0304
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.260 and 14.x through
+    16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429 on Linux, Adobe
+    AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe
+    AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before 16.0.0.272 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2015-0309.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0304
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0304
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0304
+  - cwe-119
+- id: yellow_cve_2015_0305
+  name: 'CVE Analysis: CVE-2015-0305'
+  description: 'Target: CVE-2015-0305
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary
+    code by leveraging an unspecified "type confusion."
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0305
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0305
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0305
+- id: yellow_cve_2015_0306
+  name: 'CVE Analysis: CVE-2015-0306'
+  description: 'Target: CVE-2015-0306
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2015-0303.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0306
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0306
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0306
+- id: yellow_cve_2015_0307
+  name: 'CVE Analysis: CVE-2015-0307'
+  description: 'Target: CVE-2015-0307
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow remote attackers to obtain
+    sensitive information from process memory or cause a denial of service (out-of-bounds
+    read) via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0307
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0307
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0307
+  - cwe-119
+- id: yellow_cve_2015_0308
+  name: 'CVE Analysis: CVE-2015-0308'
+  description: 'Target: CVE-2015-0308
+
+
+    Use-after-free vulnerability in Adobe Flash Player before 13.0.0.260 and 14.x
+    through 16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429 on
+    Linux, Adobe AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on
+    Android, Adobe AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before
+    16.0.0.272 allows attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0308
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0308
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0308
+- id: yellow_cve_2015_0309
+  name: 'CVE Analysis: CVE-2015-0309'
+  description: 'Target: CVE-2015-0309
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.260 and 14.x through
+    16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429 on Linux, Adobe
+    AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe
+    AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before 16.0.0.272 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2015-0304.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-0309
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0309
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0309
+  - cwe-119
+- id: yellow_cve_2015_3096
+  name: 'CVE Analysis: CVE-2015-3096'
+  description: 'Target: CVE-2015-3096
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X allow remote attackers to
+    bypass a CVE-2014-5333 protection mechanism via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3096
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3096
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3096
+  - cwe-352
+- id: yellow_cve_2015_3098
+  name: 'CVE Analysis: CVE-2015-3098'
+  description: 'Target: CVE-2015-3098
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X allow remote attackers to
+    bypass the Same Origin Policy via unspecified vectors, a different vulnerability
+    than CVE-2015-3099 and CVE-2015-3102.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3098
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3098
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3098
+  - cwe-200
+- id: yellow_cve_2015_3099
+  name: 'CVE Analysis: CVE-2015-3099'
+  description: 'Target: CVE-2015-3099
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X allow remote attackers to
+    bypass the Same Origin Policy via unspecified vectors, a different vulnerability
+    than CVE-2015-3098 and CVE-2015-3102.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3099
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3099
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3099
+  - cwe-200
+- id: yellow_cve_2015_3100
+  name: 'CVE Analysis: CVE-2015-3100'
+  description: 'Target: CVE-2015-3100
+
+
+    Stack-based buffer overflow in Adobe Flash Player before 13.0.0.292 and 14.x through
+    18.x before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on Linux, Adobe
+    AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe
+    AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe
+    AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143 on OS X
+    allows attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3100
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3100
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3100
+  - cwe-119
+- id: yellow_cve_2015_3101
+  name: 'CVE Analysis: CVE-2015-3101'
+  description: 'Target: CVE-2015-3101
+
+
+    The Flash broker in Adobe Flash Player before 13.0.0.292 and 14.x through 18.x
+    before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on Linux, Adobe
+    AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe
+    AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe
+    AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143 on OS X,
+    when Internet Explorer is used, allows attackers to perform a transition from
+    Low Integrity to Medium Integrity via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3101
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3101
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3101
+  - cwe-264
+- id: yellow_cve_2015_3102
+  name: 'CVE Analysis: CVE-2015-3102'
+  description: 'Target: CVE-2015-3102
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X allow remote attackers to
+    bypass the Same Origin Policy via unspecified vectors, a different vulnerability
+    than CVE-2015-3098 and CVE-2015-3099.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3102
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3102
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3102
+  - cwe-200
+- id: yellow_cve_2015_3103
+  name: 'CVE Analysis: CVE-2015-3103'
+  description: 'Target: CVE-2015-3103
+
+
+    Use-after-free vulnerability in Adobe Flash Player before 13.0.0.292 and 14.x
+    through 18.x before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on
+    Linux, Adobe AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and
+    Android, Adobe AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS
+    X, and Adobe AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143
+    on OS X allows attackers to execute arbitrary code via unspecified vectors, a
+    different vulnerability than CVE-2015-3106 and CVE-2015-3107.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3103
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3103
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3103
+- id: yellow_cve_2015_3104
+  name: 'CVE Analysis: CVE-2015-3104'
+  description: 'Target: CVE-2015-3104
+
+
+    Integer overflow in Adobe Flash Player before 13.0.0.292 and 14.x through 18.x
+    before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on Linux, Adobe
+    AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe
+    AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe
+    AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143 on OS X
+    allows attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3104
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3104
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3104
+  - cwe-189
+- id: yellow_cve_2015_3105
+  name: 'CVE Analysis: CVE-2015-3105'
+  description: 'Target: CVE-2015-3105
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X allow attackers to execute
+    arbitrary code or cause a denial of service (memory corruption) via unspecified
+    vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3105
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3105
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3105
+  - cwe-119
+- id: yellow_cve_2015_3106
+  name: 'CVE Analysis: CVE-2015-3106'
+  description: 'Target: CVE-2015-3106
+
+
+    Use-after-free vulnerability in Adobe Flash Player before 13.0.0.292 and 14.x
+    through 18.x before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on
+    Linux, Adobe AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and
+    Android, Adobe AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS
+    X, and Adobe AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143
+    on OS X allows attackers to execute arbitrary code via unspecified vectors, a
+    different vulnerability than CVE-2015-3103 and CVE-2015-3107.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3106
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3106
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3106
+- id: yellow_cve_2015_3107
+  name: 'CVE Analysis: CVE-2015-3107'
+  description: 'Target: CVE-2015-3107
+
+
+    Use-after-free vulnerability in Adobe Flash Player before 13.0.0.292 and 14.x
+    through 18.x before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on
+    Linux, Adobe AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and
+    Android, Adobe AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS
+    X, and Adobe AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143
+    on OS X allows attackers to execute arbitrary code via unspecified vectors, a
+    different vulnerability than CVE-2015-3103 and CVE-2015-3106.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3107
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3107
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3107
+  - cwe-416
+- id: yellow_cve_2015_3108
+  name: 'CVE Analysis: CVE-2015-3108'
+  description: 'Target: CVE-2015-3108
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X do not properly restrict discovery
+    of memory addresses, which allows attackers to bypass the ASLR protection mechanism
+    via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-3108
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3108
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3108
+  - cwe-200
+- id: yellow_cve_2015_8073
+  name: 'CVE Analysis: CVE-2015-8073'
+  description: 'Target: CVE-2015-8073
+
+
+    mediaserver in Android 4.4 and 5.1 before 5.1.1 LMY48X allows remote attackers
+    to execute arbitrary code or cause a denial of service (memory corruption) via
+    a crafted media file, aka internal bug 14388161, a different vulnerability than
+    CVE-2015-6608 and CVE-2015-8072.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2015-8073
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-8073
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-8073
+  - cwe-119
+- id: yellow_cve_2022_41926
+  name: 'CVE Analysis: CVE-2022-41926'
+  description: 'Target: CVE-2022-41926
+
+
+    Nextcould talk android is the android OS implementation of the nextcloud talk
+    chat system. In affected versions the receiver is not protected by broadcastPermission
+    allowing malicious apps to monitor communication. It is recommended that the Nextcloud
+    Talk Android is upgraded to 14.1.0. There are no known workarounds for this issue.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: yellow
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2022-41926
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: LOW
+  expected_output:
+    must_contain:
+    - CVE-2022-41926
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2022-41926
+  - cwe-200
+  - cwe-732

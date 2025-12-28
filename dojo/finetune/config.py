@@ -10,9 +10,9 @@ class FinetuneConfig:
     """Configuration for fine-tuning WhiteRabbitNeo or similar models."""
 
     # Model settings
-    base_model: str = "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF"
-    huggingface_model: str = "WhiteRabbitNeo/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B"
-    output_name: str = "WhiteRabbitNeo-ADB-Dojo"
+    base_model: str = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    huggingface_model: str = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    output_name: str = "Qwen2.5-Coder-32B-ADB-Dojo"
 
     # LoRA settings
     lora_r: int = 16

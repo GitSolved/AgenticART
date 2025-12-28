@@ -1,613 +1,801 @@
-# Orange Belt Challenges
-# Purpose: Advanced ADB operations - file system, databases, network, app internals
-# Focus: Deeper device analysis and security-relevant operations
-
 challenges:
-  # Challenge 1: List App Data Directory
-  - id: orange_001
-    name: "App Data Directory Exploration"
-    description: |
-      Write an ADB command that lists the contents of the data directory
-      for the Settings app (com.android.settings).
-
-      This requires accessing /data/data/com.android.settings/ which may
-      need the run-as command for debuggable apps.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "list app data directory"
-        target_package: "com.android.settings"
-        target_path: "/data/data/com.android.settings/"
-
-    validation:
-      type: output_contains
-      expected: "shared_prefs"
-
-    hints:
-      - "Use 'run-as' to execute commands as the app"
-      - "Alternatively, use 'ls' with the full path"
-      - "Some apps may not be debuggable"
-
-    kata_solution: "shell run-as com.android.settings ls /data/data/com.android.settings/"
-
-    tags:
-      - file-system
-      - app-data
-      - run-as
-
-  # Challenge 2: SQLite Database Query
-  - id: orange_002
-    name: "SQLite Database Extraction"
-    description: |
-      Write an ADB command that queries the contacts database to show
-      all tables in the contacts2.db database.
-
-      Use sqlite3 to interact with the database.
-    belt: orange
-    difficulty: 4
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "query SQLite database"
-        database_path: "/data/data/com.android.providers.contacts/databases/contacts2.db"
-
-    validation:
-      type: output_contains
-      expected: "table"
-
-    hints:
-      - "Use sqlite3 command-line tool"
-      - "The .tables command lists all tables"
-      - "May need root access for protected databases"
-
-    kata_solution: "shell sqlite3 /data/data/com.android.providers.contacts/databases/contacts2.db '.tables'"
-
-    tags:
-      - database
-      - sqlite
-      - data-extraction
-
-  # Challenge 3: Network Connections
-  - id: orange_003
-    name: "Active Network Connections"
-    description: |
-      Write an ADB command that displays all active network connections
-      on the device, including listening ports and established connections.
-
-      Show TCP and UDP connections with their states.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "list network connections"
-
-    validation:
-      type: output_contains
-      expected: "LISTEN"
-
-    hints:
-      - "Use netstat or ss command"
-      - "The -a flag shows all connections"
-      - "The -n flag shows numeric addresses"
-
-    kata_solution: "shell netstat -an"
-
-    tags:
-      - networking
-      - connections
-      - reconnaissance
-
-  # Challenge 4: Content Provider Query
-  - id: orange_004
-    name: "Content Provider Enumeration"
-    description: |
-      Write an ADB command that queries the Settings content provider
-      to retrieve system settings values.
-
-      Use the content command to query content://settings/system.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "query content provider"
-        content_uri: "content://settings/system"
-
-    validation:
-      type: output_contains
-      expected: "Row:"
-
-    hints:
-      - "Use the 'content' command for content provider operations"
-      - "The 'query' subcommand retrieves data"
-      - "Specify the URI with --uri flag"
-
-    kata_solution: "shell content query --uri content://settings/system"
-
-    tags:
-      - content-provider
-      - settings
-      - data-access
-
-  # Challenge 5: Memory Maps
-  - id: orange_005
-    name: "Process Memory Mapping"
-    description: |
-      Write an ADB command that displays the memory map of the
-      system_server process, showing all loaded libraries and memory regions.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "view process memory maps"
-        target_process: "system_server"
-
-    validation:
-      type: output_contains
-      expected: ".so"
-
-    hints:
-      - "Memory maps are in /proc/[pid]/maps"
-      - "First find the PID of system_server"
-      - "Use pgrep or ps to find the PID"
-
-    kata_solution: "shell cat /proc/$(pidof system_server)/maps"
-
-    tags:
-      - memory
-      - process-analysis
-      - reconnaissance
-
-  # Challenge 6: Installed Package Details
-  - id: orange_006
-    name: "Package Component Listing"
-    description: |
-      Write an ADB command that lists all activities, services, and
-      receivers declared in the Browser app manifest.
-
-      Show the exported components of com.android.browser.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "enumerate app components"
-        target_package: "com.android.browser"
-
-    validation:
-      type: output_contains
-      expected: "Activity"
-
-    hints:
-      - "Use dumpsys package to get detailed package info"
-      - "Package info includes declared components"
-      - "Filter output to show relevant sections"
-
-    kata_solution: "shell dumpsys package com.android.browser | grep -A 100 'Activity Resolver Table'"
-
-    tags:
-      - app-analysis
-      - components
-      - manifest
-
-  # Challenge 7: System Properties Dump
-  - id: orange_007
-    name: "Security Properties Extraction"
-    description: |
-      Write an ADB command that extracts all security-related system
-      properties from the device, including SELinux and crypto settings.
-
-      Filter for properties containing 'security' or 'selinux'.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "extract security properties"
-
-    validation:
-      type: output_contains
-      expected: "selinux"
-
-    hints:
-      - "Use getprop to list all system properties"
-      - "Pipe through grep to filter results"
-      - "Security properties often contain 'ro.crypto' or 'selinux'"
-
-    kata_solution: "shell getprop | grep -iE 'security|selinux'"
-
-    tags:
-      - security
-      - properties
-      - selinux
-
-  # Challenge 8: Force Stop Application
-  - id: orange_008
-    name: "Application Force Stop"
-    description: |
-      Write an ADB command that force stops the Calculator application
-      (com.android.calculator2), terminating all its processes.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "force stop application"
-        target_package: "com.android.calculator2"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use 'am force-stop' command"
-      - "Specify the package name"
-      - "This kills all processes for the app"
-
-    kata_solution: "shell am force-stop com.android.calculator2"
-
-    tags:
-      - process-control
-      - activity-manager
-      - app-management
-
-  # Challenge 9: Keyevent Simulation
-  - id: orange_009
-    name: "Hardware Key Simulation"
-    description: |
-      Write an ADB command that simulates pressing the HOME button
-      on the device, returning the user to the home screen.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "simulate hardware key press"
-        key: "HOME"
-        keycode: 3
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use 'input keyevent' command"
-      - "HOME button is keycode 3"
-      - "KEYCODE_HOME can also be used"
-
-    kata_solution: "shell input keyevent 3"
-
-    tags:
-      - input-simulation
-      - keyevent
-      - automation
-
-  # Challenge 10: TCP Port Forwarding Setup
-  - id: orange_010
-    name: "Port Forward Configuration"
-    description: |
-      Write an ADB command that sets up port forwarding from
-      localhost:8080 on the host to port 8080 on the device.
-
-      This allows accessing device services from the host machine.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "setup port forwarding"
-        host_port: 8080
-        device_port: 8080
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use 'adb forward' command"
-      - "Format is tcp:HOST_PORT tcp:DEVICE_PORT"
-      - "This is not a shell command"
-
-    kata_solution: "forward tcp:8080 tcp:8080"
-
-    tags:
-      - networking
-      - port-forward
-      - debugging
-
-  # Challenge 11: Backup Application Data
-  - id: orange_011
-    name: "Application Data Backup"
-    description: |
-      Write an ADB command that creates a backup of the Settings
-      application data to a file called settings_backup.ab on the host.
-
-      Use ADB backup functionality.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "backup application"
-        target_package: "com.android.settings"
-        output_file: "settings_backup.ab"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use 'adb backup' command"
-      - "Specify -f for output file"
-      - "Include the package name to backup"
-
-    kata_solution: "backup -f settings_backup.ab com.android.settings"
-
-    tags:
-      - backup
-      - data-extraction
-      - forensics
-
-  # Challenge 12: Window Hierarchy Dump
-  - id: orange_012
-    name: "UI Hierarchy Extraction"
-    description: |
-      Write an ADB command that dumps the current window hierarchy
-      (UI layout) to an XML file on the device at /sdcard/window_dump.xml.
-
-      This is useful for UI testing and analysis.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "dump UI hierarchy"
-        output_path: "/sdcard/window_dump.xml"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use 'uiautomator dump' command"
-      - "Specify the output file path"
-      - "The output is in XML format"
-
-    kata_solution: "shell uiautomator dump /sdcard/window_dump.xml"
-
-    tags:
-      - ui-testing
-      - automation
-      - analysis
-
-  # Challenge 13: Disk Usage Analysis
-  - id: orange_013
-    name: "Storage Space Analysis"
-    description: |
-      Write an ADB command that shows disk usage for the /data partition,
-      displaying how much space is used and available.
-    belt: orange
-    difficulty: 1
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "analyze disk usage"
-        partition: "/data"
-
-    validation:
-      type: output_contains
-      expected: "/data"
-
-    hints:
-      - "Use 'df' command for disk free space"
-      - "The -h flag shows human-readable sizes"
-      - "Specify the path to check specific partition"
-
-    kata_solution: "shell df -h /data"
-
-    tags:
-      - storage
-      - system-info
-      - analysis
-
-  # Challenge 14: Set System Setting
-  - id: orange_014
-    name: "Modify System Setting"
-    description: |
-      Write an ADB command that enables USB debugging programmatically
-      by modifying the global settings.
-
-      Set the adb_enabled setting to 1.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "modify system setting"
-        setting_namespace: "global"
-        setting_name: "adb_enabled"
-        setting_value: "1"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use 'settings' command to modify settings"
-      - "The 'put' subcommand sets a value"
-      - "Settings can be in system, secure, or global namespace"
-
-    kata_solution: "shell settings put global adb_enabled 1"
-
-    tags:
-      - settings
-      - configuration
-      - system-modification
-
-  # Challenge 15: Environment Variables
-  - id: orange_015
-    name: "Shell Environment Dump"
-    description: |
-      Write an ADB command that displays all environment variables
-      available in the Android shell environment.
-    belt: orange
-    difficulty: 1
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "list environment variables"
-
-    validation:
-      type: output_contains
-      expected: "PATH"
-
-    hints:
-      - "Use standard shell commands for environment"
-      - "The 'env' or 'printenv' command shows variables"
-      - "The 'set' command also works"
-
-    kata_solution: "shell printenv"
-
-    tags:
-      - environment
-      - shell
-      - system-info
-
-  # --- ROOT READINESS UPGRADES ---
-
-  # Challenge 16: Deep Kernel Fingerprinting
-  - id: orange_016
-    name: "Kernel Version & Compile Info"
-    description: |
-      Write an ADB command that retrieves the full kernel version string,
-      including the compile date and the user who compiled it.
-    belt: orange
-    difficulty: 2
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "deep kernel fingerprinting"
-
-    validation:
-      type: regex_match
-      pattern: "Linux version \\d+\\.\\d+"
-
-    hints:
-      - "Use the 'uname' command with proper flags"
-      - "The -a flag shows all system information"
-      - "Alternatively, check /proc/version"
-
-    kata_solution: "shell uname -a"
-
-    tags:
-      - reconnaissance
-      - kernel
-      - fingerprinting
-
-  # Challenge 17: Privilege Escalation Probing
-  - id: orange_017
-    name: "SUID Binary Discovery"
-    description: |
-      Write an ADB command that searches for all files in /system/bin
-      that have the SUID bit set, which could be used for privilege escalation.
-    belt: orange
-    difficulty: 4
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "probe for privilege escalation vectors"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "Use the 'find' command"
-      - "Look for permission bit 4000 (SUID)"
-      - "Syntax: find [path] -perm -4000"
-
-    kata_solution: "shell find /system/bin -perm -4000"
-
-    tags:
-      - reconnaissance
-      - permissions
-      - privilege-escalation
-
-  # Challenge 18: Payload Staging
-  - id: orange_018
-    name: "Exploit Payload Deployment"
-    description: |
-      Write an ADB command that prepares a staging area for an exploit by
-      copying a dummy file to /data/local/tmp and making it executable.
-    belt: orange
-    difficulty: 3
-    script_type: adb
-
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "stage exploit payload"
-
-    validation:
-      type: not_empty
-
-    hints:
-      - "/data/local/tmp is often the only writable directory for the shell user"
-      - "Use 'touch' or 'echo' to create a dummy file if needed"
-      - "Use 'chmod' to set executable bits"
-
-    kata_solution: "shell touch /data/local/tmp/exploit && shell chmod 755 /data/local/tmp/exploit"
-
-    tags:
-      - exploitation
-      - file-system
-      - staging
+- id: orange_001
+  name: App Data Directory Exploration
+  description: 'Write an ADB command that lists the contents of the data directory
+
+    for the Settings app (com.android.settings).
+
+
+    This requires accessing /data/data/com.android.settings/ which may
+
+    need the run-as command for debuggable apps.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: list app data directory
+      target_package: com.android.settings
+      target_path: /data/data/com.android.settings/
+  validation:
+    type: output_contains
+    expected: shared_prefs
+  hints:
+  - Use 'run-as' to execute commands as the app
+  - Alternatively, use 'ls' with the full path
+  - Some apps may not be debuggable
+  kata_solution: shell run-as com.android.settings ls /data/data/com.android.settings/
+  tags:
+  - file-system
+  - app-data
+  - run-as
+- id: orange_002
+  name: SQLite Database Extraction
+  description: 'Write an ADB command that queries the contacts database to show
+
+    all tables in the contacts2.db database.
+
+
+    Use sqlite3 to interact with the database.
+
+    '
+  belt: orange
+  difficulty: 4
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: query SQLite database
+      database_path: /data/data/com.android.providers.contacts/databases/contacts2.db
+  validation:
+    type: output_contains
+    expected: table
+  hints:
+  - Use sqlite3 command-line tool
+  - The .tables command lists all tables
+  - May need root access for protected databases
+  kata_solution: shell sqlite3 /data/data/com.android.providers.contacts/databases/contacts2.db
+    '.tables'
+  tags:
+  - database
+  - sqlite
+  - data-extraction
+- id: orange_003
+  name: Active Network Connections
+  description: 'Write an ADB command that displays all active network connections
+
+    on the device, including listening ports and established connections.
+
+
+    Show TCP and UDP connections with their states.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: list network connections
+  validation:
+    type: output_contains
+    expected: LISTEN
+  hints:
+  - Use netstat or ss command
+  - The -a flag shows all connections
+  - The -n flag shows numeric addresses
+  kata_solution: shell netstat -an
+  tags:
+  - networking
+  - connections
+  - reconnaissance
+- id: orange_004
+  name: Content Provider Enumeration
+  description: 'Write an ADB command that queries the Settings content provider
+
+    to retrieve system settings values.
+
+
+    Use the content command to query content://settings/system.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: query content provider
+      content_uri: content://settings/system
+  validation:
+    type: output_contains
+    expected: 'Row:'
+  hints:
+  - Use the 'content' command for content provider operations
+  - The 'query' subcommand retrieves data
+  - Specify the URI with --uri flag
+  kata_solution: shell content query --uri content://settings/system
+  tags:
+  - content-provider
+  - settings
+  - data-access
+- id: orange_005
+  name: Process Memory Mapping
+  description: 'Write an ADB command that displays the memory map of the
+
+    system_server process, showing all loaded libraries and memory regions.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: view process memory maps
+      target_process: system_server
+  validation:
+    type: output_contains
+    expected: .so
+  hints:
+  - Memory maps are in /proc/[pid]/maps
+  - First find the PID of system_server
+  - Use pgrep or ps to find the PID
+  kata_solution: shell cat /proc/$(pidof system_server)/maps
+  tags:
+  - memory
+  - process-analysis
+  - reconnaissance
+- id: orange_006
+  name: Package Component Listing
+  description: 'Write an ADB command that lists all activities, services, and
+
+    receivers declared in the Browser app manifest.
+
+
+    Show the exported components of com.android.browser.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: enumerate app components
+      target_package: com.android.browser
+  validation:
+    type: output_contains
+    expected: Activity
+  hints:
+  - Use dumpsys package to get detailed package info
+  - Package info includes declared components
+  - Filter output to show relevant sections
+  kata_solution: shell dumpsys package com.android.browser | grep -A 100 'Activity
+    Resolver Table'
+  tags:
+  - app-analysis
+  - components
+  - manifest
+- id: orange_007
+  name: Security Properties Extraction
+  description: 'Write an ADB command that extracts all security-related system
+
+    properties from the device, including SELinux and crypto settings.
+
+
+    Filter for properties containing ''security'' or ''selinux''.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: extract security properties
+  validation:
+    type: output_contains
+    expected: selinux
+  hints:
+  - Use getprop to list all system properties
+  - Pipe through grep to filter results
+  - Security properties often contain 'ro.crypto' or 'selinux'
+  kata_solution: shell getprop | grep -iE 'security|selinux'
+  tags:
+  - security
+  - properties
+  - selinux
+- id: orange_008
+  name: Application Force Stop
+  description: 'Write an ADB command that force stops the Calculator application
+
+    (com.android.calculator2), terminating all its processes.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: force stop application
+      target_package: com.android.calculator2
+  validation:
+    type: not_empty
+  hints:
+  - Use 'am force-stop' command
+  - Specify the package name
+  - This kills all processes for the app
+  kata_solution: shell am force-stop com.android.calculator2
+  tags:
+  - process-control
+  - activity-manager
+  - app-management
+- id: orange_009
+  name: Hardware Key Simulation
+  description: 'Write an ADB command that simulates pressing the HOME button
+
+    on the device, returning the user to the home screen.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: simulate hardware key press
+      key: HOME
+      keycode: 3
+  validation:
+    type: not_empty
+  hints:
+  - Use 'input keyevent' command
+  - HOME button is keycode 3
+  - KEYCODE_HOME can also be used
+  kata_solution: shell input keyevent 3
+  tags:
+  - input-simulation
+  - keyevent
+  - automation
+- id: orange_010
+  name: Port Forward Configuration
+  description: 'Write an ADB command that sets up port forwarding from
+
+    localhost:8080 on the host to port 8080 on the device.
+
+
+    This allows accessing device services from the host machine.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: setup port forwarding
+      host_port: 8080
+      device_port: 8080
+  validation:
+    type: not_empty
+  hints:
+  - Use 'adb forward' command
+  - Format is tcp:HOST_PORT tcp:DEVICE_PORT
+  - This is not a shell command
+  kata_solution: forward tcp:8080 tcp:8080
+  tags:
+  - networking
+  - port-forward
+  - debugging
+- id: orange_011
+  name: Application Data Backup
+  description: 'Write an ADB command that creates a backup of the Settings
+
+    application data to a file called settings_backup.ab on the host.
+
+
+    Use ADB backup functionality.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: backup application
+      target_package: com.android.settings
+      output_file: settings_backup.ab
+  validation:
+    type: not_empty
+  hints:
+  - Use 'adb backup' command
+  - Specify -f for output file
+  - Include the package name to backup
+  kata_solution: backup -f settings_backup.ab com.android.settings
+  tags:
+  - backup
+  - data-extraction
+  - forensics
+- id: orange_012
+  name: UI Hierarchy Extraction
+  description: 'Write an ADB command that dumps the current window hierarchy
+
+    (UI layout) to an XML file on the device at /sdcard/window_dump.xml.
+
+
+    This is useful for UI testing and analysis.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: dump UI hierarchy
+      output_path: /sdcard/window_dump.xml
+  validation:
+    type: not_empty
+  hints:
+  - Use 'uiautomator dump' command
+  - Specify the output file path
+  - The output is in XML format
+  kata_solution: shell uiautomator dump /sdcard/window_dump.xml
+  tags:
+  - ui-testing
+  - automation
+  - analysis
+- id: orange_013
+  name: Storage Space Analysis
+  description: 'Write an ADB command that shows disk usage for the /data partition,
+
+    displaying how much space is used and available.
+
+    '
+  belt: orange
+  difficulty: 1
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: analyze disk usage
+      partition: /data
+  validation:
+    type: output_contains
+    expected: /data
+  hints:
+  - Use 'df' command for disk free space
+  - The -h flag shows human-readable sizes
+  - Specify the path to check specific partition
+  kata_solution: shell df -h /data
+  tags:
+  - storage
+  - system-info
+  - analysis
+- id: orange_014
+  name: Modify System Setting
+  description: 'Write an ADB command that enables USB debugging programmatically
+
+    by modifying the global settings.
+
+
+    Set the adb_enabled setting to 1.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: modify system setting
+      setting_namespace: global
+      setting_name: adb_enabled
+      setting_value: '1'
+  validation:
+    type: not_empty
+  hints:
+  - Use 'settings' command to modify settings
+  - The 'put' subcommand sets a value
+  - Settings can be in system, secure, or global namespace
+  kata_solution: shell settings put global adb_enabled 1
+  tags:
+  - settings
+  - configuration
+  - system-modification
+- id: orange_015
+  name: Shell Environment Dump
+  description: 'Write an ADB command that displays all environment variables
+
+    available in the Android shell environment.
+
+    '
+  belt: orange
+  difficulty: 1
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: list environment variables
+  validation:
+    type: output_contains
+    expected: PATH
+  hints:
+  - Use standard shell commands for environment
+  - The 'env' or 'printenv' command shows variables
+  - The 'set' command also works
+  kata_solution: shell printenv
+  tags:
+  - environment
+  - shell
+  - system-info
+- id: orange_016
+  name: Kernel Version & Compile Info
+  description: 'Write an ADB command that retrieves the full kernel version string,
+
+    including the compile date and the user who compiled it.
+
+    '
+  belt: orange
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: deep kernel fingerprinting
+  validation:
+    type: regex_match
+    pattern: Linux version \d+\.\d+
+  hints:
+  - Use the 'uname' command with proper flags
+  - The -a flag shows all system information
+  - Alternatively, check /proc/version
+  kata_solution: shell uname -a
+  tags:
+  - reconnaissance
+  - kernel
+  - fingerprinting
+- id: orange_017
+  name: SUID Binary Discovery
+  description: 'Write an ADB command that searches for all files in /system/bin
+
+    that have the SUID bit set, which could be used for privilege escalation.
+
+    '
+  belt: orange
+  difficulty: 4
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: probe for privilege escalation vectors
+  validation:
+    type: not_empty
+  hints:
+  - Use the 'find' command
+  - Look for permission bit 4000 (SUID)
+  - 'Syntax: find [path] -perm -4000'
+  kata_solution: shell find /system/bin -perm -4000
+  tags:
+  - reconnaissance
+  - permissions
+  - privilege-escalation
+- id: orange_018
+  name: Exploit Payload Deployment
+  description: 'Write an ADB command that prepares a staging area for an exploit by
+
+    copying a dummy file to /data/local/tmp and making it executable.
+
+    '
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: stage exploit payload
+  validation:
+    type: not_empty
+  hints:
+  - /data/local/tmp is often the only writable directory for the shell user
+  - Use 'touch' or 'echo' to create a dummy file if needed
+  - Use 'chmod' to set executable bits
+  kata_solution: shell touch /data/local/tmp/exploit && shell chmod 755 /data/local/tmp/exploit
+  tags:
+  - exploitation
+  - file-system
+  - staging
+- id: orange_cve_2022_41971
+  name: 'CVE Analysis: CVE-2022-41971'
+  description: 'Target: CVE-2022-41971
+
+
+    Nextcould Talk android is a video and audio conferencing app for Nextcloud. Prior
+    to versions 12.2.8, 13.0.10, 14.0.6, and 15.0.0, guests can continue to receive
+    video streams from a call after being removed from a conversation. An attacker
+    would be able to see videos on a call in a public conversation after being removed
+    from that conversation, provided that they were removed while being in the call.
+    Versions 12.2.8, 13.0.10, 14.0.6, and 15.0.0 contain patches for the issue. No
+    known workarounds are available.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2022-41971
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: MEDIUM
+  expected_output:
+    must_contain:
+    - CVE-2022-41971
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2022-41971
+  - cwe-200
+  - cwe-359
+  - cwe-668
+- id: orange_cve_2023_21445
+  name: 'CVE Analysis: CVE-2023-21445'
+  description: 'Target: CVE-2023-21445
+
+
+    Improper access control vulnerability in MyFiles prior to versions 12.2.09 in
+    Android R(11), 13.1.03.501 in Android S(12) and 14.1.00.422 in Android T(13) allows
+    local attacker to write file with MyFiles privilege via implicit intent.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2023-21445
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: MEDIUM
+  expected_output:
+    must_contain:
+    - CVE-2023-21445
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2023-21445
+  - cwe-284
+  - cwe-668
+- id: orange_cve_2021_25377
+  name: 'CVE Analysis: CVE-2021-25377'
+  description: 'Target: CVE-2021-25377
+
+
+    Intent redirection in Samsung Experience Service versions 10.8.0.4 in Android
+    P(9.0) below, and 12.2.0.5 in Android Q(10.0) above allows attacker to execute
+    privileged action.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2021-25377
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: LOW
+  expected_output:
+    must_contain:
+    - CVE-2021-25377
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2021-25377
+  - cwe-287
+  - cwe-269
+- id: orange_cve_2021_25403
+  name: 'CVE Analysis: CVE-2021-25403'
+  description: 'Target: CVE-2021-25403
+
+
+    Intent redirection vulnerability in Samsung Account prior to version 10.8.0.4
+    in Android P(9.0) and below, and 12.2.0.9 in Android Q(10.0) and above allows
+    attacker to access contacts and file provider using SettingWebView component.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2021-25403
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: LOW
+  expected_output:
+    must_contain:
+    - CVE-2021-25403
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2021-25403
+  - cwe-200
+- id: orange_cve_2021_1024
+  name: 'CVE Analysis: CVE-2021-1024'
+  description: 'Target: CVE-2021-1024
+
+
+    In onEventReceived of EventResultPersister.java, there is a possible intent redirection
+    due to a confused deputy. This could lead to local escalation of privilege with
+    System execution privileges needed. User interaction is not needed for exploitation.Product:
+    AndroidVersions: Android-12Android ID: A-191283525
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2021-1024
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: MEDIUM
+  expected_output:
+    must_contain:
+    - CVE-2021-1024
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2021-1024
+- id: orange_cve_2020_23349
+  name: 'CVE Analysis: CVE-2020-23349'
+  description: 'Target: CVE-2020-23349
+
+
+    An intent redirection issue was doscovered in Sina Weibo Android SDK 4.2.7 (com.sina.weibo.sdk.share.WbShareTransActivity),
+    any unexported Activities could be started by the com.sina.weibo.sdk.share.WbShareTransActivity.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2020-23349
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: HIGH
+  expected_output:
+    must_contain:
+    - CVE-2020-23349
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2020-23349
+- id: orange_cve_2022_20116
+  name: 'CVE Analysis: CVE-2022-20116'
+  description: 'Target: CVE-2022-20116
+
+
+    In onEntryUpdated of OngoingCallController.kt, it is possible to launch non-exported
+    activities due to intent redirection. This could lead to local escalation of privilege
+    with User execution privileges needed. User interaction is not needed for exploitation.Product:
+    AndroidVersions: Android-12 Android-12LAndroid ID: A-212467440
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2022-20116
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: HIGH
+  expected_output:
+    must_contain:
+    - CVE-2022-20116
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2022-20116
+- id: orange_cve_2019_5452
+  name: 'CVE Analysis: CVE-2019-5452'
+  description: 'Target: CVE-2019-5452
+
+
+    Bypass lock protection in the Nextcloud Android app prior to version 3.6.2 causes
+    leaking of thumbnails when requesting the Android content provider although the
+    lock protection was not solved.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  inputs:
+    cve_id: CVE-2019-5452
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: LOW
+  expected_output:
+    must_contain:
+    - CVE-2019-5452
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2019-5452
+  - cwe-284
