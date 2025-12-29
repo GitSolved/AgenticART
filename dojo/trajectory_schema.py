@@ -269,7 +269,7 @@ class Trajectory:
         trace_parts.append(f"## Context\n{self.device_context}")
 
         if self.hints:
-            trace_parts.append(f"## Hints\n" + "\n".join(f"- {h}" for h in self.hints))
+            trace_parts.append("## Hints\n" + "\n".join(f"- {h}" for h in self.hints))
 
         if self.initial_thought:
             trace_parts.append(f"## Initial Analysis\n{self.initial_thought.content}")

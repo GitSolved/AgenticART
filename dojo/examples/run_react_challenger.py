@@ -165,7 +165,7 @@ def run_example(mode: str = "mock", model: str = ""):
         print(f"Outcome: {sample['final_outcome']}")
 
         if sample.get('initial_thought'):
-            print(f"\nInitial Thought:")
+            print("\nInitial Thought:")
             print(f"  {sample['initial_thought']['content'][:200]}...")
 
         for step in sample.get('steps', [])[:2]:

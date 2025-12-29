@@ -26,7 +26,6 @@ from typing import Any, Callable, Dict, List, Optional, Protocol
 from dojo.models import Challenge, ChallengeSession
 from dojo.trajectory_logger import TrajectoryLogger
 from dojo.trajectory_schema import (
-    ActionType,
     ReasoningType,
     StepOutcome,
 )
@@ -421,7 +420,7 @@ class ReActChallenger:
     ) -> str:
         """Format device context for the prompt."""
         lines = [
-            f"- connection: adb",
+            "- connection: adb",
             f"- device_id: {device_info.get('device_id', 'unknown')}",
             f"- android_version: {device_info.get('android_version', 'unknown')}",
             f"- task: {challenge.name}",
@@ -437,7 +436,7 @@ class ReActChallenger:
         """Build a ChallengeSession from the run results."""
         # This would integrate with the existing ChallengeSession model
         # For now, return a basic structure
-        from dojo.models import ChallengeSession, AttemptRecord, ExecutionResult
+        from dojo.models import AttemptRecord, ChallengeSession, ExecutionResult
 
         attempt_records = []
         for att in attempts:
