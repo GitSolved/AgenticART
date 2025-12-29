@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from dojo import Belt, ChallengeLoader
 from dojo.curriculum import Executor
@@ -91,6 +92,7 @@ def run_example(mode: str = "mock", model: str = ""):
     executor = Executor(device_id="emulator-5554")
 
     # Create LLM client
+    llm: Any
     if mode == "mock":
         llm = MockReActLLM()
         print("Using: Mock LLM")

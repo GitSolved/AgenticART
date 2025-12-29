@@ -23,7 +23,9 @@ import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
-from dojo.models import Challenge, ChallengeSession
+from dojo.curriculum.challenger import AttemptRecord, ChallengeSession
+from dojo.curriculum.executor import ExecutionResult
+from dojo.models import Challenge
 from dojo.trajectory_logger import TrajectoryLogger
 from dojo.trajectory_schema import (
     ReasoningType,
@@ -433,16 +435,12 @@ class ReActChallenger:
         success: bool,
     ) -> ChallengeSession:
         """Build a ChallengeSession from the run results."""
-        # This would integrate with the existing ChallengeSession model
-        # For now, return a basic structure
-        from dojo.models import AttemptRecord, ChallengeSession, ExecutionResult
-
         attempt_records = []
         for att in attempts:
             attempt_records.append(
                 AttemptRecord(
                     attempt_number=att["step"],
-                    prompt="",  # Not storing full prompt
+                    prompt_used="",  # Not storing full prompt
                     model_output=att["command"],
                     execution_result=ExecutionResult(
                         success=att["success"],
@@ -458,5 +456,4 @@ class ReActChallenger:
         return ChallengeSession(
             challenge=challenge,
             attempts=attempt_records,
-            final_success=success,
         )
