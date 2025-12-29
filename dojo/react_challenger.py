@@ -30,7 +30,6 @@ from dojo.trajectory_schema import (
     StepOutcome,
 )
 
-
 # ReAct prompt templates
 REACT_SYSTEM_PROMPT = """You are a security research agent specializing in Android penetration testing.
 
