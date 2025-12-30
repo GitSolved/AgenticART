@@ -71,6 +71,16 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    # ─────────────────────────────────────────────────────────────────────
+    # PERMISSIONS FOR SARIF UPLOAD
+    # ─────────────────────────────────────────────────────────────────────
+    # Required to upload findings to GitHub Security tab (private)
+    # ─────────────────────────────────────────────────────────────────────
+    permissions:
+      security-events: write  # Required for SARIF upload
+      contents: read          # Required to read code
+      actions: read           # Required for workflow context
+
     steps:
       - uses: actions/checkout@v4
 
@@ -81,46 +91,41 @@ jobs:
           cache: 'pip'
 
       # ─────────────────────────────────────────────────────────────────────
-      # BANDIT - Python Security Linter
+      # BANDIT - Python Security Linter (SARIF OUTPUT - PRIVATE)
       # ─────────────────────────────────────────────────────────────────────
-      # Bandit scans Python code for common security issues like:
+      # Findings go to GitHub Security tab, NOT public logs
+      #
+      # Bandit scans for:
       # - B102: exec() usage (code injection risk)
       # - B602: subprocess with shell=True (command injection)
       # - B101: assert statements (removed in optimized mode)
       # - B105: hardcoded passwords
-      #
-      # Severity levels: LOW, MEDIUM, HIGH
-      # Confidence levels: LOW, MEDIUM, HIGH
       # ─────────────────────────────────────────────────────────────────────
       - name: Install Bandit
-        run: pip install bandit[toml]
+        run: pip install bandit[toml,sarif]
 
-      - name: Run Bandit Security Scan
+      - name: Run Bandit (SARIF output)
         run: |
           bandit -r dojo/ scripts/ \
             -ll \
             --confidence-level medium \
-            -f txt \
+            -f sarif \
+            -o bandit-results.sarif \
             --exit-zero
-        # Flags explained:
-        # -r dojo/ scripts/    : Recursively scan these directories
-        # -ll                  : Only report MEDIUM severity and above
-        # --confidence-level   : Only report MEDIUM confidence and above
-        # -f txt               : Output format (txt, json, html, xml available)
-        # --exit-zero          : Don't fail CI (remove this once issues are fixed)
+        # Output goes to file, not stdout (keeps logs clean)
 
-      # ─────────────────────────────────────────────────────────────────────
-      # BANDIT STRICT MODE (commented out until issues are fixed)
-      # ─────────────────────────────────────────────────────────────────────
-      # Uncomment this and remove the above step once security issues are fixed
-      # This version WILL fail the CI if issues are found
-      # - name: Run Bandit (Strict)
-      #   run: bandit -r dojo/ scripts/ -ll --confidence-level medium
+      - name: Upload Bandit Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-results.sarif
+          category: bandit
+        continue-on-error: true  # Don't fail if upload has issues
 
       # ─────────────────────────────────────────────────────────────────────
       # SAFETY - Dependency Vulnerability Checker
       # ─────────────────────────────────────────────────────────────────────
-      # Checks installed packages against known vulnerability databases
+      # Note: Safety output stays in logs (dependency info is less sensitive
+      # than code vulnerabilities - it's public knowledge from PyPI)
       # ─────────────────────────────────────────────────────────────────────
       - name: Install Safety
         run: pip install safety
@@ -130,17 +135,23 @@ jobs:
 
       - name: Check Dependencies for Vulnerabilities
         run: safety check --output text || true
-        # || true prevents CI failure - remove once deps are clean
 
       # ─────────────────────────────────────────────────────────────────────
-      # SEMGREP - Advanced Static Analysis
+      # SEMGREP - Advanced Static Analysis (SARIF OUTPUT - PRIVATE)
       # ─────────────────────────────────────────────────────────────────────
-      # More sophisticated pattern matching than Bandit
-      # Uses community rules for Python security
-      # Can catch complex injection patterns
+      # Findings go to GitHub Security tab, NOT public logs
       # ─────────────────────────────────────────────────────────────────────
       - name: Run Semgrep
         uses: returntocorp/semgrep-action@v1
         with:
-          config: p/python  # Use Python security ruleset
-        continue-on-error: true  # Don't fail CI yet
+          config: p/python
+          generateSarif: "1"  # Enable SARIF output
+        continue-on-error: true
+
+      - name: Upload Semgrep Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()  # Upload even if Semgrep found issues
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+        continue-on-error: true
