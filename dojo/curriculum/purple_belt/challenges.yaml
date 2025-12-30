@@ -1248,3 +1248,622 @@ challenges:
   - cwe-310
   source: NVD API - Android Security Bulletin
   published: '2024-11-04'
+- id: nvd_cve_2024_38409
+  name: CVE-2024-38409 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-04)
+
+
+    CVE: CVE-2024-38409
+
+    CVSS: 7.8 (HIGH)
+
+    CWE: CWE-120, CWE-120
+
+
+    Memory corruption while station LL statistic handling.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38409
+    cvss_score: 7.8
+    severity: HIGH
+    cwes:
+    - CWE-120
+    - CWE-120
+  expected_output:
+    must_contain:
+    - CVE-2024-38409
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-38409
+  - cwe-120
+  - cwe-120
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-04'
+- id: nvd_cve_2024_38410
+  name: CVE-2024-38410 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-04)
+
+
+    CVE: CVE-2024-38410
+
+    CVSS: 7.8 (HIGH)
+
+    CWE: CWE-121, CWE-787
+
+
+    Memory corruption while IOCLT is called when device is in invalid state and the WMI command buffer may be freed twice.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38410
+    cvss_score: 7.8
+    severity: HIGH
+    cwes:
+    - CWE-121
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-38410
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-38410
+  - cwe-121
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-04'
+- id: nvd_cve_2024_38411
+  name: CVE-2024-38411 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-02-03)
+
+
+    CVE: CVE-2024-38411
+
+    CVSS: 6.6 (MEDIUM)
+
+    CWE: CWE-416
+
+
+    Memory corruption while registering a buffer from user-space to kernel-space using IOCTL calls.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38411
+    cvss_score: 6.6
+    severity: MEDIUM
+    cwes:
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-38411
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-38411
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-02-03'
+- id: nvd_cve_2024_38412
+  name: CVE-2024-38412 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-02-03)
+
+
+    CVE: CVE-2024-38412
+
+    CVSS: 6.6 (MEDIUM)
+
+    CWE: CWE-416
+
+
+    Memory corruption while invoking IOCTL calls from user-space to kernel-space to handle session errors.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38412
+    cvss_score: 6.6
+    severity: MEDIUM
+    cwes:
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-38412
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-38412
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-02-03'
+- id: nvd_cve_2024_33042
+  name: CVE-2024-33042 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-33042
+
+    CVSS: 7.8 (HIGH)
+
+    CWE: CWE-120, CWE-787
+
+
+    Memory corruption when Alternative Frequency offset value is set to 255.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-33042
+    cvss_score: 7.8
+    severity: HIGH
+    cwes:
+    - CWE-120
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-33042
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-33042
+  - cwe-120
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_33043
+  name: CVE-2024-33043 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-33043
+
+    CVSS: 5.5 (MEDIUM)
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS while handling PS event when Program Service name length offset value is set to 255.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-33043
+    cvss_score: 5.5
+    severity: MEDIUM
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-33043
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-33043
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_33044
+  name: CVE-2024-33044 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-12-02)
+
+
+    CVE: CVE-2024-33044
+
+    CVSS: 8.4 (HIGH)
+
+    CWE: CWE-129
+
+
+    Memory corruption while Configuring the SMR/S2CR register in Bypass mode.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-33044
+    cvss_score: 8.4
+    severity: HIGH
+    cwes:
+    - CWE-129
+  expected_output:
+    must_contain:
+    - CVE-2024-33044
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-33044
+  - cwe-129
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-12-02'
+- id: nvd_cve_2024_33045
+  name: CVE-2024-33045 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-33045
+
+    CVSS: 8.4 (HIGH)
+
+    CWE: CWE-562, CWE-787
+
+
+    Memory corruption when BTFM client sends new messages over Slimbus to ADSP.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-33045
+    cvss_score: 8.4
+    severity: HIGH
+    cwes:
+    - CWE-562
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-33045
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-33045
+  - cwe-562
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_33049
+  name: CVE-2024-33049 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-10-07)
+
+
+    CVE: CVE-2024-33049
+
+    CVSS: 7.5 (HIGH)
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS while parsing noninheritance IE of Extension element when length of IE is 2 of beacon frame.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-33049
+    cvss_score: 7.5
+    severity: HIGH
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-33049
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-33049
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-10-07'
+- id: nvd_cve_2024_33050
+  name: CVE-2024-33050 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-33050
+
+    CVSS: 7.5 (HIGH)
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS while parsing MBSSID during new IE generation in beacon/probe frame when IE length check is either missing
+    or improper.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-33050
+    cvss_score: 7.5
+    severity: HIGH
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-33050
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-33050
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_23380
+  name: CVE-2024-23380 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-07-01)
+
+
+    CVE: CVE-2024-23380
+
+    CVSS: 8.4 (HIGH)
+
+    CWE: CWE-416, CWE-416
+
+
+    Memory corruption while handling user packets during VBO bind operation.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23380
+    cvss_score: 8.4
+    severity: HIGH
+    cwes:
+    - CWE-416
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-23380
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-23380
+  - cwe-416
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-07-01'
+- id: nvd_cve_2024_21468
+  name: CVE-2024-21468 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-04-01)
+
+
+    CVE: CVE-2024-21468
+
+    CVSS: 8.4 (HIGH)
+
+    CWE: CWE-416, CWE-416
+
+
+    Memory corruption when there is failed unmap operation in GPU.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-21468
+    cvss_score: 8.4
+    severity: HIGH
+    cwes:
+    - CWE-416
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-21468
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-21468
+  - cwe-416
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-04-01'
+- id: nvd_cve_2024_21469
+  name: CVE-2024-21469 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-07-01)
+
+
+    CVE: CVE-2024-21469
+
+    CVSS: 7.3 (HIGH)
+
+    CWE: CWE-264, CWE-787
+
+
+    Memory corruption when an invoke call and a TEE call are bound for the same trusted application.
+
+
+    OBJECTIVE: Analyze the device for this critical vulnerability.
+
+
+    This is a DETECTION challenge for advanced vulnerability assessment.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-21469
+    cvss_score: 7.3
+    severity: HIGH
+    cwes:
+    - CWE-264
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-21469
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - qualcomm
+  - cve-2024-21469
+  - cwe-264
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-07-01'

@@ -133,604 +133,6 @@ challenges:
   - cve-2021-23162
   - cwe-296
   - cwe-295
-- id: blue_cve_2014_0547
-  name: 'CVE Analysis: CVE-2014-0547'
-  description: 'Target: CVE-2014-0547
-
-
-    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on
-    Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249,
-    and Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2014-0549, CVE-2014-0550, CVE-2014-0551,
-    CVE-2014-0552, and CVE-2014-0555.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0547
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0547
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0547
-  - cwe-119
-- id: blue_cve_2014_0549
-  name: 'CVE Analysis: CVE-2014-0549'
-  description: 'Target: CVE-2014-0549
-
-
-    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on
-    Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249,
-    and Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2014-0547, CVE-2014-0550, CVE-2014-0551,
-    CVE-2014-0552, and CVE-2014-0555.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0549
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0549
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0549
-  - cwe-119
-- id: blue_cve_2014_0550
-  name: 'CVE Analysis: CVE-2014-0550'
-  description: 'Target: CVE-2014-0550
-
-
-    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on
-    Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249,
-    and Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0551,
-    CVE-2014-0552, and CVE-2014-0555.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0550
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0550
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0550
-  - cwe-119
-- id: blue_cve_2014_0551
-  name: 'CVE Analysis: CVE-2014-0551'
-  description: 'Target: CVE-2014-0551
-
-
-    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on
-    Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249,
-    and Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550,
-    CVE-2014-0552, and CVE-2014-0555.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0551
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0551
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0551
-  - cwe-119
-- id: blue_cve_2014_0552
-  name: 'CVE Analysis: CVE-2014-0552'
-  description: 'Target: CVE-2014-0552
-
-
-    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on
-    Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249,
-    and Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550,
-    CVE-2014-0551, and CVE-2014-0555.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0552
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0552
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0552
-  - cwe-119
-- id: blue_cve_2014_0555
-  name: 'CVE Analysis: CVE-2014-0555'
-  description: 'Target: CVE-2014-0555
-
-
-    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on
-    Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249,
-    and Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550,
-    CVE-2014-0551, and CVE-2014-0552.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0555
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0555
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0555
-  - cwe-119
-- id: blue_cve_2014_0556
-  name: 'CVE Analysis: CVE-2014-0556'
-  description: 'Target: CVE-2014-0556
-
-
-    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and
-    OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android,
-    Adobe AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249 allows attackers to execute arbitrary
-    code via unspecified vectors, a different vulnerability than CVE-2014-0559.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0556
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0556
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0556
-  - cwe-119
-- id: blue_cve_2014_0559
-  name: 'CVE Analysis: CVE-2014-0559'
-  description: 'Target: CVE-2014-0559
-
-
-    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows and
-    OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android,
-    Adobe AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249 allows attackers to execute arbitrary
-    code via unspecified vectors, a different vulnerability than CVE-2014-0556.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2014-0559
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2014-0559
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2014-0559
-  - cwe-119
-- id: blue_cve_2015_0303
-  name: 'CVE Analysis: CVE-2015-0303'
-  description: 'Target: CVE-2015-0303
-
-
-    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429
-    on Linux, Adobe AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
-    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2015-0306.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-0303
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-0303
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-0303
-- id: blue_cve_2015_0304
-  name: 'CVE Analysis: CVE-2015-0304'
-  description: 'Target: CVE-2015-0304
-
-
-    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on Windows
-    and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android,
-    Adobe AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before 16.0.0.272 allows attackers to execute arbitrary
-    code via unspecified vectors, a different vulnerability than CVE-2015-0309.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-0304
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-0304
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-0304
-  - cwe-119
-- id: blue_cve_2015_0306
-  name: 'CVE Analysis: CVE-2015-0306'
-  description: 'Target: CVE-2015-0306
-
-
-    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429
-    on Linux, Adobe AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
-    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary code or cause a denial of service
-    (memory corruption) via unspecified vectors, a different vulnerability than CVE-2015-0303.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-0306
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-0306
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-0306
-- id: blue_cve_2015_0307
-  name: 'CVE Analysis: CVE-2015-0307'
-  description: 'Target: CVE-2015-0307
-
-
-    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429
-    on Linux, Adobe AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
-    and Adobe AIR SDK & Compiler before 16.0.0.272 allow remote attackers to obtain sensitive information from process memory
-    or cause a denial of service (out-of-bounds read) via unspecified vectors.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-0307
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-0307
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-0307
-  - cwe-119
-- id: blue_cve_2015_0309
-  name: 'CVE Analysis: CVE-2015-0309'
-  description: 'Target: CVE-2015-0309
-
-
-    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on Windows
-    and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android,
-    Adobe AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before 16.0.0.272 allows attackers to execute arbitrary
-    code via unspecified vectors, a different vulnerability than CVE-2015-0304.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-0309
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-0309
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-0309
-  - cwe-119
-- id: blue_cve_2015_3100
-  name: 'CVE Analysis: CVE-2015-3100'
-  description: 'Target: CVE-2015-3100
-
-
-    Stack-based buffer overflow in Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on Windows
-    and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android,
-    Adobe AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before 18.0.0.144
-    on Windows and before 18.0.0.143 on OS X allows attackers to execute arbitrary code via unspecified vectors.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-3100
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-3100
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-3100
-  - cwe-119
-- id: blue_cve_2015_3104
-  name: 'CVE Analysis: CVE-2015-3104'
-  description: 'Target: CVE-2015-3104
-
-
-    Integer overflow in Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on Windows and OS X and
-    before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe
-    AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before 18.0.0.144 on
-    Windows and before 18.0.0.143 on OS X allows attackers to execute arbitrary code via unspecified vectors.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-3104
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-3104
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-3104
-  - cwe-189
-- id: blue_cve_2015_3105
-  name: 'CVE Analysis: CVE-2015-3105'
-  description: 'Target: CVE-2015-3105
-
-
-    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on Windows and OS X and before 11.2.202.466
-    on Linux, Adobe AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
-    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143
-    on OS X allow attackers to execute arbitrary code or cause a denial of service (memory corruption) via unspecified vectors.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-3105
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-3105
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-3105
-  - cwe-119
-- id: blue_cve_2015_8073
-  name: 'CVE Analysis: CVE-2015-8073'
-  description: 'Target: CVE-2015-8073
-
-
-    mediaserver in Android 4.4 and 5.1 before 5.1.1 LMY48X allows remote attackers to execute arbitrary code or cause a denial
-    of service (memory corruption) via a crafted media file, aka internal bug 14388161, a different vulnerability than CVE-2015-6608
-    and CVE-2015-8072.
-
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
-  belt: blue
-  difficulty: 3
-  script_type: adb
-  compatibility: android_14
-  inputs:
-    cve_id: CVE-2015-8073
-    device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: UNKNOWN
-  expected_output:
-    must_contain:
-    - CVE-2015-8073
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
-  tags:
-  - nvd-generated
-  - cve-2015-8073
-  - cwe-119
 - id: nvd_cve_2024_43767
   name: CVE-2024-43767 - HIGH Vulnerability Analysis
   description: 'Real-world CVE from Android Security Bulletin (2025-01-03)
@@ -1449,3 +851,2469 @@ challenges:
   - cwe-120
   source: NVD API - Android Security Bulletin
   published: '2024-08-15'
+- id: nvd_cve_2024_0024
+  name: CVE-2024-0024 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-0024
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-269
+
+
+    In multiple methods of UserManagerService.java, there is a possible failure to persist or enforce user restrictions due
+    to improper input validation. This could lead to local escalation of privilege with no additional execution privileges
+    needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0024
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-269
+  expected_output:
+    must_contain:
+    - CVE-2024-0024
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0024
+  - cwe-269
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_0025
+  name: CVE-2024-0025 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-0025
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-284
+
+
+    In sendIntentSender of ActivityManagerService.java, there is a possible background activity launch due to a logic error.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0025
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-284
+  expected_output:
+    must_contain:
+    - CVE-2024-0025
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0025
+  - cwe-284
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_0043
+  name: CVE-2024-0043 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-0043
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-863
+
+
+    In multiple locations, there is a possible notification listener grant to an app running in the work profile due to a
+    logic error in the code. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0043
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-863
+  expected_output:
+    must_contain:
+    - CVE-2024-0043
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0043
+  - cwe-863
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_0045
+  name: CVE-2024-0045 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-03-11)
+
+
+    CVE: CVE-2024-0045
+
+    CVSS: 6.5 (MEDIUM)
+
+    Attack Vector: ADJACENT_NETWORK
+
+    CWE: CWE-125, CWE-20
+
+
+    In smp_proc_sec_req of smp_act.cc, there is a possible out of bounds read due to improper input validation. This could
+    lead to remote (proximal/adjacent) information disclosure with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0045
+    cvss_score: 6.5
+    severity: MEDIUM
+    attack_vector: ADJACENT_NETWORK
+    cwes:
+    - CWE-125
+    - CWE-20
+  expected_output:
+    must_contain:
+    - CVE-2024-0045
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0045
+  - cwe-125
+  - cwe-20
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-03-11'
+- id: nvd_cve_2024_23706
+  name: CVE-2024-23706 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-23706
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-20
+
+
+    In multiple locations, there is a possible bypass of health data permissions due to an improper input validation. This
+    could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed
+    for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23706
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-20
+  expected_output:
+    must_contain:
+    - CVE-2024-23706
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23706
+  - cwe-20
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_23707
+  name: CVE-2024-23707 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-23707
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-20
+
+
+    In multiple locations, there is a possible permissions bypass due to improper input validation. This could lead to local
+    escalation of privilege with no additional execution privileges needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23707
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-20
+  expected_output:
+    must_contain:
+    - CVE-2024-23707
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23707
+  - cwe-20
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_23708
+  name: CVE-2024-23708 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-23708
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-451
+
+
+    In multiple functions of NotificationManagerService.java, there is a possible way to not show a toast message when a clipboard
+    message has been accessed. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23708
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-451
+  expected_output:
+    must_contain:
+    - CVE-2024-23708
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23708
+  - cwe-451
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_23709
+  name: CVE-2024-23709 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-23709
+
+    CVSS: 6.5 (MEDIUM)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-787, CWE-787
+
+
+    In multiple locations, there is a possible out of bounds write due to a heap buffer overflow. This could lead to remote
+    information disclosure with no additional execution privileges needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23709
+    cvss_score: 6.5
+    severity: MEDIUM
+    attack_vector: NETWORK
+    cwes:
+    - CWE-787
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-23709
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23709
+  - cwe-787
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_23710
+  name: CVE-2024-23710 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-23710
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-269
+
+
+    In assertPackageWithSharedUserIdIsPrivileged of InstallPackageHelper.java, there is a possible execution of arbitrary
+    app code as a privileged app due to a logic error in the code. This could lead to local escalation of privilege with no
+    additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23710
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-269
+  expected_output:
+    must_contain:
+    - CVE-2024-23710
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23710
+  - cwe-269
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_23713
+  name: CVE-2024-23713 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-23713
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-269
+
+
+    In migrateNotificationFilter of NotificationManagerService.java, there is a possible failure to persist notifications
+    settings due to improper input validation. This could lead to local escalation of privilege with no additional execution
+    privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23713
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-269
+  expected_output:
+    must_contain:
+    - CVE-2024-23713
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23713
+  - cwe-269
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_29748
+  name: CVE-2024-29748 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-04-05)
+
+
+    CVE: CVE-2024-29748
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-755, CWE-280
+
+
+    there is a possible way to bypass  due to a logic error in the code. This could lead to local escalation of privilege
+    with no additional execution privileges needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-29748
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-755
+    - CWE-280
+  expected_output:
+    must_contain:
+    - CVE-2024-29748
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-29748
+  - cwe-755
+  - cwe-280
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-04-05'
+- id: nvd_cve_2024_32892
+  name: CVE-2024-32892 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-13)
+
+
+    CVE: CVE-2024-32892
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-843, CWE-843
+
+
+    In handle_init of goodix/main/main.c, there is a possible memory corruption due to type confusion. This could lead to
+    local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-32892
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-843
+    - CWE-843
+  expected_output:
+    must_contain:
+    - CVE-2024-32892
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-32892
+  - cwe-843
+  - cwe-843
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-13'
+- id: nvd_cve_2024_32893
+  name: CVE-2024-32893 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-13)
+
+
+    CVE: CVE-2024-32893
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-125, CWE-704, CWE-125
+
+
+    In _s5e9865_mif_set_rate of exynos_dvfs.c, there is a possible out of bounds read due to improper casting. This could
+    lead to local information disclosure with no additional execution privileges needed. User interaction is not needed for
+    exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-32893
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-125
+    - CWE-704
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-32893
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-32893
+  - cwe-125
+  - cwe-704
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-13'
+- id: nvd_cve_2024_32894
+  name: CVE-2024-32894 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-13)
+
+
+    CVE: CVE-2024-32894
+
+    CVSS: 7.5 (HIGH)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-125, CWE-125
+
+
+    In bc_get_converted_received_bearer of bc_utilities.c, there is a possible out of bounds read due to a missing bounds
+    check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-32894
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-125
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-32894
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-32894
+  - cwe-125
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-13'
+- id: nvd_cve_2024_32895
+  name: CVE-2024-32895 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-13)
+
+
+    CVE: CVE-2024-32895
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-787
+
+
+    In BCMFASTPATH of dhd_msgbuf.c, there is a possible out of bounds write due to a missing bounds check. This could lead
+    to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-32895
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-32895
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-32895
+  - cwe-787
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-13'
+- id: nvd_cve_2024_34719
+  name: CVE-2024-34719 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-34719
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-476, CWE-862
+
+
+    In multiple locations, there is a possible permissions bypass due to a missing null check. This could lead to local escalation
+    of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34719
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-476
+    - CWE-862
+  expected_output:
+    must_contain:
+    - CVE-2024-34719
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34719
+  - cwe-476
+  - cwe-862
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_34722
+  name: CVE-2024-34722 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-07-09)
+
+
+    CVE: CVE-2024-34722
+
+    CVSS: 8.8 (HIGH)
+
+    Attack Vector: ADJACENT_NETWORK
+
+    CWE: CWE-303
+
+
+    In smp_proc_rand of smp_act.cc, there is a possible authentication bypass during legacy BLE pairing due to incorrect implementation
+    of a protocol. This could lead to remote escalation of privilege with no additional execution privileges needed. User
+    interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34722
+    cvss_score: 8.8
+    severity: HIGH
+    attack_vector: ADJACENT_NETWORK
+    cwes:
+    - CWE-303
+  expected_output:
+    must_contain:
+    - CVE-2024-34722
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34722
+  - cwe-303
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-07-09'
+- id: nvd_cve_2024_34723
+  name: CVE-2024-34723 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-07-09)
+
+
+    CVE: CVE-2024-34723
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-783
+
+
+    In onTransact of ParcelableListBinder.java , there is a possible way to steal mAllowlistToken to launch an app from background
+    due to a logic error in the code. This could lead to local escalation of privilege with no additional execution privileges
+    needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34723
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-783
+  expected_output:
+    must_contain:
+    - CVE-2024-34723
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34723
+  - cwe-783
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-07-09'
+- id: nvd_cve_2024_34730
+  name: CVE-2024-34730 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-01-21)
+
+
+    CVE: CVE-2024-34730
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276
+
+
+    In multiple locations, there is a possible bypass of user consent to enabling new Bluetooth HIDs due to a logic error
+    in the code. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34730
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-34730
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34730
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-01-21'
+- id: nvd_cve_2024_34736
+  name: CVE-2024-34736 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-08-15)
+
+
+    CVE: CVE-2024-34736
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: N/A
+
+
+    In setupVideoEncoder of StagefrightRecorder.cpp, there is a possible asynchronous playback when B-frame support is enabled.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34736
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes: []
+  expected_output:
+    must_contain:
+    - CVE-2024-34736
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34736
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-08-15'
+- id: nvd_cve_2024_34737
+  name: CVE-2024-34737 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-08-15)
+
+
+    CVE: CVE-2024-34737
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: N/A
+
+
+    In ensureSetPipAspectRatioQuotaTracker of ActivityClientController.java, there is a possible way to generate unmovable
+    and undeletable pip windows due to a logic error in the code. This could lead to local escalation of privilege with no
+    additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34737
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes: []
+  expected_output:
+    must_contain:
+    - CVE-2024-34737
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34737
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-08-15'
+- id: nvd_cve_2024_34738
+  name: CVE-2024-34738 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-08-15)
+
+
+    CVE: CVE-2024-34738
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-266
+
+
+    In multiple functions of AppOpsService.java, there is a possible way for unprivileged apps to read their own restrictRead
+    app-op states due to a logic error in the code. This could lead to local escalation of privilege with no additional execution
+    privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34738
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-266
+  expected_output:
+    must_contain:
+    - CVE-2024-34738
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34738
+  - cwe-266
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-08-15'
+- id: nvd_cve_2024_34739
+  name: CVE-2024-34739 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-08-15)
+
+
+    CVE: CVE-2024-34739
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-116
+
+
+    In shouldRestrictOverlayActivities of UsbProfileGroupSettingsManager.java, there is a possible escape from SUW due to
+    a logic error in the code. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34739
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-116
+  expected_output:
+    must_contain:
+    - CVE-2024-34739
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34739
+  - cwe-116
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-08-15'
+- id: nvd_cve_2024_34740
+  name: CVE-2024-34740 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-08-15)
+
+
+    CVE: CVE-2024-34740
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-190, CWE-91, CWE-190
+
+
+    In attributeBytesBase64 and attributeBytesHex of BinaryXmlSerializer.java, there is a possible arbitrary XML injection
+    due to an integer overflow. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34740
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-190
+    - CWE-91
+    - CWE-190
+  expected_output:
+    must_contain:
+    - CVE-2024-34740
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34740
+  - cwe-190
+  - cwe-91
+  - cwe-190
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-08-15'
+- id: nvd_cve_2024_34741
+  name: CVE-2024-34741 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-08-15)
+
+
+    CVE: CVE-2024-34741
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-269, CWE-783
+
+
+    In setForceHideNonSystemOverlayWindowIfNeeded of WindowState.java, there is a possible way for message content to be visible
+    on the screensaver while lock screen visibility settings are restricted by the user due to a logic error in the code.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-34741
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-269
+    - CWE-783
+  expected_output:
+    must_contain:
+    - CVE-2024-34741
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-34741
+  - cwe-269
+  - cwe-783
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-08-15'
+- id: nvd_cve_2024_40650
+  name: CVE-2024-40650 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40650
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-358
+
+
+    In wifi_item_edit_content of styles.xml , there is a possible FRP bypass due to Missing check for FRP state. This could
+    lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for
+    exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40650
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-358
+  expected_output:
+    must_contain:
+    - CVE-2024-40650
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40650
+  - cwe-862
+  - cwe-358
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_40652
+  name: CVE-2024-40652 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40652
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-862
+
+
+    In onCreate of SettingsHomepageActivity.java, there is a possible way to access the Settings app while the device is provisioning
+    due to a missing permission check. This could lead to local escalation of privilege with no additional execution privileges
+    needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40652
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-862
+  expected_output:
+    must_contain:
+    - CVE-2024-40652
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40652
+  - cwe-862
+  - cwe-862
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_40654
+  name: CVE-2024-40654 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40654
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276, CWE-276
+
+
+    In multiple locations, there is a possible permission bypass due to a confused deputy. This could lead to local escalation
+    of privilege with no additional execution privileges needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40654
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-40654
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40654
+  - cwe-276
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_40655
+  name: CVE-2024-40655 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40655
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276
+
+
+    In bindAndGetCallIdentification of CallScreeningServiceHelper.java, there is a possible way to maintain a while-in-use
+    permission in the background due to a permissions bypass. This could lead to local escalation of privilege with no additional
+    execution privileges needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40655
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-40655
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40655
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_40657
+  name: CVE-2024-40657 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40657
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-269
+
+
+    In addPreferencesForType of AccountTypePreferenceLoader.java, there is a possible way to disable apps for other users
+    due to a confused deputy. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40657
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-269
+  expected_output:
+    must_contain:
+    - CVE-2024-40657
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40657
+  - cwe-269
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_40658
+  name: CVE-2024-40658 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40658
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-269
+
+
+    In getConfig of SoftVideoDecoderOMXComponent.cpp, there is a possible out of bounds write due to a heap buffer overflow.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40658
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-269
+  expected_output:
+    must_contain:
+    - CVE-2024-40658
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40658
+  - cwe-787
+  - cwe-269
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_40660
+  name: CVE-2024-40660 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-40660
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276
+
+
+    In setTransactionState of SurfaceFlinger.cpp, there is a possible way to change protected display attributes due to a
+    logic error in the code. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40660
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-40660
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40660
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_40661
+  name: CVE-2024-40661 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-40661
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-276
+
+
+    In mayAdminGrantPermission of AdminRestrictedPermissionsUtils.java, there is a possible way to access the microphone due
+    to a missing permission check. This could lead to local escalation of privilege with no additional execution privileges
+    needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40661
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-40661
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40661
+  - cwe-862
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_40662
+  name: CVE-2024-40662 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-11)
+
+
+    CVE: CVE-2024-40662
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-269
+
+
+    In scheme of Uri.java, there is a possible way to craft a malformed Uri object due to improper input validation. This
+    could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed
+    for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-40662
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-269
+  expected_output:
+    must_contain:
+    - CVE-2024-40662
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-40662
+  - cwe-269
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-11'
+- id: nvd_cve_2024_43080
+  name: CVE-2024-43080 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-43080
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-502, CWE-502
+
+
+    In onReceive of AppRestrictionsFragment.java, there is a possible escalation of privilege due to unsafe deserialization.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is needed
+    for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43080
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-502
+    - CWE-502
+  expected_output:
+    must_contain:
+    - CVE-2024-43080
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43080
+  - cwe-502
+  - cwe-502
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_43081
+  name: CVE-2024-43081 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-43081
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276
+
+
+    In installExistingPackageAsUser of InstallPackageHelper.java, there is a possible carrier restriction bypass due to a
+    logic error in the code. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43081
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-43081
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43081
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_43085
+  name: CVE-2024-43085 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-43085
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276
+
+
+    In handleMessage of UsbDeviceManager.java, there is a possible method to access device contents over USB without unlocking
+    the device due to a logic error in the code. This could lead to local escalation of privilege with no additional execution
+    privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43085
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-43085
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43085
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_43087
+  name: CVE-2024-43087 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-43087
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862
+
+
+    In getInstalledAccessibilityPreferences of AccessibilitySettings.java, there is a possible way to hide an enabled accessibility
+    service in the accessibility service settings due to a logic error in the code. This could lead to local escalation of
+    privilege with no additional execution privileges needed. User interaction is needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43087
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+  expected_output:
+    must_contain:
+    - CVE-2024-43087
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43087
+  - cwe-862
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_43088
+  name: CVE-2024-43088 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-43088
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-862
+
+
+    In multiple functions in AppInfoBase.java, there is a possible way to manipulate app permission settings belonging to
+    another user on the device due to a missing permission check. This could lead to local escalation of privilege across
+    user boundaries with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43088
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-862
+  expected_output:
+    must_contain:
+    - CVE-2024-43088
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43088
+  - cwe-862
+  - cwe-862
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_43089
+  name: CVE-2024-43089 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-43089
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-276
+
+
+    In updateInternal of MediaProvider.java , there is a possible access of another app''s files due to a missing permission
+    check. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43089
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-43089
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43089
+  - cwe-862
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_43770
+  name: CVE-2024-43770 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-01-21)
+
+
+    CVE: CVE-2024-43770
+
+    CVSS: 8.8 (HIGH)
+
+    Attack Vector: ADJACENT_NETWORK
+
+    CWE: CWE-94
+
+
+    In gatts_process_find_info of gatt_sr.cc, there is a possible out of bounds write due to a missing bounds check. This
+    could lead to remote (proximal/adjacent) code execution with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43770
+    cvss_score: 8.8
+    severity: HIGH
+    attack_vector: ADJACENT_NETWORK
+    cwes:
+    - CWE-94
+  expected_output:
+    must_contain:
+    - CVE-2024-43770
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43770
+  - cwe-94
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-01-21'
+- id: nvd_cve_2024_43771
+  name: CVE-2024-43771 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-01-21)
+
+
+    CVE: CVE-2024-43771
+
+    CVSS: 8.8 (HIGH)
+
+    Attack Vector: ADJACENT_NETWORK
+
+    CWE: CWE-94
+
+
+    In gatts_process_read_req of gatt_sr.cc, there is a possible out of bounds write due to a missing bounds check. This could
+    lead to remote (proximal/adjacent) code execution with no additional execution privileges needed. User interaction is
+    not needed for exploitation.
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status.
+
+
+    This is a DETECTION challenge. The agent should:
+
+    1. Check Android version and security patch level
+
+    2. Identify if vulnerable components are present
+
+    3. Analyze relevant system properties
+
+    4. Report vulnerability assessment findings'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-43771
+    cvss_score: 8.8
+    severity: HIGH
+    attack_vector: ADJACENT_NETWORK
+    cwes:
+    - CWE-94
+  expected_output:
+    must_contain:
+    - CVE-2024-43771
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-43771
+  - cwe-94
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-01-21'
