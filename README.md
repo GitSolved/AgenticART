@@ -1,177 +1,390 @@
-# AgenticART: A Dojo Framework for Recursive Security LLM Training
+# AgenticART: Android Red Team Training Dojo for Security LLMs
 
-**Abstract:** AgenticART is a research framework for studying how Large Language Models (LLMs) can be aligned to Android security tasks. It implements a recursive "feedback loopback" architecture that (i) synthesizes candidate exploit trajectories, (ii) executes them on a live Android environment, and (iii) uses the resulting execution traces to refine models via Supervised Fine-Tuning (SFT) and Direct Preference Optimization (DPO). The current implementation targets shell/ADB, Frida-based dynamic instrumentation, and native interfaces as primary execution domains.
-
----
-
-## 🚀 Proof of Impact: The Android 11 Milestone
-
-We have successfully demonstrated the "Dojo Flywheel" by distilling data-center class intelligence into a local, specialized agent.
-
-*   **Student:** WhiteRabbitNeo 2.5 7B (MLX 4-bit)
-*   **Teacher:** Llama 3.1 70B
-*   **Target:** Android 11 (API 30)
-*   **Result:** The student model's pass rate on foundational security tasks increased from **20% to 100%** (+80 percentage points) after 500 iterations of LoRA fine-tuning on teacher-generated "Gold" trajectories.
+A research framework for training Large Language Models (LLMs) on Android security tasks through structured challenges, execution-verified feedback, and curriculum-based skill progression.
 
 ---
 
-## 🛡️ Why AgenticART?
+## Why AgenticART?
 
-This framework solves the "Security AI Paradox" by providing:
+### The Problem
 
-1.  **Capability Compression (Distillation):** High-end reasoning from 70B+ models is compressed into 7B models that run natively on local workstations/laptops.
-2.  **Air-Gapped Privacy:** 100% offline execution. No exploit trajectories are ever sent to cloud APIs, making it safe for sensitive vulnerability research.
-3.  **Execution-Verified Truth:** Unlike general LLMs that hallucinate code, AgenticART models are trained on **verified execution traces** from Android devices or emulators. They know what *actually* works.
-4.  **Automated Specialization:** The framework acts as a "factory" for security brains. Point it at a new Android version or device, and it autonomously trains a specialized agent for that specific target.
+Most LLMs can *talk* about security but can't *do* security. They hallucinate commands, misunderstand Android internals, and fail when execution matters. Training data for security tasks is scarce, outdated, or synthetic.
 
----
+### The Solution
 
-## 🔬 Research Significance: AI Alignment for Security
+AgenticART creates **AI agents that can actually perform security assessments** by:
 
-For AI Security researchers, AgenticART provides a novel environment for studying **Hardware-Grounded Alignment**:
+- Training on **real CVEs** from Android Security Bulletins (not textbook examples)
+- Using **execution-verified feedback** (did the command actually work?)
+- Providing **structured progression** from beginner to advanced (belt system)
 
-1.  **Physical Verification Gates vs. "Vibe Checks":** Most RLHF depends on human preference ("vibe checks"). AgenticART replaces human graders with a physical Android kernel. The reward signal is binary and objective: *Does the code execute and achieve the goal on real hardware?*
-2.  **Quantified Capability Compression:** We have empirically demonstrated a **10:1 Intelligence Density** ratio, proving that specialized 7B models can achieve 100% parity with 70B models when distilled through hardware-verified trajectories.
-3.  **Failure Mode Archeology:** By capturing and grading thousands of failed attempts, the Dojo builds a unique dataset of **AI Security Hallucinations**. This allows researchers to study the cognitive limits of LLMs in high-stakes, adversarial environments.
-4.  **Recursive Alignment Loop:** The Dojo acts as a "Specialization Factory." It solves the problem of model decay against new security patches by autonomously synthesized new "Gold" data for every new Android OS release.
+### Value Proposition
 
----
+| For | Value |
+|-----|-------|
+| **AI Researchers** | High-quality training data for security-focused LLMs |
+| **Security Teams** | Foundation for automated vulnerability assessment |
+| **Red Teams** | AI-assisted Android penetration testing capabilities |
+| **Educators** | Structured, real-world security curriculum |
 
-## 🎯 High-Level Overview
+### Key Differentiators
 
-At a high level, AgenticART runs an LLM as an "agent" that proposes actions (e.g., ADB commands, Frida scripts, native code), executes them on an Android device or emulator, and logs what happened. Verified-successful sequences are treated as positive training examples; failed or unsafe sequences become negative examples. Over time, these examples can be used to train or adapt models that better handle Android vulnerability research workflows. This repository focuses on the orchestration, data pipeline, and alignment scripts needed to explore that loop.
-
----
-
-## 🔬 Core Methodology: Execution-Verified RLHF
-
-The framework operates on the hypothesis that security-specific capabilities depend on verified execution history, not only on static pre-training. This repository provides tooling to test that hypothesis; full empirical evaluation is ongoing.
-
-### 1. Trajectory Synthesis & Execution Feed
-
-The system generates candidate exploit trajectories across three primary execution domains:
-
-* **CLI/ADB Layer:** Shell-level reconnaissance and intent manipulation logic.
-* **Dynamic Instrumentation (Frida):** Runtime memory inspection and API hooking.
-* **Kernel Interface (C/Native):** Low-level interaction with system drivers and the Linux kernel. *(Currently syntax-validation only; on-device execution requires NDK integration.)*
-
-### 2. Automated Data Provenance (The Refinery)
-
-AgenticART includes an automated grading component that attempts to classify raw execution logs:
-
-* **NVD-Driven Curriculum:** Ingests live CVE data from the NIST National Vulnerability Database.
-* **Semantic Classification:** CVEs are categorized into a tiered "Belt System" using a multi-factor heuristic involving CVSS 3.1 scores, attack vectors, and keyword-based complexity analysis (e.g., UAF vs. Info Leak).
-* **Verification Gate:** Only trajectories that reach a clearly defined objective (e.g., specific file access, privilege boundary crossing) are promoted to the "Gold" training set; this promotion logic is configurable and still under active refinement.
-
-### 3. Alignment & Reinforcement (DPO Phase)
-
-Model refinement is achieved through Direct Preference Optimization:
-
-* **Chosen Trajectories ($y_w$):** Verified successful executions.
-* **Rejected Trajectories ($y_l$):** Failed attempts exhibiting common security-specific failure modes (e.g., syntax errors, permission denied states, or execution crashes).
-* **Reward Modeling:** This phase is intended to encode security-relevant preferences by penalizing trajectories that consistently lead to failed or unsafe states (e.g., repeated permission errors, crashes). We have not yet quantified how much this improves real-world exploit performance; that is future work.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    What Makes AgenticART Different               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ❌ Traditional LLM Training    ✅ AgenticART Approach           │
+│  ─────────────────────────────  ─────────────────────────────── │
+│  • Static text datasets         • Execution-verified traces     │
+│  • Synthetic examples           • Real CVEs from NVD (166+)     │
+│  • No difficulty scaling        • 8-tier belt progression       │
+│  • Generic security knowledge   • Android-specific expertise    │
+│  • Cloud-dependent              • 100% offline capable          │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 🍱 Tiered Proficiency Infrastructure (Curriculum)
+## How It Works
 
-The research environment is partitioned into discrete belts to measure model generalization:
+AgenticART implements a "Dojo" training system where AI agents learn Android vulnerability assessment through a continuous improvement loop:
 
-* **L1 (White/Yellow):** Foundational reconnaissance and environment fingerprinting.
-* **L2 (Orange/Green):** Inter-Process Communication (IPC) logic and dynamic instrumentation.
-* **L3 (Blue/Purple):** Native memory corruption and privilege escalation.
-* **L4 (Brown/Black):** Autonomous Vulnerability Research (AVR) targeting kernel-level behavior and complex exploitation chains. In the current codebase, L4 is a conceptual target tier; systematic zero-day discovery is an aspirational goal rather than a demonstrated capability.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      AgenticART Architecture                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
+│   │   NVD    │───▶│ Challenge│───▶│  Agent   │───▶│ Android  │ │
+│   │   API    │    │ Generator│    │ Executor │    │ Emulator │ │
+│   └──────────┘    └──────────┘    └──────────┘    └──────────┘ │
+│                                          │              │       │
+│                                          ▼              ▼       │
+│                                   ┌──────────┐   ┌──────────┐  │
+│                                   │  Grader  │◀──│Exec Trace│  │
+│                                   └──────────┘   └──────────┘  │
+│                                          │                      │
+│                                          ▼                      │
+│                                   ┌──────────┐                  │
+│                                   │ Training │                  │
+│                                   │   Data   │                  │
+│                                   └──────────┘                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**The Loop:**
+1. **Challenge Generation** - Pull real CVEs from NVD, classify by difficulty
+2. **Agent Execution** - LLM attempts the challenge on a live Android device
+3. **Grading** - Verify if the output achieved the objective
+4. **Training Data** - Successful attempts become "gold" training examples
+5. **Model Refinement** - Fine-tune models on verified execution traces
+6. **Repeat** - Progressively harder challenges, continuously improving agents
 
 ---
 
-## 🏎 Performance Architecture: MLX & Apple Silicon
+## Curriculum Statistics
 
-To facilitate high-throughput local experimentation, the framework implements a native **MLX-LM** training path optimized for Apple's M-series Unified Memory:
+**Last Updated:** December 2025
 
-* **Quantization:** 4-bit NormalFloat (NF4) quantization for high-parameter models (32B+).
-* **LoRA Integration:** Low-Rank Adaptation targeting the $W_q$ and $W_v$ projections to minimize memory overhead while maintaining alignment stability.
-* **Compute:** Direct utilization of the 40-core GPU via Metal Performance Shaders (MPS). In local testing on M-series hardware, this configuration has provided substantial speedups in tokens-per-second during alignment experiments, compared to unoptimized baselines.
+| Belt | Challenges | Skill Level | Focus Area |
+|------|------------|-------------|------------|
+| White | 17 | Beginner | Device reconnaissance, basic ADB |
+| Yellow | 23 | Novice | Information disclosure, simple DoS |
+| Orange | 43 | Intermediate | Permission bypass, logic bugs |
+| Green | 43 | Intermediate+ | IPC, content providers, intents |
+| Blue | 58 | Advanced | Buffer overflows, high-severity EoP |
+| Brown | 47 | Expert | UAF, race conditions, memory corruption |
+| Purple | 28 | Elite | Qualcomm critical, RCE vectors |
+| Black | 24 | Master | Kernel exploits, zero-click analysis |
+| **Total** | **283** | | |
+
+**CVE Sources:** NIST National Vulnerability Database, Android Security Bulletins (2019-2025)
 
 ---
 
-## 🛠 Implementation & Reproduction
+## Execution Capabilities & Design Choices
+
+### What Agents CAN Do (Full Execution)
+
+| Domain | Status | Description |
+|--------|--------|-------------|
+| **ADB/Shell** | ✅ Full | Device reconnaissance, package analysis, system probing |
+| **Frida** | ✅ Full | Runtime hooking, API interception, memory inspection |
+| **Content Providers** | ✅ Full | Query/exploit exposed data interfaces |
+| **Intent Attacks** | ✅ Full | IPC manipulation, deep link exploitation |
+| **Logcat Analysis** | ✅ Full | Sensitive data leakage detection |
+
+### Intentional Constraints (Realistic Training)
+
+#### 🔒 Non-Rooted Environment (By Design)
+
+**Why:** ~95% of real Android devices are NOT rooted. Training agents on rooted emulators would teach unrealistic techniques that fail in the real world.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              REALISTIC CONSTRAINT TRAINING                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ❌ If we trained on rooted emulators:                          │
+│     Agent learns: "su -c cat /data/data/com.app/secrets.db"     │
+│     Real world:   "su: not found" → FAILS on 95% of devices     │
+│                                                                  │
+│  ✅ Current approach (non-rooted):                              │
+│     Agent learns: Exploit logic bugs, misconfigurations         │
+│     Agent learns: "run-as com.debuggable.app cat databases/*"   │
+│     Agent learns: Chain low-privilege vulnerabilities           │
+│     Real world:   Actually works on real targets                │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Result:** Agents learn to hack like real attackers, not like someone who already owns the device.
+
+#### ⚠️ C/Native Code (Syntax Validation Only)
+
+**Current State:** C exploit code is validated for syntax but NOT compiled or executed on device.
+
+**Why this limitation exists:**
+- Requires NDK cross-compilation (ARM toolchain)
+- Binary must be pushed to device and executed
+- Most native exploits target specific kernel versions/builds
+- Not yet implemented (contribution welcome!)
+
+**Impact:** Black/Purple belt kernel challenges are **detection-focused** - agents analyze vulnerabilities but cannot execute native exploits.
+
+**Fixable?** Yes - NDK integration would enable full native execution. See [Contributing](#contributing).
+
+#### 📱 Emulator vs Physical Device
+
+| Aspect | Emulator | Physical Device |
+|--------|----------|-----------------|
+| Reproducibility | ✅ Consistent | ❌ Varies |
+| Hardware features | ❌ Limited | ✅ Full |
+| Kernel | Generic | Vendor-specific |
+| TEE/TrustZone | ❌ No | ✅ Yes |
+| Baseband/Radio | ❌ No | ✅ Yes |
+
+**Current approach:** Emulators for reproducible training. Physical devices for validation.
+
+---
+
+## Supported Android Versions
+
+Persona configurations exist for:
+
+| Version | API Level | Codename | Persona File |
+|---------|-----------|----------|--------------|
+| Android 11 | 30 | R | `android_11_user.yaml` |
+| Android 14 | 34 | U | `android_14_user.yaml` |
+| Android 15 | 35 | V | `android_15_user.yaml` |
+| Android 16 | 36 | Baklava | `android_16_user.yaml` |
+
+Each persona includes realistic user data (contacts, SMS, files, apps) to enable meaningful security assessments.
+
+---
+
+## Installation
 
 ### Prerequisites
 
-* Python 3.10+
-* Android SDK / Platform Tools (ADB)
-* Ollama (Local Inference Engine)
-* MLX / MLX-LM (M-series Optimization, optional)
+- Python 3.10+
+- Android SDK / Platform Tools (ADB)
+- Android Emulator or physical device
+- Ollama (for local LLM inference)
+- MLX / MLX-LM (optional, for Apple Silicon optimization)
 
-### Installation
+### Setup
 
 ```bash
-# Clone and install dependencies
+# Clone repository
 git clone https://github.com/GitSolved/AgenticART.git
 cd AgenticART
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Install as editable package (optional, for development)
+# Install as editable package (optional)
 pip install -e .
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your NVD API key (optional, for CVE generation)
 ```
 
-### Execution Pipeline
+---
 
-1. **Curriculum Generation:** `python3 scripts/generate_nvd_challenges.py`
-2. **Trajectory Mining:** `python3 dojo/test_end_to_end.py --mode live --model [base_model] --belt [target]`
-3. **Model Alignment:** `python3 scripts/package_finetune.py` followed by `python3 mlx_train.py`
+## Usage
 
-Each step is modular; researchers can swap in different base models, challenge sets, or training backends while keeping the same orchestration flow.
+### 1. Generate Challenges from NVD
+
+```bash
+python3 scripts/generate_nvd_challenges.py
+```
+
+Fetches recent Android CVEs and generates challenge templates.
+
+### 2. Run Agent Training
+
+```bash
+python3 dojo/test_end_to_end.py --mode live --model <model_name> --belt <target_belt>
+```
+
+### 3. Package Training Data
+
+```bash
+python3 scripts/package_finetune.py
+```
+
+### 4. Fine-tune with MLX (Apple Silicon)
+
+```bash
+python3 dojo/custom_train.py
+```
 
 ---
 
-## 📊 Evaluation & Metrics
+## Project Structure
 
-Progress is tracked via the **Dojo Benchmarking Dashboard**, which evaluates:
-
-* **Domain Mastery:** Success rates across specific vulnerability classes.
-* **Execution Reliability:** The ratio of syntax-correct outputs to total attempts.
-* **Cross-Device Generalization:** Performance delta across varying Android API levels and security patch sets.
+```
+AgenticART/
+├── dojo/
+│   ├── curriculum/           # Challenge definitions by belt
+│   │   ├── white_belt/
+│   │   ├── yellow_belt/
+│   │   ├── ...
+│   │   └── black_belt/
+│   ├── personas/             # Android device configurations
+│   ├── tools/                # NVD generator, utilities
+│   ├── challenger.py         # Basic challenge executor
+│   ├── react_challenger.py   # ReAct (Reason+Act) executor
+│   ├── executor.py           # ADB/Frida/C execution engine
+│   ├── grader.py             # Output validation
+│   └── models.py             # Data models (Belt, Challenge, etc.)
+├── scripts/
+│   ├── generate_nvd_challenges.py
+│   ├── package_finetune.py
+│   └── validate_training_data.py
+├── webapp/                   # Streamlit dashboard
+└── tests/
+```
 
 ---
 
-## 🧠 Framework Evolution: The ReAct Challenger
+## Challenge Execution Modes
 
-Recent research within the Dojo has proven that while the "Basic Challenger" is efficient for foundational tasks, higher-belt challenges (Yellow and above) require **ReAct (Reason + Act)** prompting to achieve reliability.
+Challenges specify their execution capability:
 
-### 🔬 Proof of ReAct Effectiveness: Multi-Step Discovery
-We conducted a controlled experiment on a **Dynamic Package Discovery** task: *"Find the versionName of the package containing 'telephony'."*
-
-*   **Basic Challenger (FAIL):** Attempts to solve the problem in a single turn using complex, brittle one-liners. It cannot adapt when a command fails or when intermediate data is needed.
-*   **ReAct Challenger (SUCCESS):** Demonstrates "System 2" thinking by breaking the task into logical steps:
-    1.  **Reconnaissance:** Enumerates packages to find the exact target string.
-    2.  **Analysis:** Uses the discovered package name to query the system for the version.
-    3.  **Validation:** Confirms the output matches the goal and signals completion.
-
-### 🗝️ Key Integration Insight
-ReAct is the **essential bridge** between simple command generation and autonomous vulnerability research. It enables the model to recover from "Permission Denied" errors, pivot to alternative tools (e.g., switching from `pm` to `dumpsys`), and maintain a stateful context of the target device's internal state.
+| Mode | Description |
+|------|-------------|
+| `full_execution` | Agent can complete the entire challenge |
+| `detection_analysis` | Agent analyzes/detects but cannot exploit |
+| `detection_only` | Vulnerability assessment only |
+| `simulation` | Simulates behavior patterns |
+| `syntax_only` | C code validated locally, not executed |
+| `try_harder` | Aspirational challenge with partial credit |
 
 ---
 
-## 🚧 Status and Limitations
+## Evaluation Metrics
 
-### Currently implemented:
+The framework tracks:
 
-*   **[VERIFIED]** End-to-end distillation loop: 70B Teacher → 7B Student via MLX LoRA.
-*   **[VERIFIED]** +80 percentage point improvement on Android 11 foundational benchmarks (20% → 100%, reaching parity with teacher).
-*   End-to-end orchestration for generating Android security challenges from NVD data.
-*   Initial grading and curriculum logic (belt tiers) based on CVSS and heuristic classification.
+- **Pass Rate:** Percentage of challenges completed successfully
+- **Syntax Accuracy:** Valid code generation rate
+- **Execution Success:** Commands that run without errors
+- **Objective Achievement:** Goal completion rate
 
-### Experimental / in progress:
+---
 
-* Robust automated verification criteria for "success" across diverse vulnerability classes.
-* Evaluation of how much aligned models improve over base models on fixed Android security benchmarks.
-* Generalization tests across multiple device profiles and API levels.
+## Scope & Boundaries
 
-### Known limitations and risks:
+### What AgenticART IS
 
-* This framework is a research prototype and should not be treated as a production-ready pentesting tool.
-* Automated exploit generation and execution can cause instability (e.g., crashes, data loss) on test devices; use only in controlled environments you own and have permission to test.
-* The system does not guarantee discovery of new vulnerabilities; its primary purpose is to study agentic workflows and alignment in Android security contexts.
+- ✅ Training framework for Android security assessment agents
+- ✅ Curriculum of 283 real-world CVE challenges
+- ✅ Execution-verified feedback loop for model improvement
+- ✅ Realistic non-rooted environment matching real targets
+- ✅ Research prototype for studying AI security capabilities
 
-Note: upcoming research paper proving effectiveness of this framework will be posted to my cybersecurity portfolio website: [secureyourgear.com](https://secureyourgear.com). Comments & questions are always appreciated! 
+### What AgenticART is NOT
+
+- ❌ Production-ready pentesting tool
+- ❌ Zero-day discovery engine (aspirational, not demonstrated)
+- ❌ Magic "hack any phone" solution
+- ❌ Replacement for human security researchers
+
+### Technical Boundaries
+
+| Capability | Status | Reason |
+|------------|--------|--------|
+| **Zero-Click Exploits** | Analysis only | Requires months of dedicated 0-day research, memory corruption expertise |
+| **Kernel Exploitation** | Detection only | Needs specific kernel builds, not generalizable |
+| **Baseband/Radio** | Not supported | Requires physical device with cellular hardware |
+| **TrustZone/TEE** | Not supported | Hardware security module not emulated |
+| **Bootloader Attacks** | Not supported | Requires unlocked bootloader, physical access |
+
+### Honest Expectations
+
+```
+What you SHOULD expect:
+───────────────────────
+• Agents that can perform systematic Android reconnaissance
+• Automated vulnerability assessment against known CVEs
+• High-quality training data for security-focused LLMs
+• Foundation for building more advanced security tools
+
+What you should NOT expect:
+───────────────────────────
+• Agents discovering novel 0-days autonomously
+• "Push button, hack phone" capability
+• Replacement for skilled penetration testers
+• Production-grade security scanner
+```
+
+---
+
+## Research Goals
+
+AgenticART explores:
+
+1. **Capability Transfer:** Can security skills be distilled from large models (70B) to smaller ones (7B)?
+2. **Execution-Verified Learning:** Does training on verified execution traces improve reliability?
+3. **Curriculum Learning:** Does progressive difficulty (belt system) accelerate skill acquisition?
+4. **Failure Analysis:** What patterns emerge in AI security task failures?
+
+---
+
+## Contributing
+
+Contributions welcome! Areas of interest:
+
+- Additional CVE challenge templates
+- New Android version personas
+- Improved grading heuristics
+- NDK integration for native execution
+- Additional execution domains (e.g., Magisk, Xposed)
+
+---
+
+## License
+
+MIT License - See [LICENSE](LICENSE)
+
+---
+
+## Disclaimer
+
+This framework is for **authorized security research only**. Use only on devices you own or have explicit permission to test. The authors are not responsible for misuse.
+
+---
+
+## Contact
+
+- **Repository:** [github.com/GitSolved/AgenticART](https://github.com/GitSolved/AgenticART)
+- **Research Portfolio:** [secureyourgear.com](https://secureyourgear.com)
+
+---
+
+*Last updated: December 30, 2025*
