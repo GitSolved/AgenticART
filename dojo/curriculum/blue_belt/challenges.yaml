@@ -140,3 +140,635 @@ challenges:
   - cve-2021-23162
   - cwe-296
   - cwe-295
+- id: blue_cve_2014_0547
+  name: 'CVE Analysis: CVE-2014-0547'
+  description: 'Target: CVE-2014-0547
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0549, CVE-2014-0550, CVE-2014-0551, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0547
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0547
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0547
+  - cwe-119
+- id: blue_cve_2014_0549
+  name: 'CVE Analysis: CVE-2014-0549'
+  description: 'Target: CVE-2014-0549
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0550, CVE-2014-0551, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0549
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0549
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0549
+  - cwe-119
+- id: blue_cve_2014_0550
+  name: 'CVE Analysis: CVE-2014-0550'
+  description: 'Target: CVE-2014-0550
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0551, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0550
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0550
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0550
+  - cwe-119
+- id: blue_cve_2014_0551
+  name: 'CVE Analysis: CVE-2014-0551'
+  description: 'Target: CVE-2014-0551
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550, CVE-2014-0552,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0551
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0551
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0551
+  - cwe-119
+- id: blue_cve_2014_0552
+  name: 'CVE Analysis: CVE-2014-0552'
+  description: 'Target: CVE-2014-0552
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550, CVE-2014-0551,
+    and CVE-2014-0555.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0552
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0552
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0552
+  - cwe-119
+- id: blue_cve_2014_0555
+  name: 'CVE Analysis: CVE-2014-0555'
+  description: 'Target: CVE-2014-0555
+
+
+    Adobe Flash Player before 13.0.0.244 and 14.x and 15.x before 15.0.0.152 on Windows
+    and OS X and before 11.2.202.406 on Linux, Adobe AIR before 15.0.0.249 on Windows
+    and OS X and before 15.0.0.252 on Android, Adobe AIR SDK before 15.0.0.249, and
+    Adobe AIR SDK & Compiler before 15.0.0.249 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2014-0547, CVE-2014-0549, CVE-2014-0550, CVE-2014-0551,
+    and CVE-2014-0552.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0555
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0555
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0555
+  - cwe-119
+- id: blue_cve_2014_0556
+  name: 'CVE Analysis: CVE-2014-0556'
+  description: 'Target: CVE-2014-0556
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.244 and 14.x and
+    15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on Linux, Adobe
+    AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe
+    AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2014-0559.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0556
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0556
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0556
+  - cwe-119
+- id: blue_cve_2014_0559
+  name: 'CVE Analysis: CVE-2014-0559'
+  description: 'Target: CVE-2014-0559
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.244 and 14.x and
+    15.x before 15.0.0.152 on Windows and OS X and before 11.2.202.406 on Linux, Adobe
+    AIR before 15.0.0.249 on Windows and OS X and before 15.0.0.252 on Android, Adobe
+    AIR SDK before 15.0.0.249, and Adobe AIR SDK & Compiler before 15.0.0.249 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2014-0556.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2014-0559
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2014-0559
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2014-0559
+  - cwe-119
+- id: blue_cve_2015_0303
+  name: 'CVE Analysis: CVE-2015-0303'
+  description: 'Target: CVE-2015-0303
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2015-0306.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-0303
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0303
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0303
+- id: blue_cve_2015_0304
+  name: 'CVE Analysis: CVE-2015-0304'
+  description: 'Target: CVE-2015-0304
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.260 and 14.x through
+    16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429 on Linux, Adobe
+    AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe
+    AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before 16.0.0.272 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2015-0309.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-0304
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0304
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0304
+  - cwe-119
+- id: blue_cve_2015_0306
+  name: 'CVE Analysis: CVE-2015-0306'
+  description: 'Target: CVE-2015-0306
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow attackers to execute arbitrary
+    code or cause a denial of service (memory corruption) via unspecified vectors,
+    a different vulnerability than CVE-2015-0303.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-0306
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0306
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0306
+- id: blue_cve_2015_0307
+  name: 'CVE Analysis: CVE-2015-0307'
+  description: 'Target: CVE-2015-0307
+
+
+    Adobe Flash Player before 13.0.0.260 and 14.x through 16.x before 16.0.0.257 on
+    Windows and OS X and before 11.2.202.429 on Linux, Adobe AIR before 16.0.0.245
+    on Windows and OS X and before 16.0.0.272 on Android, Adobe AIR SDK before 16.0.0.272,
+    and Adobe AIR SDK & Compiler before 16.0.0.272 allow remote attackers to obtain
+    sensitive information from process memory or cause a denial of service (out-of-bounds
+    read) via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-0307
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0307
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0307
+  - cwe-119
+- id: blue_cve_2015_0309
+  name: 'CVE Analysis: CVE-2015-0309'
+  description: 'Target: CVE-2015-0309
+
+
+    Heap-based buffer overflow in Adobe Flash Player before 13.0.0.260 and 14.x through
+    16.x before 16.0.0.257 on Windows and OS X and before 11.2.202.429 on Linux, Adobe
+    AIR before 16.0.0.245 on Windows and OS X and before 16.0.0.272 on Android, Adobe
+    AIR SDK before 16.0.0.272, and Adobe AIR SDK & Compiler before 16.0.0.272 allows
+    attackers to execute arbitrary code via unspecified vectors, a different vulnerability
+    than CVE-2015-0304.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-0309
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-0309
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-0309
+  - cwe-119
+- id: blue_cve_2015_3100
+  name: 'CVE Analysis: CVE-2015-3100'
+  description: 'Target: CVE-2015-3100
+
+
+    Stack-based buffer overflow in Adobe Flash Player before 13.0.0.292 and 14.x through
+    18.x before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on Linux, Adobe
+    AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe
+    AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe
+    AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143 on OS X
+    allows attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-3100
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3100
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3100
+  - cwe-119
+- id: blue_cve_2015_3104
+  name: 'CVE Analysis: CVE-2015-3104'
+  description: 'Target: CVE-2015-3104
+
+
+    Integer overflow in Adobe Flash Player before 13.0.0.292 and 14.x through 18.x
+    before 18.0.0.160 on Windows and OS X and before 11.2.202.466 on Linux, Adobe
+    AIR before 18.0.0.144 on Windows and before 18.0.0.143 on OS X and Android, Adobe
+    AIR SDK before 18.0.0.144 on Windows and before 18.0.0.143 on OS X, and Adobe
+    AIR SDK & Compiler before 18.0.0.144 on Windows and before 18.0.0.143 on OS X
+    allows attackers to execute arbitrary code via unspecified vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-3104
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3104
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3104
+  - cwe-189
+- id: blue_cve_2015_3105
+  name: 'CVE Analysis: CVE-2015-3105'
+  description: 'Target: CVE-2015-3105
+
+
+    Adobe Flash Player before 13.0.0.292 and 14.x through 18.x before 18.0.0.160 on
+    Windows and OS X and before 11.2.202.466 on Linux, Adobe AIR before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X and Android, Adobe AIR SDK before 18.0.0.144
+    on Windows and before 18.0.0.143 on OS X, and Adobe AIR SDK & Compiler before
+    18.0.0.144 on Windows and before 18.0.0.143 on OS X allow attackers to execute
+    arbitrary code or cause a denial of service (memory corruption) via unspecified
+    vectors.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-3105
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-3105
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-3105
+  - cwe-119
+- id: blue_cve_2015_8073
+  name: 'CVE Analysis: CVE-2015-8073'
+  description: 'Target: CVE-2015-8073
+
+
+    mediaserver in Android 4.4 and 5.1 before 5.1.1 LMY48X allows remote attackers
+    to execute arbitrary code or cause a denial of service (memory corruption) via
+    a crafted media file, aka internal bug 14388161, a different vulnerability than
+    CVE-2015-6608 and CVE-2015-8072.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: blue
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2015-8073
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: UNKNOWN
+  expected_output:
+    must_contain:
+    - CVE-2015-8073
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2015-8073
+  - cwe-119

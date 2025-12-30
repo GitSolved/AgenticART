@@ -1,19 +1,3 @@
-# Orange Belt Challenges
-# =============================================================================
-# Purpose: Data Access & Extraction
-# Focus: Accessing protected data, content providers, databases, file system
-# =============================================================================
-#
-# COMPATIBILITY:
-#   android_11  - Only Android 11
-#   android_14  - Only Android 14
-#   universal   - Any Android version
-#
-# PERSONA REQUIREMENTS:
-#   Some challenges require device to be provisioned with a persona
-#   to have meaningful data to extract (contacts, SMS, files, etc.)
-# =============================================================================
-
 challenges:
 - id: orange_001
   name: App Data Directory Exploration
@@ -815,534 +799,638 @@ challenges:
   - nvd-generated
   - cve-2019-5452
   - cwe-284
-
-# =============================================================================
-# PERSONA-AWARE DATA EXFILTRATION CHALLENGES
-# =============================================================================
-# These challenges require the device to be provisioned with a persona
-# to have meaningful data to extract.
-
 - id: orange_persona_001
-  name: "Contact List Exfiltration"
+  name: Contact List Exfiltration
   compatibility: universal
-  description: |
-    The device contains contacts from the user's personal and professional life.
+  description: 'The device contains contacts from the user''s personal and professional
+    life.
+
     Write an ADB command that extracts ALL contacts from the device, including
+
     names, phone numbers, and email addresses.
+
 
     PERSONA REQUIREMENT: Device must have contacts seeded (50+ contacts)
 
+
     OBJECTIVE:
+
     1. Query the contacts content provider
+
     2. Extract name, phone, and email for each contact
+
     3. Output should show VIP contacts like "Mom", "Boss", "Bank Support"
 
+
     SUCCESS CRITERIA: Output contains contact names and phone numbers
+
+    '
   belt: orange
   difficulty: 3
   script_type: adb
-
   persona_requirements:
     min_contacts: 50
     expected_data:
-      - "Mom"
-      - "Boss"
-
+    - Mom
+    - Boss
   inputs:
     device_context:
       task: exfiltrate contact list
       target_uri: content://contacts/people
       objective: extract all contacts with details
-
   validation:
     type: regex_match
-    pattern: "(Mom|Boss|\\+1-555)"
-
+    pattern: (Mom|Boss|\+1-555)
   hints:
-    - "Use content query command with contacts URI"
-    - "The contacts provider URI is content://contacts/people or content://com.android.contacts/contacts"
-    - "May need to query multiple tables for full details"
+  - Use content query command with contacts URI
+  - The contacts provider URI is content://contacts/people or content://com.android.contacts/contacts
+  - May need to query multiple tables for full details
+  kata_solution: 'shell content query --uri content://com.android.contacts/data --projection
+    display_name:data1:data4
 
-  kata_solution: |
-    shell content query --uri content://com.android.contacts/data --projection display_name:data1:data4
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - contacts
-    - content-provider
-
+  - persona-required
+  - data-exfiltration
+  - contacts
+  - content-provider
 - id: orange_persona_002
-  name: "SMS Message Extraction"
+  name: SMS Message Extraction
   compatibility: universal
-  description: |
-    The user's SMS inbox contains sensitive messages including:
+  description: 'The user''s SMS inbox contains sensitive messages including:
+
     - 2FA verification codes
+
     - Bank alerts
+
     - Personal conversations
 
+
     Write an ADB command that extracts SMS messages, focusing on finding
+
     sensitive content like verification codes and financial alerts.
+
 
     PERSONA REQUIREMENT: Device must have SMS seeded (100+ messages)
 
+
     OBJECTIVE:
+
     1. Query the SMS content provider
+
     2. Extract sender (address) and body for each message
+
     3. Find messages containing codes or bank alerts
 
+
     SUCCESS CRITERIA: Output contains SMS with verification codes or bank alerts
+
+    '
   belt: orange
   difficulty: 3
   script_type: adb
-
   persona_requirements:
     min_sms: 100
     expected_patterns:
-      - "verification code"
-      - "Alert:"
-
+    - verification code
+    - 'Alert:'
   inputs:
     device_context:
       task: exfiltrate SMS messages
       target_uri: content://sms/inbox
       objective: find sensitive messages
-
   validation:
     type: regex_match
-    pattern: "(verification|code|Alert|\\$[0-9])"
-
+    pattern: (verification|code|Alert|\$[0-9])
   hints:
-    - "SMS content provider URI is content://sms"
-    - "Use --projection to select specific columns"
-    - "Address is the sender, body is the message content"
+  - SMS content provider URI is content://sms
+  - Use --projection to select specific columns
+  - Address is the sender, body is the message content
+  kata_solution: 'shell content query --uri content://sms/inbox --projection address:body
 
-  kata_solution: |
-    shell content query --uri content://sms/inbox --projection address:body
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - sms
-    - 2fa
-    - content-provider
-
+  - persona-required
+  - data-exfiltration
+  - sms
+  - 2fa
+  - content-provider
 - id: orange_persona_003
-  name: "Sensitive File Discovery"
+  name: Sensitive File Discovery
   compatibility: universal
-  description: |
-    The user stores sensitive documents on external storage including:
+  description: 'The user stores sensitive documents on external storage including:
+
     - Password backup files
+
     - Financial documents
+
     - Personal photos
 
+
     Write an ADB command that searches /sdcard for files containing
+
     sensitive keywords in their names (password, tax, bank, backup).
+
 
     PERSONA REQUIREMENT: Device must have files seeded
 
+
     OBJECTIVE:
+
     1. Search /sdcard recursively for sensitive file names
+
     2. List files matching sensitive patterns
+
     3. Identify high-value targets for exfiltration
 
+
     SUCCESS CRITERIA: Find files like passwords.txt or Tax_Return.pdf
+
+    '
   belt: orange
   difficulty: 2
   script_type: adb
-
   persona_requirements:
     required_files:
-      - /sdcard/Documents/passwords.txt
-
+    - /sdcard/Documents/passwords.txt
   inputs:
     device_context:
       task: discover sensitive files
       search_path: /sdcard
-      patterns: [password, tax, bank, backup, secret]
-
+      patterns:
+      - password
+      - tax
+      - bank
+      - backup
+      - secret
   validation:
     type: regex_match
-    pattern: "(password|tax|bank|backup)"
-
+    pattern: (password|tax|bank|backup)
   hints:
-    - "Use find command with -name or -iname"
-    - "Search recursively from /sdcard"
-    - "Combine patterns with -o (or) operator"
+  - Use find command with -name or -iname
+  - Search recursively from /sdcard
+  - Combine patterns with -o (or) operator
+  kata_solution: 'shell find /sdcard -type f \( -iname "*password*" -o -iname "*tax*"
+    -o -iname "*bank*" -o -iname "*backup*" \)
 
-  kata_solution: |
-    shell find /sdcard -type f \( -iname "*password*" -o -iname "*tax*" -o -iname "*bank*" -o -iname "*backup*" \)
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - file-discovery
-    - sensitive-data
-
+  - persona-required
+  - data-exfiltration
+  - file-discovery
+  - sensitive-data
 - id: orange_persona_004
-  name: "Password File Exfiltration"
+  name: Password File Exfiltration
   compatibility: universal
-  description: |
-    Based on reconnaissance, a file containing passwords was discovered
+  description: 'Based on reconnaissance, a file containing passwords was discovered
+
     at /sdcard/Documents/passwords.txt (or similar location).
 
+
     Write an ADB command that reads and exfiltrates the contents of
+
     this password file.
+
 
     PERSONA REQUIREMENT: Device must have password file seeded
 
+
     OBJECTIVE:
+
     1. Read the password file contents
+
     2. Extract stored credentials
+
     3. Document what accounts are compromised
 
+
     SUCCESS CRITERIA: Output contains credentials (username/password pairs)
+
+    '
   belt: orange
   difficulty: 2
   script_type: adb
-
   persona_requirements:
     required_files:
-      - /sdcard/Documents/passwords.txt
-
+    - /sdcard/Documents/passwords.txt
   inputs:
     device_context:
       task: exfiltrate password file
       target_file: /sdcard/Documents/passwords.txt
       objective: extract stored credentials
-
   validation:
     type: regex_match
-    pattern: "(WiFi|VPN|Netflix|password)"
-
+    pattern: (WiFi|VPN|Netflix|password)
   hints:
-    - "Use cat to read file contents"
-    - "The file is in plaintext on external storage"
-    - "No special permissions needed for /sdcard"
+  - Use cat to read file contents
+  - The file is in plaintext on external storage
+  - No special permissions needed for /sdcard
+  kata_solution: 'shell cat /sdcard/Documents/passwords.txt
 
-  kata_solution: |
-    shell cat /sdcard/Documents/passwords.txt
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - credentials
-    - plaintext-storage
-
+  - persona-required
+  - data-exfiltration
+  - credentials
+  - plaintext-storage
 - id: orange_persona_005
-  name: "WiFi Credential Extraction"
+  name: WiFi Credential Extraction
   compatibility: android_11
-  description: |
-    The user has connected to multiple WiFi networks. On older Android versions,
+  description: 'The user has connected to multiple WiFi networks. On older Android
+    versions,
+
     saved WiFi credentials can be extracted from the wpa_supplicant.conf file.
+
 
     Write an ADB command that attempts to extract saved WiFi passwords.
 
+
     Note: This may require root access on the device.
+
 
     PERSONA REQUIREMENT: Device must have WiFi networks configured
 
+
     OBJECTIVE:
+
     1. Locate WiFi configuration files
+
     2. Extract SSIDs and passwords
+
     3. Document compromised networks
 
+
     SUCCESS CRITERIA: Find WiFi SSIDs and/or passwords
+
+    '
   belt: orange
   difficulty: 4
   script_type: adb
-
   persona_requirements:
     wifi_networks: 3
-
   inputs:
     device_context:
       task: extract WiFi credentials
       target_paths:
-        - /data/misc/wifi/wpa_supplicant.conf
-        - /data/misc/wifi/WifiConfigStore.xml
+      - /data/misc/wifi/wpa_supplicant.conf
+      - /data/misc/wifi/WifiConfigStore.xml
       objective: find saved network passwords
-
   validation:
     type: regex_match
-    pattern: "(ssid|psk|HomeNetwork|password)"
-
+    pattern: (ssid|psk|HomeNetwork|password)
   hints:
-    - "WiFi configs stored in /data/misc/wifi/"
-    - "wpa_supplicant.conf on older versions, WifiConfigStore.xml on newer"
-    - "Requires root access to read /data/misc/wifi"
+  - WiFi configs stored in /data/misc/wifi/
+  - wpa_supplicant.conf on older versions, WifiConfigStore.xml on newer
+  - Requires root access to read /data/misc/wifi
+  kata_solution: 'shell su -c cat /data/misc/wifi/WifiConfigStore.xml
 
-  kata_solution: |
-    shell su -c cat /data/misc/wifi/WifiConfigStore.xml
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - wifi
-    - credentials
-    - root-required
-
+  - persona-required
+  - data-exfiltration
+  - wifi
+  - credentials
+  - root-required
 - id: orange_persona_006
-  name: "Call Log Extraction"
+  name: Call Log Extraction
   compatibility: universal
-  description: |
-    The device call log contains a history of incoming, outgoing, and missed
+  description: 'The device call log contains a history of incoming, outgoing, and
+    missed
+
     calls. This metadata reveals communication patterns and contacts.
 
+
     Write an ADB command that extracts the call log including:
+
     - Phone numbers
+
     - Call types (incoming/outgoing/missed)
+
     - Call durations
+
 
     PERSONA REQUIREMENT: Device must have call history
 
+
     OBJECTIVE:
+
     1. Query the call log content provider
+
     2. Extract call metadata
+
     3. Identify frequently called numbers
 
+
     SUCCESS CRITERIA: Output contains call log entries
+
+    '
   belt: orange
   difficulty: 3
   script_type: adb
-
   persona_requirements:
     min_calls: 50
-
   inputs:
     device_context:
       task: exfiltrate call log
       target_uri: content://call_log/calls
       objective: extract call history
-
   validation:
     type: regex_match
-    pattern: "(number|type|duration|\\+1)"
-
+    pattern: (number|type|duration|\+1)
   hints:
-    - "Call log URI: content://call_log/calls"
-    - "Projection can include: number, type, duration, date"
-    - "Type 1=incoming, 2=outgoing, 3=missed"
+  - 'Call log URI: content://call_log/calls'
+  - 'Projection can include: number, type, duration, date'
+  - Type 1=incoming, 2=outgoing, 3=missed
+  kata_solution: 'shell content query --uri content://call_log/calls --projection
+    number:type:duration
 
-  kata_solution: |
-    shell content query --uri content://call_log/calls --projection number:type:duration
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - call-log
-    - metadata
-    - content-provider
-
+  - persona-required
+  - data-exfiltration
+  - call-log
+  - metadata
+  - content-provider
 - id: orange_persona_007
-  name: "Screenshot Theft"
+  name: Screenshot Theft
   compatibility: universal
-  description: |
-    Users often take screenshots that capture sensitive information:
+  description: 'Users often take screenshots that capture sensitive information:
+
     - Banking balances
+
     - 2FA codes
+
     - Private conversations
 
+
     Write an ADB command that finds and lists all screenshots on the device,
+
     then pull one to the host machine.
+
 
     PERSONA REQUIREMENT: Device must have screenshots
 
+
     OBJECTIVE:
+
     1. Find screenshot files in DCIM/Screenshots
+
     2. List all available screenshots
+
     3. Pull a screenshot to host for analysis
 
+
     SUCCESS CRITERIA: Successfully find and list screenshot files
+
+    '
   belt: orange
   difficulty: 2
   script_type: adb
-
   persona_requirements:
     screenshots: 5
-
   inputs:
     device_context:
       task: find and exfiltrate screenshots
       search_path: /sdcard/DCIM/Screenshots
       objective: steal potentially sensitive screenshots
-
   validation:
     type: regex_match
-    pattern: "(Screenshot|png|jpg)"
-
+    pattern: (Screenshot|png|jpg)
   hints:
-    - "Screenshots typically in /sdcard/DCIM/Screenshots"
-    - "Use ls to list, pull to download"
-    - "Look for files with 'Screenshot' in the name"
+  - Screenshots typically in /sdcard/DCIM/Screenshots
+  - Use ls to list, pull to download
+  - Look for files with 'Screenshot' in the name
+  kata_solution: 'shell ls -la /sdcard/DCIM/Screenshots/
 
-  kata_solution: |
-    shell ls -la /sdcard/DCIM/Screenshots/
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - screenshots
-    - media
-
+  - persona-required
+  - data-exfiltration
+  - screenshots
+  - media
 - id: orange_persona_008
-  name: "Clipboard History Access"
+  name: Clipboard History Access
   compatibility: android_11
-  description: |
-    The clipboard may contain recently copied sensitive data:
+  description: 'The clipboard may contain recently copied sensitive data:
+
     - Passwords
+
     - API keys
+
     - Wallet addresses
+
     - Meeting codes
+
 
     Write a command that attempts to access the current clipboard contents.
 
+
     Note: Clipboard access is restricted in newer Android versions.
+
 
     PERSONA REQUIREMENT: Device should have clipboard history
 
+
     OBJECTIVE:
+
     1. Access clipboard service
+
     2. Extract current or recent clipboard contents
+
     3. Find any sensitive copied data
 
+
     SUCCESS CRITERIA: Access clipboard data or service info
+
+    '
   belt: orange
   difficulty: 4
   script_type: adb
-
   persona_requirements:
     clipboard_entries: 3
-
   inputs:
     device_context:
       task: access clipboard contents
       service: clipboard
       objective: extract copied data
-
   validation:
     type: output_contains
-    expected: "clipboard"
-
+    expected: clipboard
   hints:
-    - "Use service call or dumpsys for clipboard"
-    - "Clipboard service is 'clipboard'"
-    - "Content may be encoded or restricted"
+  - Use service call or dumpsys for clipboard
+  - Clipboard service is 'clipboard'
+  - Content may be encoded or restricted
+  kata_solution: 'shell dumpsys clipboard
 
-  kata_solution: |
-    shell dumpsys clipboard
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - clipboard
-    - sensitive-data
-
+  - persona-required
+  - data-exfiltration
+  - clipboard
+  - sensitive-data
 - id: orange_persona_009
-  name: "Browser History Extraction"
+  name: Browser History Extraction
   compatibility: universal
-  description: |
-    The user's browser history reveals:
+  description: 'The user''s browser history reveals:
+
     - Banking websites visited
+
     - Shopping sites
+
     - Personal interests
+
     - Work-related sites
 
+
     Write an ADB command that extracts browser history from the default
+
     browser or Chrome.
+
 
     PERSONA REQUIREMENT: Device must have browser history seeded
 
+
     OBJECTIVE:
+
     1. Locate browser database files
+
     2. Query history table
+
     3. Extract visited URLs
 
+
     SUCCESS CRITERIA: Output contains visited URLs
+
+    '
   belt: orange
   difficulty: 4
   script_type: adb
-
   persona_requirements:
     browser_history: 50
-
   inputs:
     device_context:
       task: exfiltrate browser history
       target_app: com.android.chrome
       objective: extract browsing history
-
   validation:
     type: regex_match
-    pattern: "(http|chase|amazon|google)"
-
+    pattern: (http|chase|amazon|google)
   hints:
-    - "Chrome data in /data/data/com.android.chrome"
-    - "History in 'History' SQLite database"
-    - "May need run-as or root access"
+  - Chrome data in /data/data/com.android.chrome
+  - History in 'History' SQLite database
+  - May need run-as or root access
+  kata_solution: 'shell run-as com.android.chrome cat databases/History 2>/dev/null
+    || shell cat /data/data/com.android.chrome/app_chrome/Default/History
 
-  kata_solution: |
-    shell run-as com.android.chrome cat databases/History 2>/dev/null || shell cat /data/data/com.android.chrome/app_chrome/Default/History
-
+    '
   tags:
-    - persona-required
-    - data-exfiltration
-    - browser
-    - history
-    - privacy
-
+  - persona-required
+  - data-exfiltration
+  - browser
+  - history
+  - privacy
 - id: orange_persona_010
-  name: "Installed App Enumeration for Targeting"
+  name: Installed App Enumeration for Targeting
   compatibility: universal
-  description: |
-    Before targeting specific apps, enumerate high-value applications installed
+  description: 'Before targeting specific apps, enumerate high-value applications
+    installed
+
     on the device:
+
     - Banking apps (Chase, Venmo, PayPal)
+
     - Crypto wallets (Coinbase)
+
     - Password managers (1Password)
+
     - Messaging apps (WhatsApp, Signal)
 
+
     Write an ADB command that lists installed packages and identifies
+
     high-value targets for further exploitation.
+
 
     PERSONA REQUIREMENT: Device must have target apps installed
 
+
     OBJECTIVE:
+
     1. List all installed packages
+
     2. Filter for high-value targets
+
     3. Identify apps with sensitive data
 
+
     SUCCESS CRITERIA: Find banking, crypto, or password manager apps
+
+    '
   belt: orange
   difficulty: 2
   script_type: adb
-
   persona_requirements:
     required_apps:
-      - com.whatsapp
-      - com.chase.sig.android
-
+    - com.whatsapp
+    - com.chase.sig.android
   inputs:
     device_context:
       task: enumerate high-value apps
-      categories: [banking, crypto, password_manager, messaging]
+      categories:
+      - banking
+      - crypto
+      - password_manager
+      - messaging
       objective: identify attack targets
-
   validation:
     type: regex_match
-    pattern: "(chase|venmo|paypal|coinbase|1password|whatsapp|signal)"
-
+    pattern: (chase|venmo|paypal|coinbase|1password|whatsapp|signal)
   hints:
-    - "Use pm list packages for all packages"
-    - "Pipe through grep to filter"
-    - "Common banking: chase, venmo, paypal"
-    - "Crypto: coinbase, binance, crypto.com"
+  - Use pm list packages for all packages
+  - Pipe through grep to filter
+  - 'Common banking: chase, venmo, paypal'
+  - 'Crypto: coinbase, binance, crypto.com'
+  kata_solution: 'shell pm list packages | grep -iE ''chase|venmo|paypal|coinbase|1password|whatsapp|signal|bank''
 
-  kata_solution: |
-    shell pm list packages | grep -iE 'chase|venmo|paypal|coinbase|1password|whatsapp|signal|bank'
-
+    '
   tags:
-    - persona-required
-    - enumeration
-    - targeting
-    - app-discovery
+  - persona-required
+  - enumeration
+  - targeting
+  - app-discovery
+- id: orange_cve_2022_41926
+  name: 'CVE Analysis: CVE-2022-41926'
+  description: 'Target: CVE-2022-41926
+
+
+    Nextcould talk android is the android OS implementation of the nextcloud talk
+    chat system. In affected versions the receiver is not protected by broadcastPermission
+    allowing malicious apps to monitor communication. It is recommended that the Nextcloud
+    Talk Android is upgraded to 14.1.0. There are no known workarounds for this issue.
+
+
+    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+  belt: orange
+  difficulty: 3
+  script_type: adb
+  compatibility: android_14
+  inputs:
+    cve_id: CVE-2022-41926
+    device_context:
+      connection: adb
+      task: vulnerability_probing
+      severity: LOW
+  expected_output:
+    must_contain:
+    - CVE-2022-41926
+    expected_patterns: []
+  scoring:
+    syntax_correct: 25
+    api_valid: 25
+    executes_successfully: 30
+    achieves_objective: 20
+  tags:
+  - nvd-generated
+  - cve-2022-41926
+  - cwe-200
+  - cwe-732

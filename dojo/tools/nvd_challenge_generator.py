@@ -172,7 +172,9 @@ class NVDChallengeGenerator:
         else:
             return Belt.YELLOW
 
-    def create_challenge_template(self, cve: LiveCVE) -> Dict[str, Any]:
+    def create_challenge_template(
+        self, cve: LiveCVE, android_version: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Generate a YAML-compatible challenge dictionary."""
         belt = self.classify_belt(cve)
 
@@ -183,6 +185,21 @@ class NVDChallengeGenerator:
         elif any(kw in cve.description.lower() for kw in ["hook", "intercept", "instrument"]):
             script_type = "frida"
 
+        # Determine compatibility based on android_version or CVE description
+        compatibility = "universal"
+        if android_version:
+            if android_version == "14":
+                compatibility = "android_14"
+            elif android_version == "11":
+                compatibility = "android_11"
+        else:
+            # Try to infer from description
+            desc_lower = cve.description.lower()
+            if "android 14" in desc_lower or "api 34" in desc_lower:
+                compatibility = "android_14"
+            elif "android 11" in desc_lower or "api 30" in desc_lower:
+                compatibility = "android_11"
+
         template = {
             "id": f"{belt.value}_{cve.cve_id.replace('-', '_').lower()}",
             "name": f"CVE Analysis: {cve.cve_id}",
@@ -190,6 +207,7 @@ class NVDChallengeGenerator:
             "belt": belt.value,
             "difficulty": 3,
             "script_type": script_type,
+            "compatibility": compatibility,
             "inputs": {
                 "cve_id": cve.cve_id,
                 "device_context": {

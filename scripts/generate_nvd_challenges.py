@@ -24,15 +24,16 @@ def main():
 
     generator = NVDChallengeGenerator(api_key=api_key)
 
-    print("📡 Fetching 50 recent Android vulnerabilities from NVD...")
-    cves = generator.fetch_recent_android_cves(android_version="14", limit=50)
+    android_version = "14"  # Target Android 14 specifically
+    print(f"📡 Fetching 50 recent Android {android_version} vulnerabilities from NVD...")
+    cves = generator.fetch_recent_android_cves(android_version=android_version, limit=50)
 
     print(f"✅ Found {len(cves)} candidates. Generating templates and exporting...")
 
     stats = {}
 
     for cve in cves:
-        template = generator.create_challenge_template(cve)
+        template = generator.create_challenge_template(cve, android_version=android_version)
         belt = template["belt"]
         generator.export_to_curriculum(template)
 
