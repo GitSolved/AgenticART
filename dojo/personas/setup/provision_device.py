@@ -17,7 +17,7 @@ import random
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import yaml
 
@@ -29,6 +29,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 class DeviceProvisioner:
     """Provisions an Android device according to a persona specification."""
 
+    persona_path: Path
+    device_id: str
+    adb_path: str
+    persona: dict
+
     def __init__(
         self,
         persona_path: Path,
@@ -36,7 +41,7 @@ class DeviceProvisioner:
         adb_path: str = "adb",
     ):
         self.persona_path = persona_path
-        self.device_id = device_id or os.getenv("EMULATOR_DEVICE", "emulator-5554")
+        self.device_id = device_id or os.getenv("EMULATOR_DEVICE") or "emulator-5554"
         self.adb_path = adb_path
         self.persona = self._load_persona()
 
@@ -80,7 +85,7 @@ class DeviceProvisioner:
         result = self._adb("shell echo ping", check=False)
         return result.returncode == 0 and "ping" in result.stdout
 
-    def provision(self, dry_run: bool = False) -> dict:
+    def provision(self, dry_run: bool = False) -> dict[str, Any]:
         """
         Provision the device according to the persona.
 
@@ -129,7 +134,7 @@ class DeviceProvisioner:
 
         return results
 
-    def _seed_contacts(self, dry_run: bool = False) -> dict:
+    def _seed_contacts(self, dry_run: bool = False) -> dict[str, Any]:
         """Seed contacts into the device."""
         result = {"step": "seed_contacts", "success": False, "details": []}
 
@@ -191,7 +196,7 @@ class DeviceProvisioner:
 
         return contacts
 
-    def _seed_sms(self, dry_run: bool = False) -> dict:
+    def _seed_sms(self, dry_run: bool = False) -> dict[str, Any]:
         """Seed SMS messages into the device."""
         result = {"step": "seed_sms", "success": False, "details": []}
 
@@ -226,7 +231,7 @@ class DeviceProvisioner:
 
         return result
 
-    def _seed_files(self, dry_run: bool = False) -> dict:
+    def _seed_files(self, dry_run: bool = False) -> dict[str, Any]:
         """Create files on the device."""
         result = {"step": "seed_files", "success": False, "details": []}
 
@@ -260,7 +265,7 @@ class DeviceProvisioner:
 
         return result
 
-    def _configure_wifi(self, dry_run: bool = False) -> dict:
+    def _configure_wifi(self, dry_run: bool = False) -> dict[str, Any]:
         """Configure WiFi networks (metadata only - can't add real networks via ADB)."""
         result = {"step": "configure_wifi", "success": False, "details": []}
 
@@ -287,7 +292,7 @@ class DeviceProvisioner:
 
         return result
 
-    def _configure_device(self, dry_run: bool = False) -> dict:
+    def _configure_device(self, dry_run: bool = False) -> dict[str, Any]:
         """Configure device properties."""
         result = {"step": "configure_device", "success": False, "details": []}
 

@@ -63,6 +63,11 @@ class PersonaValidation:
 class PersonaValidator:
     """Validates device against persona requirements."""
 
+    persona_path: Path
+    device_id: str
+    adb_path: str
+    persona: dict
+
     def __init__(
         self,
         persona_path: Path,
@@ -70,7 +75,7 @@ class PersonaValidator:
         adb_path: str = "adb",
     ):
         self.persona_path = persona_path
-        self.device_id = device_id or os.getenv("EMULATOR_DEVICE", "emulator-5554")
+        self.device_id = device_id or os.getenv("EMULATOR_DEVICE") or "emulator-5554"
         self.adb_path = adb_path
         self.persona = self._load_persona()
 
