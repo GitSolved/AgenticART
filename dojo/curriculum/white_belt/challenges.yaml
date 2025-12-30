@@ -1,159 +1,374 @@
-# White Belt Challenges
-# Purpose: Validate the dojo system works correctly
-# Focus: Basic ADB commands and system verification
-
 challenges:
-  # Challenge 1: Get Android Version
-  - id: white_001
-    name: "Device Android Version"
-    description: |
-      Write an ADB shell command that outputs the Android version of the connected device.
-      The output should be just the version number (e.g., "7.0" or "11").
-    belt: white
-    difficulty: 1
-    script_type: adb
+- id: white_001
+  name: Device Android Version
+  description: 'Write an ADB shell command that outputs the Android version of the
+    connected device.
 
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "retrieve Android version"
+    The output should be just the version number (e.g., "7.0" or "11").
 
-    validation:
-      type: regex_match
-      pattern: "^\\d+(\\.\\d+)*"
+    '
+  belt: white
+  difficulty: 1
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: retrieve Android version
+  validation:
+    type: regex_match
+    pattern: ^\d+(\.\d+)*
+  hints:
+  - Use 'adb shell getprop' to read system properties
+  - Android version is stored in ro.build.version.release
+  kata_solution: shell getprop ro.build.version.release
+  tags:
+  - fundamentals
+  - device-info
+- id: white_002
+  name: Package Listing
+  description: 'Write an ADB command that lists all installed packages on the device.
 
-    hints:
-      - "Use 'adb shell getprop' to read system properties"
-      - "Android version is stored in ro.build.version.release"
+    Use the package manager to enumerate applications.
 
-    kata_solution: "shell getprop ro.build.version.release"
+    '
+  belt: white
+  difficulty: 1
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: list installed packages
+  validation:
+    type: output_contains
+    expected: 'package:'
+  hints:
+  - Use the 'pm' (package manager) command
+  - The list packages subcommand shows all packages
+  kata_solution: shell pm list packages
+  tags:
+  - fundamentals
+  - packages
+- id: white_003
+  name: Device Model Info
+  description: 'Write an ADB command that retrieves the device model name.
 
-    tags:
-      - fundamentals
-      - device-info
+    This should return the marketing name of the device.
 
-  # Challenge 2: List Installed Packages
-  - id: white_002
-    name: "Package Listing"
-    description: |
-      Write an ADB command that lists all installed packages on the device.
-      Use the package manager to enumerate applications.
-    belt: white
-    difficulty: 1
-    script_type: adb
+    '
+  belt: white
+  difficulty: 1
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: retrieve device model
+  validation:
+    type: not_empty
+  hints:
+  - Device properties are accessed via getprop
+  - Model information is in ro.product.model
+  kata_solution: shell getprop ro.product.model
+  tags:
+  - fundamentals
+  - device-info
+- id: white_004
+  name: Process Enumeration
+  description: 'Write an ADB command that lists all running processes on the device.
 
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "list installed packages"
+    The output should show process IDs and names.
 
-    validation:
-      type: output_contains
-      expected: "package:"
+    '
+  belt: white
+  difficulty: 2
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: enumerate running processes
+  validation:
+    type: output_contains
+    expected: PID
+  hints:
+  - The 'ps' command shows running processes
+  - You may need flags to show all processes
+  kata_solution: shell ps
+  tags:
+  - fundamentals
+  - processes
+- id: white_005
+  name: Protected File Access
+  description: 'Write an ADB command that attempts to read the contents of /data/system/packages.xml.
 
-    hints:
-      - "Use the 'pm' (package manager) command"
-      - "The list packages subcommand shows all packages"
+    This file contains package information but requires elevated access.
 
-    kata_solution: "shell pm list packages"
 
-    tags:
-      - fundamentals
-      - packages
+    Note: This may fail due to permissions - that''s expected.
 
-  # Challenge 3: Get Device Model
-  - id: white_003
-    name: "Device Model Info"
-    description: |
-      Write an ADB command that retrieves the device model name.
-      This should return the marketing name of the device.
-    belt: white
-    difficulty: 1
-    script_type: adb
+    '
+  belt: white
+  difficulty: 3
+  script_type: adb
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      connection: adb
+      task: read protected file
+      note: This tests error handling - failure is expected
+  validation:
+    type: output_contains
+    expected: package
+  hints:
+  - Use 'cat' to read file contents
+  - The file is in /data/system/
+  - If permission denied, you may need elevated access
+  kata_solution: shell su -c 'cat /data/system/packages.xml'
+  tags:
+  - error-handling
+  - permissions
+  - retry-test
+- id: nvd_cve_2024_20003
+  name: CVE-2024-20003 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20003 (CVSS 7.5)
 
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "retrieve device model"
 
-    validation:
-      type: not_empty
+    In Modem NL1, there is a possible system crash due to an improper input validation.
+    This could lead to remote denial of service, if NW sent invalid NR RRC Connection
+    Setup message, with no additional execution privileges needed. User interaction
+    is not needed for exploitation. Patch ID: MOLY01191612; Issue ID: MOLY01191612
+    (MSV-981).
 
-    hints:
-      - "Device properties are accessed via getprop"
-      - "Model information is in ro.product.model"
 
-    kata_solution: "shell getprop ro.product.model"
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20004
+  name: CVE-2024-20004 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20004 (CVSS 7.5)
 
-    tags:
-      - fundamentals
-      - device-info
 
-  # Challenge 4: Check Running Processes
-  - id: white_004
-    name: "Process Enumeration"
-    description: |
-      Write an ADB command that lists all running processes on the device.
-      The output should show process IDs and names.
-    belt: white
-    difficulty: 2
-    script_type: adb
+    In Modem NL1, there is a possible system crash due to an improper input validation.
+    This could lead to remote denial of service, if NW sent invalid NR RRC Connection
+    Setup message, with no additional execution privileges needed. User interaction
+    is not needed for exploitation. Patch ID: MOLY01191612; Issue ID: MOLY01195812
+    (MSV-985).
 
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "enumerate running processes"
 
-    validation:
-      type: output_contains
-      expected: "PID"
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20005
+  name: CVE-2024-20005 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20005 (CVSS 8.2)
 
-    hints:
-      - "The 'ps' command shows running processes"
-      - "You may need flags to show all processes"
 
-    kata_solution: "shell ps"
+    In da, there is a possible permission bypass due to a missing permission check.
+    This could lead to local escalation of privilege with System execution privileges
+    needed. User interaction is not needed for exploitation. Patch ID: ALPS08355599;
+    Issue ID: ALPS08355599.
 
-    tags:
-      - fundamentals
-      - processes
 
-  # Challenge 5: Intentional Failure Test
-  # This challenge is designed to fail to verify the retry loop works
-  - id: white_005
-    name: "Protected File Access"
-    description: |
-      Write an ADB command that attempts to read the contents of /data/system/packages.xml.
-      This file contains package information but requires elevated access.
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20017
+  name: CVE-2024-20017 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20017 (CVSS 9.8)
 
-      Note: This may fail due to permissions - that's expected.
-    belt: white
-    difficulty: 3
-    script_type: adb
 
-    inputs:
-      device_id: "emulator-5554"
-      device_context:
-        connection: "adb"
-        task: "read protected file"
-        note: "This tests error handling - failure is expected"
+    In wlan service, there is a possible out of bounds write due to improper input
+    validation. This could lead to remote code execution with no additional execution
+    privileges needed. User interaction is not needed for exploitation Patch ID: WCNCR00350938;
+    Issue ID: MSV-1132.
 
-    validation:
-      type: output_contains
-      expected: "package"
 
-    hints:
-      - "Use 'cat' to read file contents"
-      - "The file is in /data/system/"
-      - "If permission denied, you may need elevated access"
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20018
+  name: CVE-2024-20018 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20018 (CVSS 9.8)
 
-    kata_solution: "shell su -c 'cat /data/system/packages.xml'"
 
-    tags:
-      - error-handling
-      - permissions
-      - retry-test
+    In wlan driver, there is a possible out of bounds write due to improper input
+    validation. This could lead to local escalation of privilege with no additional
+    execution privileges needed. User interaction is not needed for exploitation.
+    Patch ID: WCNCR00348479; Issue ID: MSV-1019.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20019
+  name: CVE-2024-20019 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20019 (CVSS 5.9)
+
+
+    In wlan driver, there is a possible memory leak due to improper input handling.
+    This could lead to remote denial of service with no additional execution privileges
+    needed. User interaction is not needed for exploitation. Patch ID: WCNCR00351241;
+    Issue ID: MSV-1173.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20020
+  name: CVE-2024-20020 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20020 (CVSS 4.4)
+
+
+    In OPTEE, there is a possible out of bounds write due to an incorrect bounds check.
+    This could lead to local information disclosure with System execution privileges
+    needed. User interaction is not needed for exploitation. Patch ID: ALPS08522504;
+    Issue ID: ALPS08522504.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20021
+  name: CVE-2024-20021 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20021 (CVSS 6.7)
+
+
+    In atf spm, there is a possible way to remap physical memory to virtual memory
+    due to a logic error. This could lead to local escalation of privilege with System
+    execution privileges needed. User interaction is not needed for exploitation.
+    Patch ID: ALPS08584568; Issue ID: MSV-1249.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20022
+  name: CVE-2024-20022 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20022 (CVSS 6.7)
+
+
+    In lk, there is a possible escalation of privilege due to a missing bounds check.
+    This could lead to local escalation of privilege with System execution privileges
+    needed. User interaction is not needed for exploitation. Patch ID: ALPS08528255;
+    Issue ID: ALPS08528255.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20023
+  name: CVE-2024-20023 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20023 (CVSS 6.7)
+
+
+    In flashc, there is a possible out of bounds write due to lack of valudation.
+    This could lead to local escalation of privilege with System execution privileges
+    needed. User interaction is not needed for exploitation. Patch ID: ALPS08541638;
+    Issue ID: ALPS08541638.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20024
+  name: CVE-2024-20024 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20024 (CVSS 6.0)
+
+
+    In flashc, there is a possible out of bounds write due to lack of valudation.
+    This could lead to local escalation of privilege with System execution privileges
+    needed. User interaction is not needed for exploitation. Patch ID: ALPS08541635;
+    Issue ID: ALPS08541635.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
+- id: nvd_cve_2024_20025
+  name: CVE-2024-20025 - Beginner Analysis
+  description: 'WHITE BELT: CVE-2024-20025 (CVSS 6.7)
+
+
+    In da, there is a possible out of bounds write due to an integer overflow. This
+    could lead to local escalation of privilege with System execution privileges needed.
+    User interaction is not needed for exploitation. Patch ID: ALPS08541686; Issue
+    ID: ALPS08541686.
+
+
+    Task: Check device patch level and assess vulnerability.'
+  difficulty: 1
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  tags:
+  - nvd-generated
+  - android-2024
+  - beginner
