@@ -316,3 +316,35 @@ class ErrorExtractor:
 
         # Low severity - likely minor fix
         return "low"
+
+    def should_escalate_to_react(self, error_context: ErrorContext) -> bool:
+        """
+        Determine if the current failure warrants a transition to ReAct reasoning.
+        
+        Logic:
+        1. High severity (Permission, Segfault) -> YES, needs reasoning to bypass or analyze.
+        2. Targeting errors (Command not found, No such path) -> YES, needs discovery steps.
+        3. Logic bypass failed -> YES.
+        """
+        # 1. High severity always warrants reasoning
+        if self.classify_severity(error_context) == "high":
+            return True
+            
+        # 2. Targeting errors imply the model guessed a name/path incorrectly
+        targeting_types = ["command_not_found"]
+        if error_context.error_type in targeting_types:
+            return True
+            
+        # 3. Check patterns in error message for discovery needs
+        discovery_patterns = [
+            r"no such file",
+            r"not found",
+            r"inaccessible",
+            r"denied",
+            r"not permitted"
+        ]
+        combined = f"{error_context.error_message} {error_context.raw_stderr}".lower()
+        if any(re.search(p, combined) for p in discovery_patterns):
+            return True
+            
+        return False

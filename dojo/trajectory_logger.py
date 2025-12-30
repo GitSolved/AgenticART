@@ -59,6 +59,7 @@ class StepBuilder:
         self,
         content: str,
         reasoning_type: ReasoningType = ReasoningType.TOOL_SELECTION,
+        hypothesis: Optional[str] = None,
         confidence: float = 0.7,
         alternatives: Optional[List[str]] = None,
     ) -> "StepBuilder":
@@ -66,6 +67,7 @@ class StepBuilder:
         self._thought = Thought(
             content=content,
             reasoning_type=reasoning_type,
+            hypothesis=hypothesis,
             confidence=confidence,
             alternatives_considered=alternatives or [],
         )
@@ -76,6 +78,7 @@ class StepBuilder:
         action_type: str,
         command: str,
         rationale: str = "",
+        tool_choice: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> "StepBuilder":
         """Record the action taken."""
@@ -100,6 +103,7 @@ class StepBuilder:
         self._action = Action(
             action_type=atype,
             tool_name=tool_map.get(atype, "unknown"),
+            tool_choice=tool_choice,
             command=command,
             parameters=parameters or {},
             rationale=rationale,
@@ -113,6 +117,7 @@ class StepBuilder:
         exit_code: int = 0,
         execution_time_ms: float = 0.0,
         outcome: Optional[StepOutcome] = None,
+        state_transition: Optional[str] = None,
         error_type: Optional[str] = None,
         extracted_data: Optional[Dict[str, Any]] = None,
     ) -> "StepBuilder":
@@ -132,6 +137,7 @@ class StepBuilder:
             exit_code=exit_code,
             execution_time_ms=execution_time_ms,
             outcome=outcome,
+            state_transition=state_transition,
             error_type=error_type,
             extracted_data=extracted_data or {},
         )
@@ -244,9 +250,9 @@ class TrajectoryBuilder:
         self._trajectory.add_step(step)
         self._current_step = None
 
-    def add_step_direct(self, step: Step) -> "TrajectoryBuilder":
-        """Add a pre-built step directly."""
-        self._trajectory.add_step(step)
+    def add_exploit_step(self, command: str) -> "TrajectoryBuilder":
+        """Add a successful command to the exploit chain."""
+        self._trajectory.exploit_chain.append(command)
         return self
 
     def complete(

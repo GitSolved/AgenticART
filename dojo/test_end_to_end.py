@@ -19,7 +19,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -40,6 +40,10 @@ from dojo import (
     # Phase 3
     Sensei,
 )
+from dojo.react_challenger import ReActChallenger
+from dojo.trajectory_logger import TrajectoryLogger
+from dojo.hybrid_challenger import HybridChallenger
+from dojo.curriculum.executor import ExecutionResult
 
 
 # --- ENGINE STATE UTILS ---
@@ -226,7 +230,11 @@ class MockLLMClient:
         for cid, keywords in self.CHALLENGE_IDENTIFIERS:
             if any(kw in prompt_lower for kw in keywords):
                 self.last_challenge_id = cid
-                return self.ANSWERS[cid]
+                answer = self.ANSWERS[cid]
+                # Inject ReAct format if requested
+                if "HYPOTHESIS:" in prompt or "THOUGHT:" in prompt:
+                    return f"HYPOTHESIS: I need to solve this challenge.\nTHOUGHT: The user wants me to execute a command.\nTOOL_CHOICE: ADB\nACTION: {answer}"
+                return answer
 
         return "shell echo 'unknown challenge'"
 
@@ -256,56 +264,65 @@ class MLXLLMClient:
         self.tokenizer = results[1]
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        import re
-
         from mlx_lm import stream_generate
 
-        # Parse the prompt to extract Instruction and Input
-        input_match = re.search(r"## Device Context", prompt)
-        if input_match:
-            input_start = input_match.start()
-            raw_input = prompt[input_start:]
-            input_context = raw_input.replace("## Device Context", "Device Context:")
-            pre_input = prompt[:input_start].strip()
-            diff_match = re.search(r"Difficulty: \d+/\d+", pre_input)
-            instruction = pre_input[diff_match.end():].strip() if diff_match else pre_input.strip()
+        # Use tokenizer's chat template if available (Correct for Qwen/Llama3)
+        if hasattr(self.tokenizer, "apply_chat_template"):
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            
+            formatted_prompt = self.tokenizer.apply_chat_template(
+                messages, 
+                tokenize=False, 
+                add_generation_prompt=True
+            )
         else:
-            instruction = prompt.strip()
-            input_context = ""
-
-        if input_context:
-            formatted_prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{input_context}\n\n### Response: "
-        else:
-            formatted_prompt = f"### Instruction:\n{instruction}\n\n### Response: "
+            # Fallback for models without chat template in tokenizer config
+            if system_prompt:
+                formatted_prompt = f"System: {system_prompt}\nUser: {prompt}\nAssistant: "
+            else:
+                formatted_prompt = f"User: {prompt}\nAssistant: "
 
         # Manual streaming to support stop tokens
-        stop_sequences = ["<|endoftext|>", "###", "Human:", "Assistant:", "\n\n"]
+        stop_sequences = ["<|endoftext|>", "<|im_end|>", "###", "Human:", "Assistant:"]
         response_text = ""
+        
+        print(f"    [MLX] Generating... (Prompt len: {len(formatted_prompt)})")
 
-        for response in stream_generate(self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=100):
+        for response in stream_generate(self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=1024):
             response_text += response.text
-            if any(stop in response_text for stop in stop_sequences):
-                for stop in stop_sequences:
-                    if stop in response_text:
-                        response_text = response_text[:response_text.find(stop)]
-                break
+            # Check for stop sequences
+            for stop in stop_sequences:
+                if stop in response_text:
+                    response_text = response_text[:response_text.find(stop)]
+                    return self._clean_response(response_text)
 
-        # Post-processing to handle hallucinations
-        lines = response_text.strip().split('\n')
+        return self._clean_response(response_text)
 
-        # Priority 1: Find the line that actually contains the command
+    def _clean_response(self, text: str) -> str:
+        """Post-processing to clean up model response."""
+        lines = text.strip().split('\n')
+
+        # Priority 1: Find lines with explicit fields (ReAct)
+        for line in lines:
+            if any(k in line.upper() for k in ["ACTION:", "THOUGHT:", "HYPOTHESIS:", "TOOL_CHOICE:"]):
+                return text.strip()
+
+        # Priority 2: Find the line that actually contains a shell command
         for line in lines:
             clean_line = line.strip()
             if clean_line.startswith('shell '):
                 return clean_line
 
-        # Priority 2: Return the first non-empty line if no 'shell' prefix found
+        # Priority 3: Return the first non-empty line
         for line in lines:
             clean_line = line.strip()
             if clean_line:
                 return clean_line
 
-        return ""
+        return text.strip()
 
 
 class OllamaLLMClient:
@@ -353,6 +370,54 @@ class OllamaLLMClient:
             return f"[ERROR: {e}]"
 
 # ============================================================================
+# Mock Executor
+# ============================================================================
+
+class MockExecutor:
+    """Mocks Executor for testing without device."""
+
+    def __init__(self, device_id: str = "mock-device", adb_path: str = "mock-adb"):
+        self.device_id = device_id
+        self.adb_path = adb_path
+
+    def check_device_connected(self) -> bool:
+        return True
+
+    def get_device_info(self) -> dict:
+        return {
+            "android_version": "11",
+            "api_level": "30",
+            "model": "MockDevice",
+            "manufacturer": "Google",
+            "device_id": self.device_id
+        }
+
+    def execute_adb(self, command: str, timeout: Optional[int] = None) -> ExecutionResult:
+        cmd = command.lower()
+        output = "mock output"
+        
+        # White Belt Mock Responses
+        if "getprop ro.build.version.release" in cmd:
+            output = "11"
+        elif "pm list packages" in cmd:
+            output = "package:com.android.settings\npackage:com.android.systemui\npackage:com.google.android.gms"
+        elif "ro.product.model" in cmd:
+            output = "Pixel 4"
+        elif "ps" in cmd or "process" in cmd:
+            output = "USER           PID  PPID     VSZ    RSS WCHAN            ADDR S NAME\nroot             1     0   10624   3220 0                   0 S init\nsystem        1542     1 2345424 234232 0                   0 S system_server"
+        elif "cat /data/system/packages.xml" in cmd:
+            output = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?>\n<packages>\n<package name=\"com.android.settings\" codePath=\"/system/priv-app/Settings\" />\n</packages>"
+        
+        print(f"      [MockExecutor] CMD: '{command}' -> OUTPUT: '{output[:20]}...'")
+        return ExecutionResult(True, 0, output, "", 0.1, command)
+
+    def execute_frida(self, script_content: str, target_process: str = "com.genymotion.settings", timeout: int = 20) -> ExecutionResult:
+        return ExecutionResult(True, 0, "[SUCCESS] Hooked", "", 0.1, "frida")
+
+    def validate_output(self, challenge: Any, execution_result: ExecutionResult) -> bool:
+        return True
+
+# ============================================================================
 # End-to-End Runner
 # ============================================================================
 
@@ -362,6 +427,8 @@ def run_end_to_end(
     belt: str = "white",
     model: Optional[str] = None,
     adapter: Optional[str] = None,
+    challenger_type: str = "basic",
+    executor_type: Optional[str] = None,
 ) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
     set_engine_state("running")
@@ -426,7 +493,21 @@ def run_end_to_end(
     print("-" * 70 + "\n")
 
     # Create Phase 2 components
-    executor = Executor(device_id=device_id, adb_path=adb_path)
+    # Determine executor type
+    use_mock_executor = False
+    if executor_type == "mock":
+        use_mock_executor = True
+    elif executor_type == "live":
+        use_mock_executor = False
+    elif mode == "mock":
+        use_mock_executor = True
+    
+    if use_mock_executor:
+        print("Executor: Mock (Simulated Device)")
+        executor = MockExecutor(device_id=device_id)
+    else:
+        print("Executor: Live (ADB)")
+        executor = Executor(device_id=device_id, adb_path=adb_path)
 
     # Check device connection
     if not executor.check_device_connected():
@@ -439,21 +520,68 @@ def run_end_to_end(
     print()
 
     loader = ChallengeLoader()
-    error_extractor = ErrorExtractor(executor)
+    error_extractor = ErrorExtractor(executor) # This might fail if MockExecutor is passed, let's see.
+    # ErrorExtractor expects an executor to call execute_adb, which MockExecutor has.
+    
     context_injector = ContextInjector(max_attempts=3)
 
     def on_attempt(attempt):
         status = "OK" if attempt.execution_result.success else "FAIL"
         print(f"  Attempt {attempt.attempt_number}: {status}")
 
-    challenger = Challenger(
-        llm_client=llm,
-        executor=executor,
-        error_extractor=error_extractor,
-        context_injector=context_injector,
-        max_retries=3,
-        on_attempt=on_attempt,
-    )
+    # Initialize selected challenger
+    if challenger_type == "react":
+        print("Challenger Type: REACT (Reason + Act)")
+        traj_dir = Path("./dojo_output/trajectories")
+        traj_logger = TrajectoryLogger(output_dir=str(traj_dir))
+        
+        def on_step(step_num, parsed, result):
+            status = "OK" if result.get("exit_code") == 0 else "FAIL"
+            print(f"    Step {step_num}: [{status}] Action: {parsed.action[:50]}...")
+
+        challenger = ReActChallenger(
+            llm_client=llm,
+            executor=executor,
+            trajectory_logger=traj_logger,
+            max_steps=5,
+            on_step=on_step
+        )
+    elif challenger_type == "hybrid":
+        print("Challenger Type: HYBRID (Basic -> ReAct on failure)")
+        # Setup both
+        basic_challenger = Challenger(
+            llm_client=llm,
+            executor=executor,
+            error_extractor=error_extractor,
+            context_injector=context_injector,
+            max_retries=3,
+            on_attempt=on_attempt,
+        )
+        
+        traj_dir = Path("./dojo_output/trajectories")
+        traj_logger = TrajectoryLogger(output_dir=str(traj_dir))
+        react_challenger = ReActChallenger(
+            llm_client=llm,
+            executor=executor,
+            trajectory_logger=traj_logger,
+            max_steps=5
+        )
+        
+        challenger = HybridChallenger(
+            basic_challenger=basic_challenger,
+            react_challenger=react_challenger,
+            on_transition=lambda msg: print(f"  [HYBRID] {msg}")
+        )
+    else:
+        print("Challenger Type: BASIC")
+        challenger = Challenger(
+            llm_client=llm,
+            executor=executor,
+            error_extractor=error_extractor,
+            context_injector=context_injector,
+            max_retries=3,
+            on_attempt=on_attempt,
+        )
 
     # Run challenges for selected belt
     challenges = loader.load_belt(belt_enum)
@@ -462,11 +590,23 @@ def run_end_to_end(
     sessions: list[ChallengeSession] = []
     for challenge in challenges:
         print(f"Challenge: {challenge.id} - {challenge.name}")
-        session = challenger.run_challenge(challenge)
+        
+        # ReAct and Hybrid require model_id
+        if challenger_type in ("react", "hybrid"):
+            # Sanitize model name for ID
+            if model:
+                safe_model_name = model.split("/")[-1].replace(":", "-")
+            else:
+                safe_model_name = f"{mode}_model"
+            run_model_id = f"{safe_model_name}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            session = challenger.run_challenge(challenge, model_id=run_model_id)
+        else:
+            session = challenger.run_challenge(challenge)
+            
         sessions.append(session)
 
         status = "PASS" if session.final_success else "FAIL"
-        print(f"  Result: {status} ({session.total_attempts} attempts)")
+        print(f"  Result: {status} ({len(session.attempts)} attempts/steps)")
         print()
 
     # Phase 2 summary
@@ -626,6 +766,18 @@ def main():
         default=None,
         help="Path to LoRA adapters (MLX mode only)",
     )
+    parser.add_argument(
+        "--challenger",
+        choices=["basic", "react", "hybrid"],
+        default="basic",
+        help="Challenger type: basic (single-turn), react (multi-turn), or hybrid (escalate on failure)",
+    )
+    parser.add_argument(
+        "--executor",
+        choices=["live", "mock"],
+        default=None,
+        help="Executor type: live (ADB) or mock (Simulated). Defaults to mock if mode=mock, else live.",
+    )
 
     args = parser.parse_args()
     exit_code = run_end_to_end(
@@ -634,6 +786,8 @@ def main():
         belt=args.belt,
         model=args.model,
         adapter=args.adapter,
+        challenger_type=args.challenger,
+        executor_type=args.executor,
     )
     sys.exit(exit_code)
 

@@ -64,6 +64,7 @@ class Thought:
     """
     content: str  # The actual reasoning text
     reasoning_type: ReasoningType
+    hypothesis: Optional[str] = None  # Explicit hypothesis being tested
     confidence: float = 0.0  # 0-1, how confident the agent is
     alternatives_considered: List[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)
@@ -72,6 +73,7 @@ class Thought:
         return {
             "content": self.content,
             "reasoning_type": self.reasoning_type.value,
+            "hypothesis": self.hypothesis,
             "confidence": self.confidence,
             "alternatives_considered": self.alternatives_considered,
             "timestamp": self.timestamp.isoformat(),
@@ -86,6 +88,7 @@ class Action:
     action_type: ActionType
     tool_name: str  # e.g., "adb", "frida", "gcc"
     command: str  # The actual command/script
+    tool_choice: Optional[str] = None  # Explicit tool choice explanation
     parameters: Dict[str, Any] = field(default_factory=dict)
     rationale: str = ""  # Why this action was chosen
     timestamp: datetime = field(default_factory=datetime.now)
@@ -94,6 +97,7 @@ class Action:
         return {
             "action_type": self.action_type.value,
             "tool_name": self.tool_name,
+            "tool_choice": self.tool_choice,
             "command": self.command,
             "parameters": self.parameters,
             "rationale": self.rationale,
@@ -111,6 +115,7 @@ class Observation:
     exit_code: int
     execution_time_ms: float
     outcome: StepOutcome
+    state_transition: Optional[str] = None  # Description of state change
     error_type: Optional[str] = None  # e.g., "permission_denied", "timeout"
     extracted_data: Dict[str, Any] = field(default_factory=dict)  # Parsed info
     timestamp: datetime = field(default_factory=datetime.now)
@@ -122,6 +127,7 @@ class Observation:
             "exit_code": self.exit_code,
             "execution_time_ms": self.execution_time_ms,
             "outcome": self.outcome.value,
+            "state_transition": self.state_transition,
             "error_type": self.error_type,
             "extracted_data": self.extracted_data,
             "timestamp": self.timestamp.isoformat(),
@@ -198,6 +204,7 @@ class Trajectory:
     # Initial planning
     initial_thought: Optional[Thought] = None
     planned_approach: str = ""
+    exploit_chain: List[str] = field(default_factory=list)  # Sequence of successful steps
 
     # The sequence of steps
     steps: List[Step] = field(default_factory=list)
@@ -244,6 +251,7 @@ class Trajectory:
             "hints": self.hints,
             "initial_thought": self.initial_thought.to_dict() if self.initial_thought else None,
             "planned_approach": self.planned_approach,
+            "exploit_chain": self.exploit_chain,
             "steps": [s.to_dict() for s in self.steps],
             "final_outcome": self.final_outcome.value,
             "final_reflection": self.final_reflection.to_dict() if self.final_reflection else None,

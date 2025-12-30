@@ -10,7 +10,9 @@ The key difference from the basic Challenger:
 3. Logs full trajectories for training data
 
 ReAct Pattern:
-    Thought: I need to find the Android version...
+    Hypothesis: The device is likely running an older Android version.
+    Thought: I need to find the Android version to verify my hypothesis.
+    Tool_Choice: 'getprop' is the standard tool for reading system properties.
     Action: shell getprop ro.build.version.release
     Observation: 11
     Thought: I got Android 11, which matches the expected format...
@@ -35,21 +37,25 @@ from dojo.trajectory_schema import (
 # ReAct prompt templates
 REACT_SYSTEM_PROMPT = """You are a security research agent specializing in Android penetration testing.
 
-You will be given a security task to complete. For each step, you MUST follow the ReAct format:
+Your goal is to autonomously solve the challenge. Do not ask for user permission.
 
-THOUGHT: [Your reasoning about what to do next]
+For each step, you MUST follow the ReAct format:
+
+HYPOTHESIS: [What do you expect this action to achieve?]
+THOUGHT: [Your reasoning about the situation and plan]
+TOOL_CHOICE: [Why are you choosing this specific tool?]
 ACTION: [The exact command to execute]
 
 After seeing the result, you will provide:
-THOUGHT: [Your analysis of what happened]
+THOUGHT: [Your analysis of what happened. If failed, analyze why and propose a workaround.]
 ACTION: [DONE] if the task is complete, or [CONTINUE] with next command
 
 Rules:
 - Always explain your reasoning in THOUGHT before acting
 - ACTION must be a single executable command (no markdown, no explanation)
-- If a command fails, analyze WHY and try a different approach
+- If a command fails (e.g. Permission Denied), do NOT stop. Try a workaround (e.g. run-as, different path).
 - Say ACTION: [DONE] when the objective is achieved
-- Say ACTION: [GIVE_UP] if the task is impossible
+- Say ACTION: [GIVE_UP] if the task is impossible after multiple attempts
 
 Available tools:
 - ADB shell commands (shell <command>)
@@ -70,7 +76,7 @@ REACT_INITIAL_PROMPT = """## Objective
 
 Begin by analyzing the task and stating your first action.
 
-THOUGHT:"""
+HYPOTHESIS:"""
 
 REACT_OBSERVATION_PROMPT = """
 OBSERVATION:
@@ -92,6 +98,8 @@ class ReActResponse:
     action: str
     action_type: str  # "command", "done", "give_up", "continue"
     raw_response: str
+    hypothesis: str = ""
+    tool_choice: str = ""
 
 
 class LLMClient(Protocol):
@@ -155,12 +163,19 @@ class ReActChallenger:
             )
 
             # Get initial thought and action
+            print(f"\n[DEBUG] Prompting ReAct model for {challenge.id}...")
             response = self.llm.generate(
                 initial_prompt,
                 system_prompt=REACT_SYSTEM_PROMPT,
             )
+            
+            # Since we forced "HYPOTHESIS:" in the prompt, some models won't repeat it.
+            if not response.strip().upper().startswith("HYPOTHESIS:") and not response.strip().upper().startswith("THOUGHT:"):
+                 response = "HYPOTHESIS: " + response
 
+            print(f"[DEBUG] Raw response: {response[:100]}...")
             parsed = self._parse_react_response(response)
+            print(f"[DEBUG] Parsed action: {parsed.action_type} - {parsed.action}")
 
             # Log initial thought
             traj.log_initial_thought(
@@ -191,6 +206,7 @@ class ReActChallenger:
                     step.think(
                         content=parsed.thought,
                         reasoning_type=self._infer_reasoning_type(parsed.thought),
+                        hypothesis=parsed.hypothesis,
                         confidence=self._estimate_confidence(parsed.thought),
                     )
 
@@ -200,10 +216,11 @@ class ReActChallenger:
                         action_type=action_type,
                         command=parsed.action,
                         rationale=parsed.thought[:200],
+                        tool_choice=parsed.tool_choice,
                     )
 
                     # Execute
-                    result = self._execute_action(parsed.action, action_type)
+                    result = self._execute_action(parsed.action, action_type, challenge)
 
                     # Record observation
                     step.observe(
@@ -213,6 +230,10 @@ class ReActChallenger:
                         execution_time_ms=result.get("duration_ms", 0),
                         error_type=result.get("error_type"),
                     )
+
+                    # Add to exploit chain if successful
+                    if result.get("exit_code", -1) == 0:
+                        traj.add_exploit_step(parsed.action)
 
                     # Build observation prompt
                     error_info = ""
@@ -236,11 +257,14 @@ class ReActChallenger:
                     next_parsed = self._parse_react_response(next_response)
 
                     # Record reflection
+                    progress_summary = self._assess_progress(result, challenge)
+                    is_goal_met = "Goal achieved" in progress_summary
+                    
                     step.reflect(
                         what_happened=self._summarize_observation(result),
-                        goal_progress=self._assess_progress(result, challenge),
+                        goal_progress=progress_summary,
                         next_step_reasoning=next_parsed.thought[:200] if next_parsed.thought else "",
-                        should_continue=next_parsed.action_type not in ("done", "give_up"),
+                        should_continue=not is_goal_met and next_parsed.action_type not in ("done", "give_up"),
                     )
 
                     # Store attempt
@@ -249,11 +273,17 @@ class ReActChallenger:
                         "command": parsed.action,
                         "success": result.get("exit_code", -1) == 0,
                         "thought": parsed.thought,
+                        "hypothesis": parsed.hypothesis,
+                        "tool_choice": parsed.tool_choice,
                     })
 
                     # Callback
                     if self.on_step:
                         self.on_step(step_num + 1, parsed, result)
+
+                    if is_goal_met:
+                        final_success = True
+                        break
 
                     parsed = next_parsed
 
@@ -271,16 +301,42 @@ class ReActChallenger:
         """Parse a ReAct-format response into structured data."""
         thought = ""
         action = ""
+        hypothesis = ""
+        tool_choice = ""
         action_type = "command"
+
+        # Extract HYPOTHESIS (Optional, might not be in all responses)
+        hyp_match = re.search(
+            r"HYPOTHESIS:\s*(.+?)(?=THOUGHT:|TOOL_CHOICE:|ACTION:|$)",
+            response,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if hyp_match:
+            hypothesis = hyp_match.group(1).strip()
 
         # Extract THOUGHT
         thought_match = re.search(
-            r"THOUGHT:\s*(.+?)(?=ACTION:|$)",
+            r"THOUGHT:\s*(.+?)(?=TOOL_CHOICE:|ACTION:|$)",
             response,
             re.DOTALL | re.IGNORECASE,
         )
         if thought_match:
             thought = thought_match.group(1).strip()
+        elif not hypothesis: 
+            # Fallback if neither HYPOTHESIS nor THOUGHT found cleanly, maybe it started with thought
+            # Check if entire string is thought until ACTION
+            pre_action = re.split(r"ACTION:", response, flags=re.IGNORECASE)[0]
+            if "HYPOTHESIS:" not in pre_action.upper():
+                 thought = pre_action.strip()
+
+        # Extract TOOL_CHOICE
+        tool_match = re.search(
+            r"TOOL_CHOICE:\s*(.+?)(?=ACTION:|$)",
+            response,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if tool_match:
+            tool_choice = tool_match.group(1).strip()
 
         # Extract ACTION
         action_match = re.search(
@@ -295,22 +351,25 @@ class ReActChallenger:
             action = action.replace("```", "").strip()
 
             # Check for special actions
-            if "[DONE]" in action.upper():
+            action_upper = action.upper()
+            if "DONE" in action_upper or "[DONE]" in action_upper:
                 action_type = "done"
-                action = ""
-            elif "[GIVE_UP]" in action.upper():
+                action = "DONE"
+            elif "GIVE_UP" in action_upper or "[GIVE_UP]" in action_upper:
                 action_type = "give_up"
-                action = ""
-            elif "[CONTINUE]" in action.upper():
+                action = "GIVE_UP"
+            elif "CONTINUE" in action_upper or "[CONTINUE]" in action_upper:
                 action_type = "continue"
                 # Extract actual command if present
-                action = re.sub(r"\[CONTINUE\]", "", action, flags=re.IGNORECASE).strip()
+                action = re.sub(r"(\[?CONTINUE\]?)", "", action, flags=re.IGNORECASE).strip()
 
         return ReActResponse(
             thought=thought,
             action=action,
             action_type=action_type,
             raw_response=response,
+            hypothesis=hypothesis,
+            tool_choice=tool_choice,
         )
 
     def _infer_action_type(self, action: str) -> str:
@@ -358,11 +417,26 @@ class ReActChallenger:
         # Medium confidence
         return 0.7
 
-    def _execute_action(self, action: str, action_type: str) -> Dict[str, Any]:
+    def _execute_action(self, action: str, action_type: str, challenge: Challenge) -> Dict[str, Any]:
         """Execute an action and return the result."""
         try:
+            # Clean action: remove "adb shell " or "adb " prefix if the model added it redundantly
+            # The executor.execute_adb method expects the command without the 'adb ' part.
+            clean_action = action.strip()
+            
+            # Recursive stripping of redundant prefixes
+            while True:
+                lower_action = clean_action.lower()
+                if lower_action.startswith("adb shell "):
+                    clean_action = clean_action[10:].strip()
+                elif lower_action.startswith("adb "):
+                    clean_action = clean_action[4:].strip()
+                else:
+                    break
+
             if action_type in ("adb_shell", "adb_command"):
-                result = self.executor.execute(action)
+                # Use execute_adb for direct command execution
+                result = self.executor.execute_adb(clean_action)
                 return {
                     "stdout": result.stdout,
                     "stderr": result.stderr,
@@ -371,7 +445,13 @@ class ReActChallenger:
                     "error_type": result.error_type if hasattr(result, 'error_type') else None,
                 }
             elif action_type == "frida_script":
-                result = self.executor.execute_frida(action)
+                # For frida, we might need a target process
+                target = challenge.inputs.device_context.get("target_package") 
+                if not target and hasattr(challenge.inputs, "target_class"):
+                    target = challenge.inputs.target_class
+                
+                target = target or "com.android.settings"
+                result = self.executor.execute_frida(clean_action, target_process=target)
                 return {
                     "stdout": result.stdout,
                     "stderr": result.stderr,
@@ -406,12 +486,25 @@ class ReActChallenger:
 
     def _assess_progress(self, result: Dict[str, Any], challenge: Challenge) -> str:
         """Assess progress toward the goal."""
+        from dojo.curriculum.executor import ExecutionResult
+        
+        # Create a temporary ExecutionResult to use validate_output
+        exec_res = ExecutionResult(
+            success=result.get("exit_code") == 0,
+            exit_code=result.get("exit_code", -1),
+            stdout=result.get("stdout", ""),
+            stderr=result.get("stderr", ""),
+            duration=result.get("duration_ms", 0) / 1000.0,
+            command="",
+            error_type=result.get("error_type")
+        )
+        
+        if self.executor.validate_output(challenge, exec_res):
+            return "Goal achieved - output passes validation"
+        
         if result.get("exit_code", -1) == 0:
-            # Check if output matches expected
-            stdout = result.get("stdout", "")
-            if challenge.expected_output and challenge.expected_output in stdout:
-                return "Goal achieved - output matches expected"
-            return "Partial progress - command succeeded"
+            return "Partial progress - command succeeded but objective not yet met"
+            
         return "No progress - command failed"
 
     def _format_device_context(

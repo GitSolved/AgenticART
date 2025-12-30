@@ -171,6 +171,7 @@ class Executor:
         start_time = time.time()
 
         try:
+            print(f"      [ADB DEBUG] Executing: {cmd_parts}")
             result = subprocess.run(
                 cmd_parts,
                 capture_output=True,
@@ -182,6 +183,9 @@ class Executor:
 
             duration = time.time() - start_time
             error_type = self._classify_error(result.stderr, result.stdout)
+            print(f"      [ADB DEBUG] Stdout: {result.stdout.strip()}")
+            print(f"      [ADB DEBUG] Stderr: {result.stderr.strip()}")
+            print(f"      [ADB DEBUG] RC: {result.returncode} | ErrorType: {error_type}")
 
             # Determine success: exit code 0 and no error patterns
             success = result.returncode == 0 and error_type is None

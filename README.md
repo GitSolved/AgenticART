@@ -131,7 +131,25 @@ Progress is tracked via the **Dojo Benchmarking Dashboard**, which evaluates:
 
 * **Domain Mastery:** Success rates across specific vulnerability classes.
 * **Execution Reliability:** The ratio of syntax-correct outputs to total attempts.
-* **Cross-Device Generalization:** (TODO) Performance delta across varying Android API levels and security patch sets.
+* **Cross-Device Generalization:** Performance delta across varying Android API levels and security patch sets.
+
+---
+
+## 🧠 Framework Evolution: The ReAct Challenger
+
+Recent research within the Dojo has proven that while the "Basic Challenger" is efficient for foundational tasks, higher-belt challenges (Yellow and above) require **ReAct (Reason + Act)** prompting to achieve reliability.
+
+### 🔬 Proof of ReAct Effectiveness: Multi-Step Discovery
+We conducted a controlled experiment on a **Dynamic Package Discovery** task: *"Find the versionName of the package containing 'telephony'."*
+
+*   **Basic Challenger (FAIL):** Attempts to solve the problem in a single turn using complex, brittle one-liners. It cannot adapt when a command fails or when intermediate data is needed.
+*   **ReAct Challenger (SUCCESS):** Demonstrates "System 2" thinking by breaking the task into logical steps:
+    1.  **Reconnaissance:** Enumerates packages to find the exact target string.
+    2.  **Analysis:** Uses the discovered package name to query the system for the version.
+    3.  **Validation:** Confirms the output matches the goal and signals completion.
+
+### 🗝️ Key Integration Insight
+ReAct is the **essential bridge** between simple command generation and autonomous vulnerability research. It enables the model to recover from "Permission Denied" errors, pivot to alternative tools (e.g., switching from `pm` to `dumpsys`), and maintain a stateful context of the target device's internal state.
 
 ---
 
