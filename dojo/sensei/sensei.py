@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from dojo.challenge_value import MetricsCollector
 from dojo.curriculum import ChallengeSession
 from dojo.models import Belt, Grade, ModelProgress, SenseiAssessment, TrainingExample
 from dojo.sensei.exporter import ExportFormat, TrainingDataExporter
@@ -65,10 +66,21 @@ class Sensei:
         extractor: Optional[TrainingExtractor] = None,
         exporter: Optional[TrainingDataExporter] = None,
         progress_tracker: Optional[ProgressTracker] = None,
+        metrics_collector: Optional[MetricsCollector] = None,
         output_dir: Optional[Path] = None,
+        collect_metrics: bool = True,
     ):
         """
         Initialize the Sensei.
+
+        Args:
+            grader: Custom grader instance.
+            extractor: Custom training extractor.
+            exporter: Custom training data exporter.
+            progress_tracker: Custom progress tracker.
+            metrics_collector: Collector for challenge metrics (curriculum analysis).
+            output_dir: Base output directory.
+            collect_metrics: Whether to collect metrics (default True).
         """
         # Ensure we use a stable path for the data engine
         self.output_dir = output_dir or Path("./dojo_output")
@@ -85,6 +97,20 @@ class Sensei:
             storage_path=self.output_dir / "progress"
         )
         self.master_refinery = MasterRefinery(master_dir=self.output_dir.parent / "master_dataset")
+
+        # Metrics collection for curriculum analysis
+        self.collect_metrics = collect_metrics
+        if collect_metrics:
+            self.metrics_collector = metrics_collector or MetricsCollector(
+                output_path=self.output_dir / "metrics.json"
+            )
+            # Load existing metrics if available
+            try:
+                self.metrics_collector.load()
+            except (FileNotFoundError, Exception):
+                pass  # Start fresh if no existing metrics
+        else:
+            self.metrics_collector = None
 
     def evaluate_session(
         self,
@@ -111,7 +137,53 @@ class Sensei:
         # 3. Record in progress tracker
         self.progress_tracker.record_assessment(model_id, assessment)
 
+        # 4. Record metrics for curriculum analysis
+        if self.metrics_collector:
+            self._record_session_metrics(session, assessment)
+
         return assessment, examples
+
+    def _record_session_metrics(
+        self,
+        session: ChallengeSession,
+        assessment: SenseiAssessment,
+    ) -> None:
+        """
+        Record metrics from a graded session for curriculum analysis.
+
+        Args:
+            session: The challenge session.
+            assessment: The grading assessment.
+        """
+        if not self.metrics_collector:
+            return
+
+        challenge = session.challenge
+
+        # Determine error info from last attempt
+        error_type = None
+        error_message = None
+        if session.attempts and not session.final_success:
+            last_attempt = session.attempts[-1]
+            if last_attempt.error_context:
+                error_type = last_attempt.error_context.error_type
+                error_message = last_attempt.error_context.error_message
+            elif last_attempt.execution_result.stderr:
+                error_type = "execution_error"
+                error_message = last_attempt.execution_result.stderr[:200]
+
+        # Record the attempt
+        self.metrics_collector.record_attempt(
+            challenge=challenge,
+            executed=len(session.attempts) > 0,
+            success=assessment.grade.is_passing,
+            execution_time=assessment.execution_time,
+            grade=assessment.grade,
+            score=assessment.score,
+            tokens=0,  # Token counting not yet implemented
+            error_type=error_type,
+            error_message=error_message,
+        )
 
     def evaluate_sessions(
         self,
@@ -204,11 +276,18 @@ class Sensei:
                 promotion = next_belt
                 progress = self.progress_tracker.get_progress(model_id)
 
-        # 5. Compile statistics
+        # 5. Save and compile metrics
+        metrics_summary = {}
+        if self.metrics_collector:
+            self.metrics_collector.save()
+            metrics_summary = self.get_metrics_summary()
+
+        # 6. Compile statistics
         stats = {
             "grading": self.grader.get_grading_summary(assessments),
             "extraction": self.extractor.get_extraction_summary(examples),
             "export": self.exporter.get_export_stats(examples) if examples else {},
+            "metrics": metrics_summary,
         }
 
         return TrainingCycleResult(
@@ -339,4 +418,149 @@ class Sensei:
 
         lines.append("=" * 60)
 
+        return "\n".join(lines)
+
+    def get_metrics_summary(self) -> dict:
+        """
+        Get summary of collected metrics for curriculum analysis.
+
+        Returns:
+            Dictionary with metrics summary including:
+            - total_challenges: Number of unique challenges attempted
+            - total_attempts: Total number of attempts across all challenges
+            - overall_success_rate: Aggregate success rate
+            - by_belt: Per-belt breakdown
+            - problematic_challenges: Challenges with low success rates
+            - error_patterns: Common error types
+        """
+        if not self.metrics_collector:
+            return {}
+
+        metrics = self.metrics_collector.metrics
+        if not metrics:
+            return {"total_challenges": 0, "total_attempts": 0}
+
+        # Aggregate stats
+        total_attempts = sum(m.total_attempts for m in metrics.values())
+        total_successes = sum(m.successful_attempts for m in metrics.values())
+
+        # Per-belt breakdown
+        by_belt: dict[str, dict] = {}
+        for m in metrics.values():
+            belt = m.belt.value
+            if belt not in by_belt:
+                by_belt[belt] = {
+                    "challenges": 0,
+                    "attempts": 0,
+                    "successes": 0,
+                    "failures": 0,
+                }
+            by_belt[belt]["challenges"] += 1
+            by_belt[belt]["attempts"] += m.total_attempts
+            by_belt[belt]["successes"] += m.successful_attempts
+            by_belt[belt]["failures"] += m.failed_attempts
+
+        # Calculate success rates per belt
+        for belt_stats in by_belt.values():
+            if belt_stats["attempts"] > 0:
+                belt_stats["success_rate"] = round(
+                    belt_stats["successes"] / belt_stats["attempts"] * 100, 1
+                )
+            else:
+                belt_stats["success_rate"] = 0.0
+
+        # Identify problematic challenges (low success rate with enough attempts)
+        problematic = []
+        for challenge_id, m in metrics.items():
+            if m.total_attempts >= 3 and m.success_rate < 0.3:
+                problematic.append({
+                    "challenge_id": challenge_id,
+                    "belt": m.belt.value,
+                    "attempts": m.total_attempts,
+                    "success_rate": round(m.success_rate * 100, 1),
+                    "most_common_error": m.most_common_error,
+                })
+
+        # Aggregate error patterns
+        error_counts: dict[str, int] = {}
+        for m in metrics.values():
+            for error_type, count in m.error_counts.items():
+                error_counts[error_type] = error_counts.get(error_type, 0) + count
+
+        # Sort errors by frequency
+        sorted_errors = sorted(error_counts.items(), key=lambda x: x[1], reverse=True)
+
+        return {
+            "total_challenges": len(metrics),
+            "total_attempts": total_attempts,
+            "overall_success_rate": round(
+                total_successes / total_attempts * 100, 1
+            ) if total_attempts > 0 else 0.0,
+            "by_belt": by_belt,
+            "problematic_challenges": problematic[:10],  # Top 10 most problematic
+            "error_patterns": dict(sorted_errors[:10]),  # Top 10 error types
+        }
+
+    def get_curriculum_insights(self) -> str:
+        """
+        Generate human-readable insights about curriculum effectiveness.
+
+        Returns:
+            Formatted string with curriculum analysis.
+        """
+        summary = self.get_metrics_summary()
+        if not summary or summary.get("total_challenges", 0) == 0:
+            return "No metrics collected yet. Run some challenges first."
+
+        lines = [
+            "=" * 60,
+            "CURRICULUM INSIGHTS",
+            "=" * 60,
+            "",
+            f"Challenges Tracked: {summary['total_challenges']}",
+            f"Total Attempts: {summary['total_attempts']}",
+            f"Overall Success Rate: {summary['overall_success_rate']}%",
+            "",
+            "-" * 60,
+            "SUCCESS RATE BY BELT",
+            "-" * 60,
+        ]
+
+        belt_order = ["white", "yellow", "orange", "green", "blue", "brown", "purple", "black"]
+        for belt in belt_order:
+            if belt in summary.get("by_belt", {}):
+                stats = summary["by_belt"][belt]
+                bar_len = int(stats["success_rate"] / 10)
+                bar = "█" * bar_len + "░" * (10 - bar_len)
+                lines.append(
+                    f"  {belt.capitalize():<8} [{bar}] {stats['success_rate']:>5.1f}% "
+                    f"({stats['successes']}/{stats['attempts']})"
+                )
+
+        # Problematic challenges
+        if summary.get("problematic_challenges"):
+            lines.extend([
+                "",
+                "-" * 60,
+                "PROBLEMATIC CHALLENGES (may need review)",
+                "-" * 60,
+            ])
+            for p in summary["problematic_challenges"][:5]:
+                lines.append(
+                    f"  {p['challenge_id']}: {p['success_rate']}% success "
+                    f"({p['attempts']} attempts) - {p['most_common_error'] or 'unknown error'}"
+                )
+
+        # Error patterns
+        if summary.get("error_patterns"):
+            lines.extend([
+                "",
+                "-" * 60,
+                "COMMON ERROR PATTERNS",
+                "-" * 60,
+            ])
+            for error_type, count in list(summary["error_patterns"].items())[:5]:
+                lines.append(f"  {error_type}: {count} occurrences")
+
+        lines.append("=" * 60)
         return "\n".join(lines)
