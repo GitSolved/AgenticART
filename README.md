@@ -252,21 +252,28 @@ python3 dojo/custom_train.py
 ```
 AgenticART/
 ├── dojo/
-│   ├── curriculum/           # Challenge definitions by belt
-│   │   ├── white_belt/
+│   ├── curriculum/           # Challenge execution engine
+│   │   ├── white_belt/       # Challenge definitions by belt
 │   │   ├── yellow_belt/
 │   │   ├── ...
-│   │   └── black_belt/
+│   │   ├── black_belt/
+│   │   ├── challenger.py     # Basic challenge executor
+│   │   ├── executor.py       # ADB/Frida/C execution engine
+│   │   └── loader.py         # Challenge loading utilities
+│   ├── sensei/               # Grading and training data pipeline
+│   │   ├── grader.py         # Output validation and scoring
+│   │   ├── exporter.py       # Training data export (JSONL/Alpaca)
+│   │   └── sensei.py         # Main orchestrator
 │   ├── personas/             # Android device configurations
+│   ├── device/               # Device management and setup
+│   ├── targets/              # Vulnerable app configurations
 │   ├── tools/                # NVD generator, utilities
-│   ├── challenger.py         # Basic challenge executor
 │   ├── react_challenger.py   # ReAct (Reason+Act) executor
-│   ├── executor.py           # ADB/Frida/C execution engine
-│   ├── grader.py             # Output validation
 │   └── models.py             # Data models (Belt, Challenge, etc.)
 ├── scripts/
 │   ├── generate_nvd_challenges.py
 │   ├── package_finetune.py
+│   ├── evaluate_curriculum.py
 │   └── validate_training_data.py
 ├── webapp/                   # Streamlit dashboard
 └── tests/
