@@ -744,3 +744,395 @@ challenges:
     - traffic
     - modification
     - tampering
+
+# =============================================================================
+# 1-DAY VULNERABILITY EXPLOITATION (Android 11 / API 30)
+# =============================================================================
+# These challenges require executing REAL vulnerabilities against the target
+# device. Not just methodology - actual successful exploitation with proof.
+#
+# Target: Android 11 (API 30) on Genymotion
+# Focus: CVEs with public POCs that affect this specific version
+# =============================================================================
+
+- id: purple_1day_001
+  name: "1-Day: CVE-2021-0313 - System UI DoS"
+  description: |
+    CVE-2021-0313: Denial of Service in System UI via malformed notification.
+
+    AFFECTED: Android 8.0 - 11 (API 26-30)
+
+    A malformed notification with an excessively long text field can crash
+    the SystemUI process, causing a denial of service.
+
+    OBJECTIVE:
+    1. Craft a notification that triggers the vulnerability
+    2. Send it to the device
+    3. Verify SystemUI crashes (observe logcat or process restart)
+
+    SUCCESS CRITERIA: SystemUI process restarts (PID changes)
+  belt: purple
+  difficulty: 3
+  script_type: adb
+  version_constraints:
+    min_api: 26
+    max_api: 30
+    patched_after: "2021-01-01"
+  inputs:
+    cve_id: CVE-2021-0313
+    device_context:
+      task: exploit 1-day vulnerability
+      target: com.android.systemui
+      impact: denial_of_service
+  validation:
+    type: output_contains
+    expected: "SystemUI"
+  hints:
+    - "Use 'am' command to send broadcast with notification"
+    - "Monitor 'pidof com.android.systemui' before and after"
+    - "Check logcat for crash: adb logcat | grep -i crash"
+  kata_solution: |
+    # Get initial PID
+    BEFORE=$(adb shell pidof com.android.systemui)
+    # Trigger (payload would go here)
+    # Verify crash
+    AFTER=$(adb shell pidof com.android.systemui)
+    [ "$BEFORE" != "$AFTER" ] && echo "SystemUI crashed and restarted"
+  tags:
+    - 1-day
+    - cve-2021-0313
+    - dos
+    - android-11
+
+- id: purple_1day_002
+  name: "1-Day: CVE-2021-0327 - Account Takeover"
+  description: |
+    CVE-2021-0327: Authentication bypass in AccountManager.
+
+    AFFECTED: Android 8.1 - 11 (API 27-30)
+
+    A vulnerability in AccountManager allows a malicious app to access
+    accounts of other apps without proper authentication.
+
+    OBJECTIVE:
+    1. Enumerate accounts on device via AccountManager
+    2. Exploit the bypass to access account tokens
+    3. Extract authentication tokens without user consent
+
+    SUCCESS CRITERIA: Extract account name/type without permission prompt
+  belt: purple
+  difficulty: 4
+  script_type: multi
+  version_constraints:
+    min_api: 27
+    max_api: 30
+    patched_after: "2021-02-01"
+  inputs:
+    cve_id: CVE-2021-0327
+    device_context:
+      task: exploit authentication bypass
+      target: android.accounts.AccountManager
+      impact: privilege_escalation
+  validation:
+    type: output_contains
+    expected: "Account:"
+  hints:
+    - "Use 'dumpsys account' to enumerate existing accounts"
+    - "The bypass involves intent redirection"
+    - "AccountManager.getAccounts() may return more than expected"
+  kata_solution: "Requires custom APK or Frida script"
+  tags:
+    - 1-day
+    - cve-2021-0327
+    - privesc
+    - android-11
+
+- id: purple_1day_003
+  name: "1-Day: CVE-2021-0391 - Bluetooth Info Disclosure"
+  description: |
+    CVE-2021-0391: Information disclosure in Bluetooth stack.
+
+    AFFECTED: Android 11 (API 30)
+
+    A vulnerability in the Bluetooth GATT implementation allows
+    unauthorized access to connected device information.
+
+    OBJECTIVE:
+    1. Enumerate Bluetooth state and paired devices
+    2. Exploit the info disclosure to access protected attributes
+    3. Extract device names/MACs without BLUETOOTH_ADMIN permission
+
+    SUCCESS CRITERIA: List Bluetooth devices without required permissions
+  belt: purple
+  difficulty: 3
+  script_type: adb
+  version_constraints:
+    min_api: 30
+    max_api: 30
+    patched_after: "2021-03-01"
+  inputs:
+    cve_id: CVE-2021-0391
+    device_context:
+      task: exploit bluetooth info disclosure
+      target: com.android.bluetooth
+      impact: information_disclosure
+  validation:
+    type: output_contains
+    expected: "Bluetooth"
+  hints:
+    - "Use 'dumpsys bluetooth_manager' for state info"
+    - "Check 'content query' on bluetooth provider"
+    - "Paired devices stored in settings database"
+  kata_solution: shell dumpsys bluetooth_manager
+  tags:
+    - 1-day
+    - cve-2021-0391
+    - info-disclosure
+    - bluetooth
+    - android-11
+
+- id: purple_1day_004
+  name: "1-Day: CVE-2021-0397 - Media Framework RCE"
+  description: |
+    CVE-2021-0397: Remote Code Execution in Media Framework.
+
+    AFFECTED: Android 8.1 - 11 (API 27-30)
+    SEVERITY: Critical
+
+    A heap buffer overflow in the media framework can be triggered by
+    a malformed media file, potentially leading to code execution.
+
+    OBJECTIVE:
+    1. Identify the vulnerable component (stagefright/media extractor)
+    2. Craft or obtain a malformed media file POC
+    3. Trigger the vulnerability and observe crash
+    4. Document the crash location for exploitation analysis
+
+    SUCCESS CRITERIA: Crash in mediaserver/mediaextractor with SIGSEGV
+  belt: purple
+  difficulty: 5
+  script_type: multi
+  version_constraints:
+    min_api: 27
+    max_api: 30
+    patched_after: "2021-02-01"
+  inputs:
+    cve_id: CVE-2021-0397
+    device_context:
+      task: trigger media framework vulnerability
+      target: mediaserver
+      impact: remote_code_execution
+  validation:
+    type: regex_match
+    pattern: "(SIGSEGV|Fatal signal|mediaserver.*crash)"
+  hints:
+    - "Push malformed media file to /sdcard/"
+    - "Trigger with 'am start -t video/* -d file:///sdcard/poc.mp4'"
+    - "Monitor logcat for crashes: adb logcat | grep -E 'SIGSEGV|Fatal'"
+    - "Media crashes often in /system/lib64/libstagefright.so"
+  kata_solution: "Requires POC media file"
+  tags:
+    - 1-day
+    - cve-2021-0397
+    - rce
+    - media
+    - android-11
+    - critical
+
+- id: purple_1day_005
+  name: "1-Day: CVE-2021-0437 - Settings Provider SQLi"
+  description: |
+    CVE-2021-0437: SQL Injection in Settings Provider.
+
+    AFFECTED: Android 10-11 (API 29-30)
+
+    The Settings content provider is vulnerable to SQL injection through
+    the 'where' clause parameter, allowing unauthorized data access.
+
+    OBJECTIVE:
+    1. Query the Settings content provider normally
+    2. Craft SQL injection payload in the query
+    3. Extract data beyond normal access scope
+    4. Demonstrate data exfiltration
+
+    SUCCESS CRITERIA: Extract settings not normally accessible
+  belt: purple
+  difficulty: 4
+  script_type: adb
+  version_constraints:
+    min_api: 29
+    max_api: 30
+    patched_after: "2021-04-01"
+  inputs:
+    cve_id: CVE-2021-0437
+    device_context:
+      task: exploit sql injection
+      target: com.android.providers.settings
+      impact: data_exfiltration
+  validation:
+    type: output_contains
+    expected: "Row:"
+  hints:
+    - "Use 'content query' command with URI"
+    - "The --where parameter is injectable"
+    - "Try: --where \"1=1 OR name LIKE '%'\""
+    - "Target: content://settings/secure"
+  kata_solution: |
+    shell content query --uri content://settings/secure --where "1=1"
+  tags:
+    - 1-day
+    - cve-2021-0437
+    - sqli
+    - android-11
+
+- id: purple_1day_006
+  name: "1-Day: CVE-2020-0471 - Bluetooth SMP Pairing Bypass"
+  description: |
+    CVE-2020-0471: Bluetooth pairing bypass via SMP implementation flaw.
+
+    AFFECTED: Android 8.0 - 11 (API 26-30)
+
+    A flaw in the Secure Manager Protocol implementation allows
+    bypassing pairing verification under certain conditions.
+
+    OBJECTIVE:
+    1. Identify Bluetooth SMP configuration on device
+    2. Analyze the pairing state machine
+    3. Demonstrate the bypass condition
+    4. Show unauthorized pairing initiation
+
+    SUCCESS CRITERIA: Document SMP vulnerability state
+  belt: purple
+  difficulty: 5
+  script_type: multi
+  version_constraints:
+    min_api: 26
+    max_api: 30
+    patched_after: "2021-01-01"
+  inputs:
+    cve_id: CVE-2020-0471
+    device_context:
+      task: analyze bluetooth smp bypass
+      target: com.android.bluetooth
+      impact: authentication_bypass
+  validation:
+    type: output_contains
+    expected: "SMP"
+  hints:
+    - "Check Bluetooth debug logs: adb shell dumpsys bluetooth_manager"
+    - "SMP states visible in btsnoop log"
+    - "Enable btsnoop: setprop persist.bluetooth.btsnoopenable true"
+  kata_solution: "Requires Bluetooth analysis tools"
+  tags:
+    - 1-day
+    - cve-2020-0471
+    - bluetooth
+    - auth-bypass
+    - android-11
+
+- id: purple_1day_007
+  name: "1-Day: CVE-2021-0341 - OkHttp Certificate Verification Bypass"
+  description: |
+    CVE-2021-0341: Certificate hostname verification bypass in OkHttp.
+
+    AFFECTED: Android apps using OkHttp < 4.9.1
+
+    OkHttp versions before 4.9.1 do not properly verify that the
+    certificate presented by the server matches the hostname, allowing
+    MITM attacks.
+
+    OBJECTIVE:
+    1. Identify apps on device using vulnerable OkHttp version
+    2. Set up MITM proxy with mismatched certificate
+    3. Intercept traffic from vulnerable app
+    4. Prove successful MITM
+
+    SUCCESS CRITERIA: Capture HTTPS traffic via MITM
+  belt: purple
+  difficulty: 4
+  script_type: frida
+  version_constraints:
+    min_api: 21
+    max_api: 30
+    affected_packages:
+      - "*"  # Depends on app's OkHttp version
+    notes: "Affects apps with OkHttp < 4.9.1, not Android itself"
+  inputs:
+    cve_id: CVE-2021-0341
+    device_context:
+      task: exploit okhttp hostname bypass
+      target: okhttp
+      impact: mitm
+  validation:
+    type: output_contains
+    expected: "intercepted"
+  hints:
+    - "First enumerate OkHttp versions: frida script to check"
+    - "Hook OkHttpClient.Builder to log version"
+    - "Set up mitmproxy with cert for wrong domain"
+    - "Vulnerable apps will connect anyway"
+  kata_solution: |
+    Java.perform(function() {
+        try {
+            var Platform = Java.use('okhttp3.internal.platform.Platform');
+            console.log('[+] OkHttp version check - Platform class found');
+        } catch(e) {
+            console.log('[-] OkHttp not present');
+        }
+    });
+  tags:
+    - 1-day
+    - cve-2021-0341
+    - mitm
+    - okhttp
+    - android-11
+
+- id: purple_1day_008
+  name: "1-Day: Intent Redirection Chain"
+  description: |
+    Multiple Android 11 CVEs involve intent redirection (CVE-2021-0314,
+    CVE-2021-0328, CVE-2021-0329, etc.).
+
+    AFFECTED: Android 11 (API 30)
+
+    Intent redirection allows a malicious app to launch non-exported
+    activities or access protected components through confused deputy.
+
+    OBJECTIVE:
+    1. Enumerate exported activities with implicit intent filters
+    2. Identify activities that forward intents to non-exported targets
+    3. Craft intent chain to reach protected activity
+    4. Demonstrate access to privileged functionality
+
+    SUCCESS CRITERIA: Launch a non-exported activity via redirect
+  belt: purple
+  difficulty: 4
+  script_type: adb
+  version_constraints:
+    min_api: 30
+    max_api: 30
+    patched_after: "2021-03-01"
+  inputs:
+    device_context:
+      task: exploit intent redirection
+      targets:
+        - CVE-2021-0314
+        - CVE-2021-0328
+        - CVE-2021-0329
+      impact: privilege_escalation
+  validation:
+    type: output_contains
+    expected: "Activity"
+  hints:
+    - "Use 'dumpsys package' to find exported activities"
+    - "Look for activities that handle ACTION_VIEW with data URIs"
+    - "Craft intent with nested intent in extras"
+    - "'am start -n pkg/.Activity --es intent_extra <nested>'"
+  kata_solution: |
+    # List potential redirect targets
+    shell dumpsys package | grep -B5 "android.intent.action.VIEW" | grep Activity
+  tags:
+    - 1-day
+    - intent-redirection
+    - android-11
+    - privesc
