@@ -18,32 +18,50 @@ AgenticART creates **AI agents that can actually perform security assessments** 
 - Using **execution-verified feedback** (did the command actually work?)
 - Providing **structured progression** from beginner to advanced (belt system)
 
-### Value Proposition
+### Who Is This For?
 
-| For | Value |
-|-----|-------|
-| **AI Researchers** | High-quality training data for security-focused LLMs |
-| **Security Teams** | Foundation for automated vulnerability assessment |
-| **Red Teams** | AI-assisted Android penetration testing capabilities |
-| **Educators** | Structured, real-world security curriculum |
+AgenticART serves a specific audience:
 
-### Key Differentiators
+| Audience | Why AgenticART? |
+|----------|-----------------|
+| **AI Security Researchers** | Study whether curriculum-based training improves security task performance. Benchmark before/after fine-tuning to validate the belt progression hypothesis. |
+| **Air-Gapped Environments** | Organizations that cannot use cloud APIs (compliance, classification, regulatory). Train a local model once, deploy offline forever. |
+| **Cost-Conscious Teams** | Cloud API costs add up. A fine-tuned 7B model running locally is free after initial training. |
+
+### What Problem Does It Solve?
+
+**GPT-4o can already do Android security tasks. Why bother?**
+
+If you can use GPT-4o: Just use it. This framework won't beat frontier models.
+
+If you *can't* use cloud APIs, you need a local model. But local models (7B-13B) are worse at security tasks. AgenticART provides:
+
+1. **Execution-verified training data** - Not "GPT-4o said this might work" but "this command actually succeeded on a real device"
+2. **Curriculum structure** - Progressive difficulty that (hypothesis) accelerates skill acquisition
+3. **Benchmarking infrastructure** - Measure if your fine-tuned model actually improved
+
+### The Testable Hypothesis
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    What Makes AgenticART Different               │
+│                    Does Belt Progression Work?                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ❌ Traditional LLM Training    ✅ AgenticART Approach           │
-│  ─────────────────────────────  ─────────────────────────────── │
-│  • Static text datasets         • Execution-verified traces     │
-│  • Synthetic examples           • Real CVEs from NVD (118+)     │
-│  • No difficulty scaling        • 8-tier belt progression       │
-│  • Generic security knowledge   • Android-specific expertise    │
-│  • Cloud-dependent              • 100% offline capable          │
+│  1. Benchmark base model (e.g., Llama 3.1 8B) on all 192        │
+│     challenges. Record pass rate per belt.                       │
+│                                                                  │
+│  2. Fine-tune on execution-verified traces from White→Green      │
+│     belt challenges.                                             │
+│                                                                  │
+│  3. Re-benchmark. Compare pass rates.                            │
+│                                                                  │
+│  If pass rate improves: Belt progression validated.              │
+│  If no improvement: Approach needs revision.                     │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+This is research infrastructure, not a finished product.
 
 ---
 
@@ -356,12 +374,16 @@ What you should NOT expect:
 
 ## Research Goals
 
-AgenticART explores:
+AgenticART explores testable hypotheses:
 
-1. **Capability Transfer:** Can security skills be distilled from large models (70B) to smaller ones (7B)?
-2. **Execution-Verified Learning:** Does training on verified execution traces improve reliability?
-3. **Curriculum Learning:** Does progressive difficulty (belt system) accelerate skill acquisition?
-4. **Failure Analysis:** What patterns emerge in AI security task failures?
+| Hypothesis | How to Test | Status |
+|------------|-------------|--------|
+| **Capability Transfer** | Fine-tune 7B model on 70B teacher traces, compare performance | Untested |
+| **Execution Verification** | Compare models trained on verified vs unverified data | Untested |
+| **Curriculum Learning** | Benchmark before/after belt-progressive training | Untested |
+| **Failure Patterns** | Analyze error types across belt levels | Infrastructure exists |
+
+**This framework provides the infrastructure to test these hypotheses, not proven results.**
 
 ---
 
