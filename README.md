@@ -542,6 +542,22 @@ This framework is for **authorized security research only**. Use only on devices
 
 ---
 
+## Inspired By
+
+This project builds on research demonstrating that LLMs can automate Android security testing:
+
+> **Breaking Android with AI: A Deep Dive into LLM-Powered Exploitation**
+> Wanni Vidulige Ishan Perera, Xing Liu, Fan Liang, Junyi Zhang
+> arXiv:2509.07933
+> [https://arxiv.org/abs/2509.07933](https://arxiv.org/abs/2509.07933)
+
+The paper showed that LLMs can significantly streamline exploitation workflows when given proper guidance. AgenticART extends this by providing:
+- **Structured curriculum** instead of ad-hoc prompting
+- **Execution verification** to ensure commands actually work
+- **Training data pipeline** to improve models over time
+
+---
+
 ## Contact
 
 - **Repository:** [github.com/GitSolved/AgenticART](https://github.com/GitSolved/AgenticART)
