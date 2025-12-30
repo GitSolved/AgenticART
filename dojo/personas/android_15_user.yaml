@@ -1,0 +1,443 @@
+# Android 15 Power User Persona
+# =============================================================================
+# Simulates a power user on Android 15 (API 35) - "Vanilla Ice Cream"
+# Features: Private Space, partial screen sharing, predictive back
+# Inherits from: base_persona.yaml
+# =============================================================================
+
+name: "Android 15 Power User"
+description: |
+  A tech-savvy user on Android 15 with advanced privacy features enabled.
+  This persona reflects Android 15's enhanced security controls including
+  Private Space, screen sharing controls, and credential manager improvements.
+
+inherits: base_persona
+compatibility: android_15
+
+# =============================================================================
+# DEVICE IDENTITY
+# =============================================================================
+device:
+  android_version: "15"
+  api_level: 35
+  security_patch: "2025-06-01"
+
+  # Emulated as Pixel 9 (realistic for Android 15)
+  model: "Pixel 9"
+  manufacturer: "Google"
+  brand: "google"
+  product: "caiman"
+  hardware: "caiman"
+
+  fingerprint: "google/caiman/caiman:15/AP4A.250105.001/12589934:user/release-keys"
+
+  screen:
+    density: 420
+    resolution: "1080x2424"
+
+  # Android 15 specific features
+  features:
+    private_space: true              # Separate profile for sensitive apps
+    partial_screen_sharing: true     # Share only one app window
+    predictive_back: true            # New back gesture system
+    passkey_enhancements: true       # Improved passkey support
+    theft_detection_lock: true       # AI-powered theft detection
+    live_threat_detection: true      # Real-time app scanning
+    screen_recording_detection: true # Apps can detect recording
+
+# =============================================================================
+# INSTALLED APPS (2025 Popular Apps)
+# =============================================================================
+apps:
+  # Banking & Finance
+  banking:
+    - package: com.chase.sig.android
+      name: "Chase Mobile"
+      category: banking
+      has_login: true
+      uses_biometric: true
+      uses_passkey: true
+      sensitive_data: [credentials, transactions, account_info]
+
+    - package: com.venmo
+      name: "Venmo"
+      category: finance
+      has_login: true
+      uses_passkey: true
+
+    - package: com.robinhood.android
+      name: "Robinhood"
+      category: investing
+      has_login: true
+      uses_biometric: true
+      sensitive_data: [portfolio, transactions, tax_docs]
+
+    - package: com.coinbase.android
+      name: "Coinbase"
+      category: crypto
+      has_login: true
+      uses_biometric: true
+      uses_passkey: true
+      sensitive_data: [wallet_keys, transactions]
+
+    - package: com.revolut.revolut
+      name: "Revolut"
+      category: banking
+      has_login: true
+      uses_biometric: true
+
+  # Social Media (2025)
+  social:
+    - package: com.instagram.android
+      name: "Instagram"
+      has_login: true
+
+    - package: com.twitter.android
+      name: "X"
+      has_login: true
+
+    - package: com.zhiliaoapp.musically
+      name: "TikTok"
+      has_login: true
+
+    - package: com.threads.android
+      name: "Threads"
+      has_login: true
+
+    - package: com.discord
+      name: "Discord"
+      has_login: true
+      sensitive_data: [messages, servers, voice_data]
+
+    - package: com.bluesky.app
+      name: "Bluesky"
+      has_login: true
+
+  # Messaging
+  messaging:
+    - package: com.whatsapp
+      name: "WhatsApp"
+      has_login: true
+      encryption: "e2e"
+
+    - package: org.telegram.messenger
+      name: "Telegram"
+      has_login: true
+
+    - package: com.google.android.apps.messaging
+      name: "Google Messages"
+      system_app: true
+      rcs_enabled: true
+      encryption: "e2e"
+
+    - package: org.thoughtcrime.securesms
+      name: "Signal"
+      has_login: true
+      encryption: "e2e"
+
+  # Productivity & AI
+  productivity:
+    - package: com.google.android.gm
+      name: "Gmail"
+      has_login: true
+
+    - package: com.microsoft.teams
+      name: "Microsoft Teams"
+      has_login: true
+
+    - package: com.notion.id
+      name: "Notion"
+      has_login: true
+
+    - package: com.linear.app
+      name: "Linear"
+      has_login: true
+      sensitive_data: [work_issues, projects]
+
+  ai:
+    - package: com.openai.chatgpt
+      name: "ChatGPT"
+      has_login: true
+      sensitive_data: [chat_history, api_keys, voice_data]
+
+    - package: com.anthropic.claude
+      name: "Claude"
+      has_login: true
+      sensitive_data: [chat_history, projects]
+
+    - package: com.google.android.apps.bard
+      name: "Gemini"
+      has_login: true
+      system_integration: true
+
+  # Security & Auth (Modern)
+  security:
+    - package: com.google.android.apps.authenticator2
+      name: "Google Authenticator"
+      sensitive_data: [totp_secrets]
+
+    - package: com.onepassword.android
+      name: "1Password"
+      has_login: true
+      uses_passkey: true
+      sensitive_data: [all_passwords, secure_notes, cards]
+
+    - package: com.bitwarden.authenticator
+      name: "Bitwarden Authenticator"
+      sensitive_data: [totp_secrets]
+
+    - package: com.yubico.yubioath
+      name: "Yubico Authenticator"
+      sensitive_data: [hardware_totp]
+
+  # Private Space Apps (Hidden from main profile)
+  private_space:
+    - package: com.dating.app.example
+      name: "Dating App"
+      in_private_space: true
+      has_login: true
+
+    - package: com.health.sensitive
+      name: "Health Tracker"
+      in_private_space: true
+      sensitive_data: [health_records]
+
+# =============================================================================
+# USER DATA
+# =============================================================================
+user_data:
+  contacts:
+    count: 156
+    include_types:
+      - family: 18
+      - work: 55
+      - friends: 60
+      - services: 23
+
+    vip_contacts:
+      - name: "Mom"
+        phone: "+1-555-0101"
+        email: "mom@family.com"
+      - name: "Dad"
+        phone: "+1-555-0102"
+      - name: "Manager - Jordan Kim"
+        phone: "+1-555-0200"
+        email: "jkim@startup.io"
+        organization: "TechStartup"
+      - name: "CTO - Rachel Chen"
+        phone: "+1-555-0201"
+        email: "rchen@startup.io"
+      - name: "Financial Advisor"
+        phone: "+1-555-0350"
+        email: "advisor@wealth.com"
+      - name: "Tax Accountant"
+        phone: "+1-555-0400"
+        email: "cpa@accounting.com"
+
+  sms:
+    count: 425
+    categories:
+      normal: 280
+      notifications: 95
+      sensitive: 50
+
+    required_sensitive:
+      # Banking
+      - sender: "+1-800-935-9935"
+        body: "Chase Alert: $3,200.00 wire transfer initiated. Ref: 847291. If not you, call immediately."
+      - sender: "737474"
+        body: "Cash App: You sent $750 to $CryptoTrader. Tap to view receipt."
+
+      # 2FA
+      - sender: "GOOGLE"
+        body: "G-847291 is your Google verification code. Don't share this code."
+      - sender: "22000"
+        body: "Your Coinbase verification code is 583920. Expires in 10 minutes."
+      - sender: "1Password"
+        body: "Your 1Password emergency access code is 492817. Valid for 24 hours."
+
+      # Work
+      - sender: "+1-555-0200"
+        body: "Investor meeting tomorrow. Deck password: StartupQ12025! Don't share."
+      - sender: "+1-555-0201"
+        body: "AWS credentials for staging: AKIA847291EXAMPLE / SuperSecret2025!"
+
+      # Crypto
+      - sender: "Coinbase"
+        body: "Your ETH withdrawal of 2.5 ETH to wallet 0x71C7... is confirmed"
+
+      # AI Services
+      - sender: "OpenAI"
+        body: "Your API usage this month: $127.45. View details at platform.openai.com"
+
+  call_log:
+    count: 312
+    include_missed: 45
+    include_voicemail: 18
+
+  files:
+    photos:
+      count: 687
+      include_screenshots: 85  # Often contain sensitive info
+      include_selfies: 150
+
+    documents:
+      required:
+        - path: "/sdcard/Documents/Tax_Return_2024.pdf"
+          size: "4.2MB"
+        - path: "/sdcard/Documents/Medical_Records.pdf"
+          size: "1.8MB"
+        - path: "/sdcard/Documents/Employment_Contract_2025.pdf"
+          size: "1.1MB"
+        - path: "/sdcard/Download/Crypto_Wallet_Backup.pdf"
+          content: |
+            WALLET RECOVERY PHRASE - TOP SECRET
+            abandon ability able about above absent
+            absorb abstract absurd abuse access accident
+
+            ETH Wallet: 0x71C7656EC7ab88b098defB751B7401B5f6d8976F
+            BTC Wallet: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+
+            NEVER SHARE THIS WITH ANYONE
+        - path: "/sdcard/Documents/passwords_backup.txt"
+          content: |
+            Personal Passwords Backup - January 2025
+            =========================================
+            Netflix: StreamLife2025!
+            Home WiFi: FamilyNetwork#2025
+            Work VPN: StartupSecure@2025
+            AWS Console: admin@startup.io / CloudAdmin2025!
+            1Password Master: MyVaultMaster#2025!
+            Coinbase: crypto@proton.me / Blockchain2025!
+            OpenAI API: sk-proj-ABC123...XYZ789
+            Anthropic API: sk-ant-ABC123...XYZ789
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_bank_balance.png"
+          notes: "Screenshot showing $47,250 account balance"
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_2fa_codes.png"
+          notes: "Screenshot of authenticator app with multiple accounts"
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_crypto_portfolio.png"
+          notes: "Screenshot showing crypto holdings"
+
+  browser:
+    history_entries: 450
+    required_sites:
+      - url: "https://secure.chase.com"
+        title: "Chase Online Banking"
+        visits: 89
+      - url: "https://www.coinbase.com/portfolio"
+        title: "Coinbase Portfolio"
+        visits: 112
+      - url: "https://console.aws.amazon.com"
+        title: "AWS Console"
+        visits: 67
+      - url: "https://platform.openai.com"
+        title: "OpenAI Platform"
+        visits: 45
+      - url: "https://my.1password.com"
+        title: "1Password"
+        visits: 38
+
+    cookies:
+      persist_sessions: true
+      sites:
+        - domain: ".chase.com"
+        - domain: ".coinbase.com"
+        - domain: ".aws.amazon.com"
+        - domain: ".google.com"
+        - domain: ".openai.com"
+
+  wifi:
+    networks:
+      - ssid: "HomeNetwork_6E"
+        security: "WPA3"
+        password: "FamilyNetwork#2025!"
+      - ssid: "StartupHQ-Secure"
+        security: "WPA3-Enterprise"
+        identity: "jkim"
+      - ssid: "iPhone (Jordan)"
+        security: "WPA3"
+        password: "hotspot2025"
+      - ssid: "Marriott_Bonvoy"
+        security: "OPEN"
+      - ssid: "WeWork-Premium"
+        security: "WPA3"
+
+  clipboard:
+    history:
+      - "sk-proj-ABC123exampleAPIkey789XYZ"
+      - "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+      - "Meeting ID: 847 2910 4856, Passcode: Investor2025"
+      - "SSN: 123-45-6789"
+
+# =============================================================================
+# ANDROID 15 SECURITY
+# =============================================================================
+security:
+  lock_screen:
+    type: "pattern"
+    timeout_seconds: 30
+
+  biometrics:
+    fingerprint: true
+    face: true  # Under-display face unlock
+
+  # Android 15 specific security
+  private_space:
+    enabled: true
+    locked: true
+    apps_count: 2
+
+  theft_protection:
+    enabled: true
+    offline_device_lock: true
+    theft_detection_lock: true
+    remote_lock: true
+
+  # Android 15 permissions
+  permissions:
+    # Partial media access (more granular in Android 15)
+    media_access: "selected"
+
+    notification_access:
+      - com.whatsapp
+      - com.google.android.apps.messaging
+
+    granted:
+      com.whatsapp:
+        - READ_CONTACTS
+        - READ_SMS
+        - CAMERA
+        - RECORD_AUDIO
+        - ACCESS_FINE_LOCATION
+        - READ_MEDIA_IMAGES
+        - READ_MEDIA_VIDEO
+      com.coinbase.android:
+        - CAMERA
+        - USE_BIOMETRIC
+        - POST_NOTIFICATIONS
+
+  # Credential Manager (Android 15 enhancements)
+  credential_manager:
+    passkeys_enabled: true
+    autofill_service: "com.onepassword.android"
+    single_tap_login: true
+
+# =============================================================================
+# CHALLENGE VALIDATION
+# =============================================================================
+validation:
+  min_contacts: 100
+  min_sms: 200
+  min_apps: 25
+  required_apps:
+    - com.whatsapp
+    - com.chase.sig.android
+    - com.coinbase.android
+    - com.onepassword.android
+    - com.openai.chatgpt
+  required_files:
+    - /sdcard/Documents/passwords_backup.txt
+    - /sdcard/Download/Crypto_Wallet_Backup.pdf

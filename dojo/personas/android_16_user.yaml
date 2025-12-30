@@ -1,0 +1,518 @@
+# Android 16 Early Adopter Persona
+# =============================================================================
+# Simulates an early adopter on Android 16 (API 36) - "Baklava"
+# Features: Desktop windowing, satellite SOS, AI notifications, app archiving
+# Inherits from: base_persona.yaml
+# =============================================================================
+
+name: "Android 16 Early Adopter"
+description: |
+  An early adopter running Android 16 with cutting-edge features enabled.
+  This persona represents users on the latest stable Android release with
+  desktop windowing, satellite connectivity, and advanced AI integrations.
+
+inherits: base_persona
+compatibility: android_16
+
+# =============================================================================
+# DEVICE IDENTITY
+# =============================================================================
+device:
+  android_version: "16"
+  api_level: 36
+  security_patch: "2025-09-01"
+
+  # Emulated as Pixel 10 (expected flagship for Android 16)
+  model: "Pixel 10"
+  manufacturer: "Google"
+  brand: "google"
+  product: "komodo"
+  hardware: "komodo"
+
+  fingerprint: "google/komodo/komodo:16/BP1A.250801.001/13000000:user/release-keys"
+
+  screen:
+    density: 480
+    resolution: "1344x2992"
+
+  # Android 16 specific features
+  features:
+    desktop_windowing: true           # Freeform windows on large screens
+    satellite_sos: true               # Emergency satellite messaging
+    ai_notification_summary: true     # AI-powered notification grouping
+    app_archiving: true               # Auto-archive unused apps
+    live_updates: true                # Richer notification updates
+    photo_picker_v2: true             # Enhanced media picker
+    health_connect_ai: true           # AI health insights
+    predictive_back_v2: true          # Enhanced back gesture
+    adaptive_timeout: true            # AI-managed screen timeout
+    advanced_passkeys: true           # Cross-device passkey sync
+
+# =============================================================================
+# INSTALLED APPS (2025-2026 Cutting Edge)
+# =============================================================================
+apps:
+  # Banking & Finance (Latest versions)
+  banking:
+    - package: com.chase.sig.android
+      name: "Chase Mobile"
+      category: banking
+      has_login: true
+      uses_biometric: true
+      uses_passkey: true
+      sensitive_data: [credentials, transactions, account_info]
+
+    - package: com.venmo
+      name: "Venmo"
+      category: finance
+      has_login: true
+      uses_passkey: true
+
+    - package: com.robinhood.android
+      name: "Robinhood"
+      category: investing
+      has_login: true
+      uses_biometric: true
+      sensitive_data: [portfolio, transactions, tax_docs]
+
+    - package: com.coinbase.android
+      name: "Coinbase"
+      category: crypto
+      has_login: true
+      uses_biometric: true
+      uses_passkey: true
+      sensitive_data: [wallet_keys, transactions]
+
+    - package: com.revolut.revolut
+      name: "Revolut"
+      category: banking
+      has_login: true
+      uses_biometric: true
+
+    - package: com.stripe.android.link
+      name: "Link by Stripe"
+      category: payments
+      has_login: true
+      uses_passkey: true
+
+  # Social Media (2025-2026)
+  social:
+    - package: com.instagram.android
+      name: "Instagram"
+      has_login: true
+
+    - package: com.twitter.android
+      name: "X"
+      has_login: true
+
+    - package: com.zhiliaoapp.musically
+      name: "TikTok"
+      has_login: true
+
+    - package: com.threads.android
+      name: "Threads"
+      has_login: true
+
+    - package: com.discord
+      name: "Discord"
+      has_login: true
+      sensitive_data: [messages, servers, voice_data]
+
+    - package: com.bluesky.app
+      name: "Bluesky"
+      has_login: true
+
+    - package: com.mastodon.android
+      name: "Mastodon"
+      has_login: true
+
+  # Messaging
+  messaging:
+    - package: com.whatsapp
+      name: "WhatsApp"
+      has_login: true
+      encryption: "e2e"
+
+    - package: org.telegram.messenger
+      name: "Telegram"
+      has_login: true
+
+    - package: com.google.android.apps.messaging
+      name: "Google Messages"
+      system_app: true
+      rcs_enabled: true
+      encryption: "e2e"
+      satellite_capable: true  # Android 16 satellite SOS
+
+    - package: org.thoughtcrime.securesms
+      name: "Signal"
+      has_login: true
+      encryption: "e2e"
+
+  # AI Assistants (Central to Android 16)
+  ai:
+    - package: com.google.android.apps.bard
+      name: "Gemini"
+      has_login: true
+      system_integration: true
+      device_control: true  # Android 16 deep integration
+      sensitive_data: [chat_history, device_context, photos_analyzed]
+
+    - package: com.openai.chatgpt
+      name: "ChatGPT"
+      has_login: true
+      sensitive_data: [chat_history, api_keys, voice_data]
+
+    - package: com.anthropic.claude
+      name: "Claude"
+      has_login: true
+      sensitive_data: [chat_history, projects]
+
+    - package: com.perplexity.android
+      name: "Perplexity"
+      has_login: true
+      sensitive_data: [search_history]
+
+    - package: com.microsoft.copilot
+      name: "Microsoft Copilot"
+      has_login: true
+      sensitive_data: [chat_history, documents]
+
+  # Productivity
+  productivity:
+    - package: com.google.android.gm
+      name: "Gmail"
+      has_login: true
+      ai_features: true  # Smart compose, summaries
+
+    - package: com.microsoft.teams
+      name: "Microsoft Teams"
+      has_login: true
+
+    - package: com.notion.id
+      name: "Notion"
+      has_login: true
+      ai_features: true
+
+    - package: com.linear.app
+      name: "Linear"
+      has_login: true
+      sensitive_data: [work_issues, projects]
+
+    - package: com.github.android
+      name: "GitHub"
+      has_login: true
+      uses_passkey: true
+      sensitive_data: [repos, tokens, code]
+
+  # Security & Auth (Modern 2026)
+  security:
+    - package: com.google.android.apps.authenticator2
+      name: "Google Authenticator"
+      sensitive_data: [totp_secrets]
+      cloud_backup: true
+
+    - package: com.onepassword.android
+      name: "1Password"
+      has_login: true
+      uses_passkey: true
+      sensitive_data: [all_passwords, secure_notes, cards]
+
+    - package: com.bitwarden.authenticator
+      name: "Bitwarden Authenticator"
+      sensitive_data: [totp_secrets]
+
+    - package: com.yubico.yubioath
+      name: "Yubico Authenticator"
+      sensitive_data: [hardware_totp]
+
+    - package: com.google.android.apps.passkeys
+      name: "Google Passkeys"
+      system_app: true
+      sensitive_data: [passkey_credentials]
+
+  # Health (Android 16 Health Connect AI)
+  health:
+    - package: com.google.android.apps.healthdata
+      name: "Health Connect"
+      system_app: true
+      ai_insights: true
+      sensitive_data: [health_records, fitness_data, sleep_data]
+
+    - package: com.fitbit.FitbitMobile
+      name: "Fitbit"
+      has_login: true
+      sensitive_data: [health_data, location_history]
+
+# =============================================================================
+# USER DATA
+# =============================================================================
+user_data:
+  contacts:
+    count: 203
+    include_types:
+      - family: 22
+      - work: 78
+      - friends: 75
+      - services: 28
+
+    vip_contacts:
+      - name: "Mom"
+        phone: "+1-555-0101"
+        email: "mom@family.com"
+      - name: "Dad"
+        phone: "+1-555-0102"
+      - name: "Manager - Jordan Kim"
+        phone: "+1-555-0200"
+        email: "jkim@startup.io"
+        organization: "TechStartup"
+      - name: "CTO - Rachel Chen"
+        phone: "+1-555-0201"
+        email: "rchen@startup.io"
+      - name: "Financial Advisor"
+        phone: "+1-555-0350"
+        email: "advisor@wealth.com"
+      - name: "Emergency Contact - Sarah"
+        phone: "+1-555-0999"
+        emergency: true
+
+  sms:
+    count: 512
+    categories:
+      normal: 340
+      notifications: 110
+      sensitive: 62
+
+    required_sensitive:
+      # Banking
+      - sender: "+1-800-935-9935"
+        body: "Chase Alert: $5,500.00 wire transfer initiated. Ref: 934821. If not you, call immediately."
+      - sender: "737474"
+        body: "Cash App: You sent $1,200 to $CryptoDealer. Tap to view receipt."
+
+      # 2FA
+      - sender: "GOOGLE"
+        body: "G-934821 is your Google verification code. Don't share this code."
+      - sender: "22000"
+        body: "Your Coinbase verification code is 847291. Expires in 10 minutes."
+      - sender: "1Password"
+        body: "Your 1Password emergency access code is 582910. Valid for 24 hours."
+      - sender: "GitHub"
+        body: "Your GitHub verification code is 847291. Valid for 10 minutes."
+
+      # Work
+      - sender: "+1-555-0200"
+        body: "Series B deck password: VentureQ42025! Board meeting Monday."
+      - sender: "+1-555-0201"
+        body: "Production DB creds: PROD_USER / ProductionSecret2026! Rotate monthly."
+
+      # Crypto
+      - sender: "Coinbase"
+        body: "Your BTC withdrawal of 0.75 BTC to wallet bc1q8x... is confirmed"
+
+      # AI Services
+      - sender: "OpenAI"
+        body: "Your API usage this month: $342.18. GPT-4 Turbo usage spike detected."
+      - sender: "Anthropic"
+        body: "Claude API key sk-ant-... will expire in 7 days. Renew at console.anthropic.com"
+
+  call_log:
+    count: 387
+    include_missed: 52
+    include_voicemail: 24
+
+  files:
+    photos:
+      count: 892
+      include_screenshots: 112
+      include_selfies: 180
+      ai_analyzed: true  # Gemini photo analysis
+
+    documents:
+      required:
+        - path: "/sdcard/Documents/Tax_Return_2025.pdf"
+          size: "4.8MB"
+        - path: "/sdcard/Documents/Medical_Records_2025.pdf"
+          size: "2.1MB"
+        - path: "/sdcard/Documents/Employment_Contract_2026.pdf"
+          size: "1.3MB"
+        - path: "/sdcard/Download/Crypto_Wallet_Backup_v2.pdf"
+          content: |
+            MULTI-CHAIN WALLET RECOVERY - TOP SECRET
+            ==========================================
+
+            BIP-39 Seed Phrase:
+            abandon ability able about above absent
+            absorb abstract absurd abuse access accident
+
+            ETH Wallet: 0x8Fc7E6A8b9C3D2e1F0a5B4c7D8E9f0A1b2C3d4E5
+            BTC Wallet: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+            SOL Wallet: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+
+            Hardware Wallet PIN: 847291
+
+            NEVER SHARE THIS WITH ANYONE
+
+        - path: "/sdcard/Documents/passwords_backup_2026.txt"
+          content: |
+            Personal Passwords Backup - January 2026
+            =========================================
+            Netflix: StreamLife2026!
+            Home WiFi: FamilyNetwork#2026
+            Work VPN: StartupSecure@2026
+            AWS Console: admin@startup.io / CloudAdmin2026!
+            1Password Master: MyVaultMaster#2026!
+            Coinbase: crypto@proton.me / Blockchain2026!
+            OpenAI API: sk-proj-NewKey2026ABC123XYZ789
+            Anthropic API: sk-ant-NewKey2026ABC123XYZ789
+            GitHub PAT: ghp_2026PersonalAccessToken123456789
+            Stripe Secret: FAKE_sk_test_ExampleKey123456
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_bank_balance_2026.png"
+          notes: "Screenshot showing $78,450 account balance"
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_crypto_portfolio_2026.png"
+          notes: "Screenshot showing crypto holdings worth $45,000"
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_gemini_conversation.png"
+          notes: "AI conversation containing personal schedule and preferences"
+
+  browser:
+    history_entries: 580
+    required_sites:
+      - url: "https://secure.chase.com"
+        title: "Chase Online Banking"
+        visits: 102
+      - url: "https://www.coinbase.com/portfolio"
+        title: "Coinbase Portfolio"
+        visits: 134
+      - url: "https://console.aws.amazon.com"
+        title: "AWS Console"
+        visits: 89
+      - url: "https://platform.openai.com"
+        title: "OpenAI Platform"
+        visits: 67
+      - url: "https://console.anthropic.com"
+        title: "Anthropic Console"
+        visits: 45
+      - url: "https://github.com"
+        title: "GitHub"
+        visits: 234
+
+    cookies:
+      persist_sessions: true
+      sites:
+        - domain: ".chase.com"
+        - domain: ".coinbase.com"
+        - domain: ".aws.amazon.com"
+        - domain: ".google.com"
+        - domain: ".openai.com"
+        - domain: ".anthropic.com"
+        - domain: ".github.com"
+
+  wifi:
+    networks:
+      - ssid: "HomeNetwork_7E"
+        security: "WPA3"
+        password: "FamilyNetwork#2026!"
+      - ssid: "StartupHQ-Premium"
+        security: "WPA3-Enterprise"
+        identity: "jkim"
+      - ssid: "iPhone (Jordan)"
+        security: "WPA3"
+        password: "hotspot2026"
+      - ssid: "Marriott_Bonvoy_Plus"
+        security: "OPEN"
+      - ssid: "WeWork-Elite"
+        security: "WPA3"
+
+  clipboard:
+    history:
+      - "sk-proj-2026NewAPIkeyABC123XYZ789"
+      - "0x8Fc7E6A8b9C3D2e1F0a5B4c7D8E9f0A1b2C3d4E5"
+      - "Meeting ID: 934 8210 5678, Passcode: BoardMeeting2026"
+      - "SSN: 123-45-6789"
+      - "ghp_2026PersonalAccessToken123456789"
+
+# =============================================================================
+# ANDROID 16 SECURITY
+# =============================================================================
+security:
+  lock_screen:
+    type: "pattern"
+    timeout_seconds: 30
+    adaptive_timeout: true  # AI manages timeout based on context
+
+  biometrics:
+    fingerprint: true
+    face: true
+    under_display: true
+
+  # Android 16 specific security
+  satellite_sos:
+    enabled: true
+    emergency_contacts:
+      - "+1-555-0999"
+
+  app_archiving:
+    enabled: true
+    archived_apps: 12  # Auto-archived unused apps
+
+  ai_security:
+    notification_scanning: true  # AI scans for phishing
+    smart_permissions: true  # AI recommends permission changes
+
+  # Android 16 permissions (stricter)
+  permissions:
+    media_access: "selected"  # Photo picker v2 default
+
+    notification_access:
+      - com.whatsapp
+      - com.google.android.apps.messaging
+
+    granted:
+      com.whatsapp:
+        - READ_CONTACTS
+        - READ_SMS
+        - CAMERA
+        - RECORD_AUDIO
+        - ACCESS_FINE_LOCATION
+        - READ_MEDIA_IMAGES
+        - READ_MEDIA_VIDEO
+      com.coinbase.android:
+        - CAMERA
+        - USE_BIOMETRIC
+        - POST_NOTIFICATIONS
+      com.google.android.apps.bard:
+        - CAMERA
+        - RECORD_AUDIO
+        - READ_CONTACTS
+        - READ_CALENDAR
+        - ACCESS_FINE_LOCATION
+        - READ_MEDIA_IMAGES
+
+  # Credential Manager (Android 16 enhancements)
+  credential_manager:
+    passkeys_enabled: true
+    cross_device_sync: true  # Sync passkeys across devices
+    autofill_service: "com.onepassword.android"
+    single_tap_login: true
+
+# =============================================================================
+# CHALLENGE VALIDATION
+# =============================================================================
+validation:
+  min_contacts: 150
+  min_sms: 300
+  min_apps: 30
+  required_apps:
+    - com.whatsapp
+    - com.chase.sig.android
+    - com.coinbase.android
+    - com.onepassword.android
+    - com.openai.chatgpt
+    - com.anthropic.claude
+    - com.google.android.apps.bard
+  required_files:
+    - /sdcard/Documents/passwords_backup_2026.txt
+    - /sdcard/Download/Crypto_Wallet_Backup_v2.pdf

@@ -254,8 +254,10 @@ class ScoringRubric:
 class Compatibility(Enum):
     """Android version compatibility for challenges."""
 
-    ANDROID_11 = "android_11"  # Only runs on Android 11
-    ANDROID_14 = "android_14"  # Only runs on Android 14
+    ANDROID_11 = "android_11"  # Only runs on Android 11 (API 30)
+    ANDROID_14 = "android_14"  # Only runs on Android 14 (API 34)
+    ANDROID_15 = "android_15"  # Only runs on Android 15 (API 35)
+    ANDROID_16 = "android_16"  # Only runs on Android 16 (API 36)
     UNIVERSAL = "universal"  # Runs on any Android version
 
     @classmethod
@@ -272,9 +274,13 @@ class Compatibility(Enum):
         if self == Compatibility.UNIVERSAL:
             return True
         elif self == Compatibility.ANDROID_11:
-            return 29 <= api_level <= 30  # Android 10-11
+            return api_level == 30  # Android 11 only
         elif self == Compatibility.ANDROID_14:
-            return api_level >= 34  # Android 14+
+            return api_level == 34  # Android 14 only
+        elif self == Compatibility.ANDROID_15:
+            return api_level == 35  # Android 15 only
+        elif self == Compatibility.ANDROID_16:
+            return api_level == 36  # Android 16 only
         return False
 
 
