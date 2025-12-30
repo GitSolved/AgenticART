@@ -9,6 +9,11 @@
 # Leads to: Purple Belt (1-day exploitation)
 # =============================================================================
 #
+# COMPATIBILITY:
+#   android_11  - Runs ONLY on Android 11
+#   android_14  - Runs ONLY on Android 14
+#   universal   - Runs on ANY Android version (technique-based, not OS-specific)
+#
 # EXPLOITATION COMPLEXITY RATING
 # =============================================================================
 # Each challenge includes an exploitation_complexity block that rates how
@@ -22,6 +27,7 @@
 #
 # Note: Brown Belt challenges are technique-based (not CVE-based), so they
 # don't have CVSS scores. Complexity determines placement in Brown Belt.
+# Most Brown Belt challenges are UNIVERSAL as techniques work across versions.
 # =============================================================================
 
 device_requirements:
@@ -52,6 +58,7 @@ challenges:
 
 - id: brown_001
   name: "OkHttp Certificate Pinning Bypass"
+  compatibility: universal  # Technique works on all Android versions
   description: |
     The target app (com.agentic.sslpinned) uses OkHttp's CertificatePinner
     to pin its SSL certificates. Write a Frida script that bypasses this
@@ -102,6 +109,7 @@ challenges:
 
 - id: brown_002
   name: "TrustManager Universal Bypass"
+  compatibility: universal  # Technique works on all Android versions
   description: |
     Write a Frida script that implements a universal SSL bypass by
     replacing the system TrustManager with one that accepts all certificates.
@@ -165,6 +173,7 @@ challenges:
     - android-11
 
 - id: brown_003
+  compatibility: universal  # Technique works on all Android versions
   name: "Native SSL Pinning Bypass (BoringSSL)"
   description: |
     Some apps implement SSL pinning at the native level using BoringSSL
@@ -222,6 +231,7 @@ challenges:
 # =============================================================================
 
 - id: brown_004
+  compatibility: universal  # Technique works on all Android versions
   name: "Multi-Layer Root Detection Bypass"
   description: |
     The target app (com.agentic.fortified) implements multiple root
@@ -297,6 +307,7 @@ challenges:
     - android-11
 
 - id: brown_005
+  compatibility: universal  # Technique works on all Android versions
   name: "Frida Detection Bypass"
   description: |
     The app actively detects Frida by:
@@ -360,6 +371,7 @@ challenges:
     - android-11
 
 - id: brown_006
+  compatibility: universal  # Technique works on all Android versions
   name: "Emulator Detection Bypass"
   description: |
     The app detects emulator environments by checking:
@@ -423,6 +435,7 @@ challenges:
 # =============================================================================
 
 - id: brown_007
+  compatibility: universal  # Technique works on all Android versions
   name: "AES Key Extraction at Runtime"
   description: |
     The app (com.agentic.cryptovault) encrypts sensitive data using AES.
@@ -482,6 +495,7 @@ challenges:
     - android-11
 
 - id: brown_008
+  compatibility: universal  # Technique works on all Android versions
   name: "RSA Signature Capture"
   description: |
     The app stores an RSA private key in the Android Keystore and uses
@@ -547,6 +561,7 @@ challenges:
     - android-11
 
 - id: brown_009
+  compatibility: universal  # Technique works on all Android versions
   name: "Keystore Enumeration"
   description: |
     Enumerate all keys stored in the Android Keystore for the target
@@ -614,6 +629,7 @@ challenges:
 # =============================================================================
 
 - id: brown_010
+  compatibility: universal  # Technique works on all Android versions
   name: "JNI Function Hooking"
   description: |
     The app uses a native library (libnative-lib.so) with a JNI function
@@ -678,6 +694,7 @@ challenges:
     - android-11
 
 - id: brown_011
+  compatibility: universal  # Technique works on all Android versions
   name: "Native Function Tracing"
   description: |
     Trace all function calls within a native library to understand its
@@ -739,6 +756,7 @@ challenges:
     - android-11
 
 - id: brown_012
+  compatibility: universal  # Technique works on all Android versions
   name: "Memory String Search"
   description: |
     Search the process memory for sensitive strings like API keys,
@@ -800,6 +818,7 @@ challenges:
 # =============================================================================
 
 - id: brown_013
+  compatibility: universal  # Technique works on all Android versions
   name: "HTTP Traffic Logger"
   description: |
     Hook the app's HTTP client to log all requests and responses,
@@ -855,6 +874,7 @@ challenges:
     - android-11
 
 - id: brown_014
+  compatibility: universal  # Technique works on all Android versions
   name: "Request Modification Attack"
   description: |
     Modify HTTP requests in-flight to change parameters, headers,

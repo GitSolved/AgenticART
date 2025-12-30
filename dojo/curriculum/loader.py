@@ -12,6 +12,7 @@ from dojo.models import (
     Belt,
     Challenge,
     ChallengeInput,
+    Compatibility,
     ExpectedOutput,
     ScoringRubric,
     ScriptType,
@@ -89,6 +90,10 @@ class ChallengeLoader:
                 achieves_objective=scoring_data.get("achieves_objective", 20),
             )
 
+            # Parse compatibility
+            compat_str = data.get("compatibility", "universal")
+            compatibility = Compatibility.from_string(compat_str)
+
             return Challenge(
                 id=data["id"],
                 name=data["name"],
@@ -101,6 +106,7 @@ class ChallengeLoader:
                 kata_solution=data.get("kata_solution"),
                 hints=data.get("hints", []),
                 tags=data.get("tags", []),
+                compatibility=compatibility,
             )
 
         except KeyError as e:
@@ -220,3 +226,40 @@ class ChallengeLoader:
     def clear_cache(self) -> None:
         """Clear the challenge cache."""
         self._cache.clear()
+
+    def load_belt_for_device(
+        self, belt: Belt, api_level: int
+    ) -> list[Challenge]:
+        """
+        Load challenges for a belt filtered by device compatibility.
+
+        Args:
+            belt: The belt level to load challenges for.
+            api_level: The Android API level of the target device.
+
+        Returns:
+            List of Challenge objects compatible with the device.
+        """
+        all_challenges = self.load_belt(belt)
+        return [
+            c for c in all_challenges
+            if c.compatibility.is_compatible_with_api(api_level)
+        ]
+
+    def filter_by_compatibility(
+        self, challenges: list[Challenge], api_level: int
+    ) -> list[Challenge]:
+        """
+        Filter a list of challenges by device compatibility.
+
+        Args:
+            challenges: List of challenges to filter.
+            api_level: The Android API level of the target device.
+
+        Returns:
+            Filtered list of compatible challenges.
+        """
+        return [
+            c for c in challenges
+            if c.compatibility.is_compatible_with_api(api_level)
+        ]

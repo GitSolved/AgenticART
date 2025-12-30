@@ -251,6 +251,33 @@ class ScoringRubric:
         return score
 
 
+class Compatibility(Enum):
+    """Android version compatibility for challenges."""
+
+    ANDROID_11 = "android_11"  # Only runs on Android 11
+    ANDROID_14 = "android_14"  # Only runs on Android 14
+    UNIVERSAL = "universal"  # Runs on any Android version
+
+    @classmethod
+    def from_string(cls, value: str) -> "Compatibility":
+        """Create Compatibility from string value."""
+        try:
+            return cls(value.lower())
+        except ValueError:
+            # Default to universal if not specified
+            return cls.UNIVERSAL
+
+    def is_compatible_with_api(self, api_level: int) -> bool:
+        """Check if this compatibility setting works with given API level."""
+        if self == Compatibility.UNIVERSAL:
+            return True
+        elif self == Compatibility.ANDROID_11:
+            return 29 <= api_level <= 30  # Android 10-11
+        elif self == Compatibility.ANDROID_14:
+            return api_level >= 34  # Android 14+
+        return False
+
+
 @dataclass
 class Challenge:
     """A single dojo challenge for the model to attempt."""
@@ -268,6 +295,7 @@ class Challenge:
     kata_solution: Optional[str] = None  # Golden example if available
     hints: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    compatibility: Compatibility = Compatibility.UNIVERSAL  # Android version compatibility
 
     def to_prompt(self) -> str:
         """Generate the challenge prompt for the model."""

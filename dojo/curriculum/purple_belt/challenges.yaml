@@ -3,10 +3,14 @@
 # Purpose: 1-Day Vulnerability Exploitation
 # Focus: Execute real CVEs with public POCs against target device
 # =============================================================================
-# Target: Android 11 (API 30) on Genymotion
 # Prerequisite: Brown Belt (app security/pentesting skills)
 # Leads to: Black Belt (vulnerability discovery)
 # =============================================================================
+#
+# COMPATIBILITY:
+#   android_11  - Runs ONLY on Android 11 (patched in 12+)
+#   android_14  - Runs ONLY on Android 14
+#   universal   - Runs on ANY Android version (library/app vuln, not OS)
 #
 # COMPLEXITY RATING (determines belt, NOT cvss):
 #   1 - trivial:  Single command, no special knowledge
@@ -19,14 +23,6 @@
 # not exploitation difficulty. A CVSS 10.0 can be trivial to exploit.
 # =============================================================================
 
-device_requirements:
-  target_android: 11
-  target_api: 30
-  security_patch_level: "2021-01-01"
-  notes: |
-    For meaningful 1-day testing, the device should NOT have the latest
-    security patches. Use a Genymotion image with older patch level.
-
 challenges:
 
 # =============================================================================
@@ -35,6 +31,7 @@ challenges:
 
 - id: purple_001
   name: "1-Day: CVE-2021-0313 - SystemUI DoS"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2021-0313: Denial of Service in System UI via malformed notification.
 
@@ -110,6 +107,7 @@ challenges:
 
 - id: purple_002
   name: "1-Day: CVE-2021-0327 - AccountManager Bypass"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2021-0327: Authentication bypass in AccountManager.
 
@@ -180,6 +178,7 @@ challenges:
 
 - id: purple_003
   name: "1-Day: CVE-2021-0391 - Bluetooth Info Leak"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2021-0391: Information disclosure in Bluetooth stack.
 
@@ -252,6 +251,7 @@ challenges:
 
 - id: purple_004
   name: "1-Day: CVE-2021-0397 - Media Framework RCE"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2021-0397: Remote Code Execution in Media Framework.
 
@@ -329,6 +329,7 @@ challenges:
 
 - id: purple_005
   name: "1-Day: CVE-2021-0437 - Settings Provider SQLi"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2021-0437: SQL Injection in Settings Provider.
 
@@ -404,6 +405,7 @@ challenges:
 
 - id: purple_006
   name: "1-Day: Intent Redirection (CVE-2021-0314/0328/0329)"
+  compatibility: android_11  # Patched in Android 12
   description: |
     Multiple Android 11 CVEs involve intent redirection:
     - CVE-2021-0314: Settings intent redirect
@@ -484,6 +486,7 @@ challenges:
 
 - id: purple_007
   name: "1-Day: CVE-2020-0471 - Bluetooth SMP Bypass"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2020-0471: Bluetooth pairing bypass via SMP flaw.
 
@@ -560,6 +563,7 @@ challenges:
 
 - id: purple_008
   name: "1-Day: CVE-2021-0341 - OkHttp Hostname Bypass"
+  compatibility: universal  # Depends on OkHttp library version, not Android OS
   description: |
     CVE-2021-0341: Certificate hostname verification bypass in OkHttp.
 
@@ -644,6 +648,7 @@ challenges:
 
 - id: purple_009
   name: "1-Day: CVE-2020-0423 - Binder Use-After-Free"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2020-0423: Use-after-free in Binder driver.
 
@@ -718,6 +723,7 @@ challenges:
 
 - id: purple_010
   name: "1-Day: CVE-2021-0399 - Framework Privilege Escalation"
+  compatibility: android_11  # Patched in Android 12
   description: |
     CVE-2021-0399: Privilege escalation in Android Framework.
 
