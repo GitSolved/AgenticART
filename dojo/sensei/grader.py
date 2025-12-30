@@ -8,9 +8,11 @@ from typing import Optional
 
 from dojo.curriculum import ChallengeSession
 from dojo.models import (
+    Belt,
     Challenge,
     ExecutionMode,
     Grade,
+    ScoringRubric,
     ScriptType,
     SenseiAssessment,
 )
@@ -87,14 +89,65 @@ class Grader:
         r"exploitable",
     ]
 
-    def __init__(self, attempt_penalty: int = 5):
+    # Belt-scaled rubric weights
+    # Lower belts: More forgiving, focus on execution (learning to run commands)
+    # Higher belts: Stricter on syntax/API precision (security-critical code)
+    #
+    # Format: {belt: (syntax, api, execution, objective)}
+    BELT_RUBRIC_WEIGHTS: dict[Belt, tuple[int, int, int, int]] = {
+        # Beginner: Focus on getting commands to run
+        Belt.WHITE:  (20, 20, 35, 25),   # Execution-heavy, forgiving on syntax
+        Belt.YELLOW: (20, 22, 33, 25),   # Slight increase in API awareness
+
+        # Intermediate: Balanced approach
+        Belt.ORANGE: (23, 24, 30, 23),   # More balanced
+        Belt.GREEN:  (25, 25, 28, 22),   # Standard rubric
+
+        # Advanced: Precision matters more
+        Belt.BLUE:   (27, 27, 26, 20),   # Syntax/API more important
+        Belt.BROWN:  (28, 28, 24, 20),   # Higher precision required
+
+        # Expert: Security-critical, syntax must be precise
+        Belt.PURPLE: (30, 28, 22, 20),   # Syntax-strict for exploit code
+        Belt.BLACK:  (32, 30, 20, 18),   # Maximum precision required
+    }
+
+    def __init__(self, attempt_penalty: int = 5, use_belt_scaling: bool = True):
         """
         Initialize the grader.
 
         Args:
             attempt_penalty: Points deducted per retry attempt.
+            use_belt_scaling: Whether to use belt-specific rubric weights.
         """
         self.attempt_penalty = attempt_penalty
+        self.use_belt_scaling = use_belt_scaling
+
+    def get_belt_rubric(self, belt: Belt) -> ScoringRubric:
+        """
+        Get the scoring rubric scaled for a specific belt level.
+
+        Args:
+            belt: The belt level.
+
+        Returns:
+            ScoringRubric with belt-appropriate weights.
+        """
+        if not self.use_belt_scaling:
+            # Return default rubric
+            return ScoringRubric()
+
+        weights = self.BELT_RUBRIC_WEIGHTS.get(
+            belt,
+            (25, 25, 30, 20),  # Default if belt not found
+        )
+
+        return ScoringRubric(
+            syntax_correct=weights[0],
+            api_valid=weights[1],
+            executes_successfully=weights[2],
+            achieves_objective=weights[3],
+        )
 
     def grade_session(self, session: ChallengeSession) -> SenseiAssessment:
         """
@@ -121,8 +174,11 @@ class Grader:
         obj_ok, obj_issues = self._evaluate_objective(session)
         security_issues = self._identify_security_issues(model_output)
 
-        # Calculate base score
-        rubric = challenge.scoring
+        # Calculate base score using belt-scaled rubric
+        if self.use_belt_scaling:
+            rubric = self.get_belt_rubric(challenge.belt)
+        else:
+            rubric = challenge.scoring
         base_score = rubric.calculate_score(syntax_ok, api_ok, exec_ok, obj_ok)
 
         # Apply attempt penalty
