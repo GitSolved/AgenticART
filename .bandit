@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# BANDIT CONFIGURATION FILE
+# ─────────────────────────────────────────────────────────────────────────────
+# This file configures Bandit, Python's security linter.
+# Documentation: https://bandit.readthedocs.io/
+#
+# HOW BANDIT WORKS:
+# 1. Scans Python AST (Abstract Syntax Tree) for dangerous patterns
+# 2. Each pattern has a unique ID (e.g., B102 = exec usage)
+# 3. Reports severity (LOW/MEDIUM/HIGH) and confidence (LOW/MEDIUM/HIGH)
+# ─────────────────────────────────────────────────────────────────────────────
+
+[bandit]
+# Directories to exclude from scanning
+exclude_dirs = [
+    "tests",           # Test code often has intentional "bad" patterns
+    "venv",            # Virtual environment
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    "docs_site",       # Documentation, not code
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SKIP SPECIFIC CHECKS (use sparingly!)
+# ─────────────────────────────────────────────────────────────────────────────
+# Only add skips for FALSE POSITIVES, not to hide real issues.
+# Each skip should have a comment explaining why.
+#
+# Common Bandit IDs:
+#   B101 - assert_used (disabled in -O mode)
+#   B102 - exec_used (code injection risk)
+#   B103 - set_bad_file_permissions (chmod 777, etc.)
+#   B104 - hardcoded_bind_all_interfaces (0.0.0.0)
+#   B105 - hardcoded_password_string
+#   B106 - hardcoded_password_funcarg
+#   B107 - hardcoded_password_default
+#   B108 - hardcoded_tmp_directory (/tmp usage)
+#   B110 - try_except_pass (bare except)
+#   B112 - try_except_continue
+#   B301 - pickle (deserialization risk)
+#   B302 - marshal (deserialization risk)
+#   B303 - md5/sha1 (weak crypto)
+#   B304-B305 - weak ciphers
+#   B306 - mktemp_q (insecure temp file)
+#   B307 - eval (code injection)
+#   B310 - urllib_urlopen (SSRF risk)
+#   B311 - random (not cryptographically secure)
+#   B312 - telnetlib (unencrypted)
+#   B320 - xml parsing (XXE)
+#   B323 - ssl unverified context
+#   B324 - hashlib weak hash
+#   B501 - request_with_no_cert_validation
+#   B502-B504 - SSL/TLS issues
+#   B506 - yaml_load (use safe_load)
+#   B507 - ssh_no_host_key_verification
+#   B601 - paramiko_calls
+#   B602 - subprocess_popen_with_shell_equals_true
+#   B603 - subprocess_without_shell_equals_true
+#   B604 - any_other_function_with_shell_equals_true
+#   B605 - start_process_with_a_shell
+#   B606 - start_process_with_no_shell
+#   B607 - start_process_with_partial_path
+#   B608 - hardcoded_sql_expressions
+#   B609 - linux_commands_wildcard_injection
+#   B610-B611 - django SQL injection
+#   B701-B703 - jinja2 issues
+# ─────────────────────────────────────────────────────────────────────────────
+
+# CURRENTLY: No skips - we want to see all issues first
+# After review, add justified skips here:
+# skips = ["B101"]  # Example: skip assert warnings in specific cases
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PER-FILE SKIPS (more granular control)
+# ─────────────────────────────────────────────────────────────────────────────
+# You can also use inline comments in code:
+#   result = exec(code)  # nosec B102 - sandboxed execution with restricted builtins
+#
+# The "# nosec" comment tells Bandit to skip that specific line.
+# Always include the rule ID and justification!
+# ─────────────────────────────────────────────────────────────────────────────
