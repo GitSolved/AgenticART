@@ -17,7 +17,6 @@ Usage:
 import argparse
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 
 # Add project root to path
@@ -28,17 +27,15 @@ import yaml
 from dojo.challenge_value import (
     ChallengeValueScorer,
     load_metrics,
-    identify_techniques,
-    TECHNIQUE_PATTERNS,
 )
 from dojo.models import (
     Belt,
     Challenge,
     ChallengeInput,
-    ExpectedOutput,
-    ScriptType,
-    ScoringRubric,
     Compatibility,
+    ExpectedOutput,
+    ScoringRubric,
+    ScriptType,
 )
 
 

@@ -26,7 +26,6 @@ from typing import Optional
 
 from dojo.models import Belt, Grade, SenseiAssessment
 
-
 # =============================================================================
 # POINT VALUES
 # =============================================================================
@@ -858,7 +857,7 @@ def format_report_text(report: dict) -> str:
         s_pct = overall["student_percentage"]
         transfer = overall["transfer_efficiency"]
 
-        lines.append(f"║                        Teacher        Student        Δ            ║")
+        lines.append("║                        Teacher        Student        Δ            ║")
         lines.append(f"║    Points:            {overall['teacher_points']:>7.0f}        {overall['student_points']:>7.0f}       {overall['point_difference']:>+6.0f}       ║")
         lines.append(f"║    Percentage:        {t_pct:>7.1f}%       {s_pct:>7.1f}%      {overall['percentage_difference']:>+6.1f}%      ║")
         lines.append(f"║    Completed:         {comparison['overall']['teacher_points']/10:>7.0f}        {overall['student_points']/10:>7.0f}       {overall['completion_difference']:>+6.0f}       ║")

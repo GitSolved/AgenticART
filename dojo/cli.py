@@ -7,12 +7,10 @@ Usage:
     python dojo/cli.py
 """
 
-import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -315,7 +313,7 @@ def select_belt(config: DojoConfig) -> None:
         'status': f"{total_challenges} total"
     })
 
-    print(f"\n  Legend: ✓ Full Execution | ◐ Detection+Analysis | ○ Detection Only\n")
+    print("\n  Legend: ✓ Full Execution | ◐ Detection+Analysis | ○ Detection Only\n")
 
     choice = print_menu("STEP 4/8: SELECT CHALLENGE LEVEL", options)
     if choice == 0:
@@ -708,7 +706,7 @@ def show_summary(config: DojoConfig) -> bool:
         filename = get_input("Filename", "dojo_command.sh")
         with open(filename, 'w') as f:
             f.write("#!/bin/bash\n")
-            f.write(f"# AgenticART Dojo Command\n")
+            f.write("# AgenticART Dojo Command\n")
             f.write(f"# Generated: {config.android_version} / {config.belt} belt\n\n")
             f.write(' '.join(cmd) + '\n')
         print(f"\n  ✓ Saved to {filename}")
