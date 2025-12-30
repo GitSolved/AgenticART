@@ -390,3 +390,132 @@ class TrajectoryLogger:
         for t in self._trajectories:
             counts[t.belt] = counts.get(t.belt, 0) + 1
         return counts
+
+    def is_high_quality(
+        self,
+        trajectory: Trajectory,
+        min_action_diversity: float = 0.7,
+        max_consecutive_failures: int = 2,
+    ) -> bool:
+        """
+        Assess trajectory quality for training data.
+
+        A high-quality trajectory either:
+        1. Succeeds (positive example)
+        2. Fails but shows diverse strategies (useful for learning pivots)
+        3. Correctly gives up after exhausting options (teaches when to stop)
+
+        Filters out:
+        - Repetitive failure loops (same command retried)
+        - Trajectories with no meaningful action diversity
+        """
+        # Always include successful trajectories
+        if trajectory.final_outcome == StepOutcome.SUCCESS:
+            return True
+
+        # Empty or single-step failures are low quality
+        if len(trajectory.steps) < 2:
+            return False
+
+        # Check action diversity (unique commands / total steps)
+        commands = [s.action.command for s in trajectory.steps]
+        unique_commands = len(set(commands))
+        diversity_ratio = unique_commands / len(commands)
+
+        if diversity_ratio < min_action_diversity:
+            return False
+
+        # Check for consecutive identical failures (retry loops)
+        consecutive_same = 1
+        for i in range(1, len(commands)):
+            if commands[i] == commands[i - 1]:
+                consecutive_same += 1
+                if consecutive_same > max_consecutive_failures:
+                    return False
+            else:
+                consecutive_same = 1
+
+        # Check for strategy pivots (indicates learning from errors)
+        has_pivot = any(
+            s.thought.reasoning_type == ReasoningType.STRATEGY_PIVOT
+            for s in trajectory.steps
+            if s.thought
+        )
+
+        # Check for proper give-up (exhausted options, not just quit early)
+        has_give_up = any(
+            s.action.action_type == ActionType.GIVE_UP
+            for s in trajectory.steps
+        )
+
+        # Include if shows strategy diversity or proper termination
+        return has_pivot or has_give_up or diversity_ratio >= 0.8
+
+    def get_high_quality_trajectories(
+        self,
+        min_action_diversity: float = 0.7,
+        max_consecutive_failures: int = 2,
+    ) -> List[Trajectory]:
+        """Get only high-quality trajectories suitable for training."""
+        return [
+            t for t in self._trajectories
+            if self.is_high_quality(t, min_action_diversity, max_consecutive_failures)
+        ]
+
+    def export_high_quality_training_data(
+        self,
+        filename: str = "training_trajectories_filtered.jsonl",
+        min_action_diversity: float = 0.7,
+        max_consecutive_failures: int = 2,
+    ) -> Path:
+        """Export only high-quality trajectories for training."""
+        filepath = self.output_dir / filename
+        high_quality = self.get_high_quality_trajectories(
+            min_action_diversity, max_consecutive_failures
+        )
+
+        with open(filepath, "w") as f:
+            for traj in high_quality:
+                f.write(json.dumps(traj.to_training_format()) + "\n")
+
+        # Log filtering stats
+        total = len(self._trajectories)
+        kept = len(high_quality)
+        filtered = total - kept
+        print(f"Trajectory quality filter: {kept}/{total} kept, {filtered} filtered out")
+
+        return filepath
+
+    def get_quality_statistics(self) -> Dict[str, Any]:
+        """Get statistics about trajectory quality distribution."""
+        if not self._trajectories:
+            return {"count": 0}
+
+        high_quality = self.get_high_quality_trajectories()
+        low_quality = [t for t in self._trajectories if t not in high_quality]
+
+        # Analyze why trajectories were filtered
+        low_quality_reasons: Dict[str, int] = {
+            "too_short": 0,
+            "low_diversity": 0,
+            "retry_loops": 0,
+        }
+
+        for t in low_quality:
+            if len(t.steps) < 2:
+                low_quality_reasons["too_short"] += 1
+            else:
+                commands = [s.action.command for s in t.steps]
+                unique = len(set(commands))
+                if unique / len(commands) < 0.7:
+                    low_quality_reasons["low_diversity"] += 1
+                else:
+                    low_quality_reasons["retry_loops"] += 1
+
+        return {
+            "total": len(self._trajectories),
+            "high_quality": len(high_quality),
+            "low_quality": len(low_quality),
+            "quality_rate": len(high_quality) / len(self._trajectories),
+            "filter_reasons": low_quality_reasons,
+        }
