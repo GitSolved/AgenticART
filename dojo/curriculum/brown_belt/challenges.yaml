@@ -8,6 +8,21 @@
 # Prerequisite: Green Belt (basic Frida skills)
 # Leads to: Purple Belt (1-day exploitation)
 # =============================================================================
+#
+# EXPLOITATION COMPLEXITY RATING
+# =============================================================================
+# Each challenge includes an exploitation_complexity block that rates how
+# difficult the technique is to execute successfully:
+#
+#   1 - trivial:  Single hook, well-documented technique
+#   2 - low:      Few hooks, basic Frida knowledge required
+#   3 - medium:   Multiple hooks, moderate domain knowledge
+#   4 - high:     Complex hooking chain, deep technical knowledge
+#   5 - expert:   Native analysis, anti-detection, chaining required
+#
+# Note: Brown Belt challenges are technique-based (not CVE-based), so they
+# don't have CVSS scores. Complexity determines placement in Brown Belt.
+# =============================================================================
 
 device_requirements:
   target_android: 11
@@ -48,6 +63,17 @@ challenges:
   difficulty: 3
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 3  # medium
+    rationale: "OkHttp pinning bypass is well-documented but requires understanding of method overloads"
+    required_skills:
+      - frida_java_hooking
+      - ssl_pinning_concepts
+      - okhttp_internals
+    steps_required: 3
+    tools_needed: [frida, proxy]
+    technique_maturity: established  # well-known technique with public scripts
   inputs:
     target_package: com.agentic.sslpinned
     device_context:
@@ -88,6 +114,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Requires creating custom Java class at runtime and understanding SSLContext initialization"
+    required_skills:
+      - frida_java_hooking
+      - java_class_registration
+      - ssl_internals
+      - trust_manager_api
+    steps_required: 5
+    tools_needed: [frida, proxy]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.sslpinned
     device_context:
@@ -138,6 +176,18 @@ challenges:
   difficulty: 5
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 5  # expert
+    rationale: "Requires native hooking, understanding C calling conventions, and BoringSSL internals"
+    required_skills:
+      - frida_native_hooking
+      - c_calling_conventions
+      - boringssl_openssl_internals
+      - function_pointer_manipulation
+    steps_required: 4
+    tools_needed: [frida, ghidra_or_ida]
+    technique_maturity: advanced  # requires reverse engineering
   inputs:
     target_package: com.agentic.nativecheck
     device_context:
@@ -188,6 +238,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Multiple hooks across different APIs; must understand all detection vectors"
+    required_skills:
+      - frida_java_hooking
+      - android_file_system
+      - package_manager_api
+      - system_properties
+    steps_required: 6
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.fortified
     device_context:
@@ -250,6 +312,18 @@ challenges:
   difficulty: 5
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 5  # expert
+    rationale: "Native hooking of libc functions; must filter I/O without breaking app; race conditions"
+    required_skills:
+      - frida_native_hooking
+      - libc_internals
+      - proc_filesystem
+      - anti_detection_techniques
+    steps_required: 5
+    tools_needed: [frida]
+    technique_maturity: advanced  # cat-and-mouse with detection
   inputs:
     target_package: com.agentic.fortified
     device_context:
@@ -301,6 +375,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Multiple static field modifications; must know realistic device fingerprints"
+    required_skills:
+      - frida_java_hooking
+      - android_build_class
+      - telephony_manager
+      - device_fingerprinting
+    steps_required: 5
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.fortified
     device_context:
@@ -350,6 +436,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Must understand Cipher API and intercept key at correct point in lifecycle"
+    required_skills:
+      - frida_java_hooking
+      - javax_crypto_api
+      - byte_array_handling
+      - hex_encoding
+    steps_required: 4
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.cryptovault
     device_context:
@@ -398,6 +496,18 @@ challenges:
   difficulty: 5
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 5  # expert
+    rationale: "Keystore keys are non-extractable; must capture operations and correlate multi-part updates"
+    required_skills:
+      - frida_java_hooking
+      - java_security_signature
+      - android_keystore
+      - cryptographic_concepts
+    steps_required: 5
+    tools_needed: [frida]
+    technique_maturity: advanced
   inputs:
     target_package: com.agentic.cryptovault
     device_context:
@@ -451,6 +561,17 @@ challenges:
   difficulty: 3
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 3  # medium
+    rationale: "Standard KeyStore API usage; well-documented enumeration technique"
+    required_skills:
+      - frida_java_hooking
+      - java_keystore_api
+      - enumeration_techniques
+    steps_required: 3
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.cryptovault
     device_context:
@@ -506,6 +627,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Requires understanding JNI naming conventions and native function signatures"
+    required_skills:
+      - frida_native_hooking
+      - jni_naming_conventions
+      - c_function_signatures
+      - argument_parsing
+    steps_required: 4
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.nativecheck
     device_context:
@@ -556,6 +689,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Must attach to all exports; handle performance impact; track call depth"
+    required_skills:
+      - frida_native_hooking
+      - module_enumeration
+      - execution_tracing
+      - performance_optimization
+    steps_required: 4
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.nativecheck
     device_context:
@@ -604,6 +749,17 @@ challenges:
   difficulty: 3
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 3  # medium
+    rationale: "Standard memory scanning technique; well-documented Frida API"
+    required_skills:
+      - frida_memory_api
+      - pattern_matching
+      - memory_region_enumeration
+    steps_required: 3
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.cryptovault
     device_context:
@@ -654,6 +810,17 @@ challenges:
   difficulty: 3
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 3  # medium
+    rationale: "Standard OkHttp hooking; well-known technique with public scripts"
+    required_skills:
+      - frida_java_hooking
+      - okhttp_internals
+      - http_protocol
+    steps_required: 3
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.sslpinned
     device_context:
@@ -698,6 +865,18 @@ challenges:
   difficulty: 4
   script_type: frida
   android_version: 11
+
+  exploitation_complexity:
+    rating: 4  # high
+    rationale: "Must intercept request building process; handle different body formats (JSON, form)"
+    required_skills:
+      - frida_java_hooking
+      - request_interception
+      - json_manipulation
+      - http_protocol
+    steps_required: 4
+    tools_needed: [frida]
+    technique_maturity: established
   inputs:
     target_package: com.agentic.sslpinned
     device_context:
