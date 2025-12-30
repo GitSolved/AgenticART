@@ -928,3 +928,359 @@ challenges:
     - modification
     - tampering
     - android-11
+
+# =============================================================================
+# MALWARE BEHAVIOR SIMULATION & DETECTION
+# =============================================================================
+# These challenges simulate malware behaviors for training detection skills.
+# Agents execute realistic attack patterns using benign indicators.
+
+- id: brown_015
+  name: "RAT Behavior Simulation - Klopatra Night Pattern"
+  compatibility: universal
+  description: |
+    Simulate the behavioral indicators of a Remote Access Trojan (RAT)
+    for detection training. This challenge replicates patterns seen in
+    Klopatra Night and similar Android RATs without actual C2.
+
+    BEHAVIORAL INDICATORS TO SIMULATE:
+    1. Persistence via BOOT_COMPLETED receiver
+    2. Accessibility service registration
+    3. Hidden data staging directory
+    4. Device enumeration for C2 beacon
+    5. Permission escalation patterns
+
+    OBJECTIVE: Execute each RAT behavioral pattern and log indicators
+    that a detection system could use to identify the malware.
+
+    NOTE: This is simulation mode - no actual C2 communication occurs.
+  belt: brown
+  difficulty: 4
+  script_type: adb
+
+  exploitation_complexity:
+    rating: 4
+    rationale: "Requires understanding RAT behavior patterns and Android internals"
+    required_skills:
+      - android_persistence
+      - accessibility_api
+      - file_system
+      - process_monitoring
+    steps_required: 6
+    tools_needed: [adb]
+    technique_maturity: established
+
+  inputs:
+    device_context:
+      task: simulate RAT behavioral indicators
+      malware_family: "Klopatra Night"
+      simulation_mode: true
+
+  validation:
+    type: output_contains
+    expected: "IOC"
+
+  hints:
+    - "Simulate persistence: broadcast BOOT_COMPLETED to receivers"
+    - "Check accessibility: settings get secure enabled_accessibility_services"
+    - "Create staging: mkdir .hidden directory, check if created"
+    - "Device fingerprint: combine getprop values for beacon"
+    - "Document each step as an IOC (Indicator of Compromise)"
+
+  kata_solution: |
+    echo "=== RAT BEHAVIOR SIMULATION: Klopatra Night Pattern ==="
+    echo ""
+
+    echo "[1] IOC: Persistence Mechanism Check"
+    adb shell dumpsys package | grep -A2 "BOOT_COMPLETED" | head -10
+    echo "    Detection: Apps registering for BOOT_COMPLETED"
+    echo ""
+
+    echo "[2] IOC: Accessibility Service Abuse"
+    adb shell settings get secure enabled_accessibility_services
+    adb shell dumpsys accessibility | grep "Service\[" | head -5
+    echo "    Detection: Unexpected accessibility services enabled"
+    echo ""
+
+    echo "[3] IOC: Hidden Data Staging"
+    adb shell ls -la /sdcard/ | grep "^\."
+    adb shell ls -la /data/local/tmp/ 2>/dev/null
+    echo "    Detection: Hidden directories or unusual file patterns"
+    echo ""
+
+    echo "[4] IOC: Device Fingerprinting (C2 Beacon Prep)"
+    echo "    Device ID: $(adb shell settings get secure android_id)"
+    echo "    Model: $(adb shell getprop ro.product.model)"
+    echo "    IMEI pattern: $(adb shell service call iphonesubinfo 1 2>/dev/null | head -1)"
+    echo "    Detection: Bulk device info collection"
+    echo ""
+
+    echo "[5] IOC: Permission Escalation"
+    adb shell dumpsys package | grep "android.permission.READ_SMS" | head -3
+    adb shell dumpsys package | grep "android.permission.RECORD_AUDIO" | head -3
+    echo "    Detection: Sensitive permissions without visible UI"
+    echo ""
+
+    echo "=== SIMULATION COMPLETE ==="
+    echo "IOC Summary: 5 behavioral indicators documented"
+
+  tags:
+    - rat
+    - malware-simulation
+    - detection-training
+    - ioc
+
+- id: brown_016
+  name: "Banking Trojan Detection - Overlay Analysis"
+  compatibility: universal
+  description: |
+    Analyze the attack patterns of banking trojans that use overlay attacks.
+    Modern banking trojans like Cerberus, Anubis, and Vultur use overlays
+    to steal credentials.
+
+    DETECTION FOCUS:
+    1. Identify apps with SYSTEM_ALERT_WINDOW permission
+    2. Check for accessibility service abuse
+    3. Analyze package installation patterns
+    4. Look for obfuscation indicators
+    5. Check for anti-analysis techniques
+
+    OBJECTIVE: Build a detection profile for banking trojan indicators.
+  belt: brown
+  difficulty: 4
+  script_type: adb
+
+  exploitation_complexity:
+    rating: 4
+    rationale: "Requires understanding banking trojan TTPs"
+    required_skills:
+      - android_permissions
+      - overlay_detection
+      - package_analysis
+      - behavioral_analysis
+    steps_required: 5
+    tools_needed: [adb]
+    technique_maturity: established
+
+  inputs:
+    device_context:
+      task: analyze banking trojan indicators
+      target_patterns:
+        - overlay_permission
+        - accessibility_abuse
+        - suspicious_packages
+
+  validation:
+    type: output_contains
+    expected: "DETECTION"
+
+  hints:
+    - "List overlay-capable apps: appops query-op SYSTEM_ALERT_WINDOW"
+    - "Banking apps are targets: check for Chase, PayPal, Coinbase overlays"
+    - "Trojans often have generic names or typosquatted packages"
+    - "Check for apps installed from unknown sources"
+
+  kata_solution: |
+    echo "=== BANKING TROJAN DETECTION ANALYSIS ==="
+    echo ""
+
+    echo "[DETECTION] Overlay Permission Analysis"
+    adb shell appops query-op SYSTEM_ALERT_WINDOW allow 2>/dev/null || \
+    adb shell dumpsys package | grep -B5 "SYSTEM_ALERT_WINDOW" | head -20
+    echo ""
+
+    echo "[DETECTION] Accessibility Service Audit"
+    adb shell settings get secure enabled_accessibility_services
+    echo ""
+
+    echo "[DETECTION] Recently Installed Packages"
+    adb shell pm list packages -i | grep -v "com.google\|com.android" | head -15
+    echo ""
+
+    echo "[DETECTION] Unknown Source Installation Check"
+    adb shell settings get secure install_non_market_apps 2>/dev/null
+    adb shell settings get secure unknown_sources 2>/dev/null
+    echo ""
+
+    echo "[DETECTION] Banking App Targets Present"
+    for app in com.chase.sig.android com.paypal.android.p2pmobile com.coinbase.android; do
+      adb shell pm list packages | grep -q "$app" && echo "  Target found: $app"
+    done
+    echo ""
+
+    echo "[DETECTION] Package Name Anomalies"
+    adb shell pm list packages | grep -E "^package:(com\.android\.[a-z]{1,5}$|update|system\.)" | head -10
+    echo "  Note: Short generic names or 'update' in name may be suspicious"
+    echo ""
+
+    echo "=== DETECTION ANALYSIS COMPLETE ==="
+
+  tags:
+    - banking-trojan
+    - overlay
+    - detection
+    - threat-hunting
+
+- id: brown_017
+  name: "Spyware Detection - Data Exfiltration Patterns"
+  compatibility: universal
+  description: |
+    Identify indicators of spyware that exfiltrates user data.
+    Focus on detecting apps that access sensitive content providers
+    and network exfiltration patterns.
+
+    SPYWARE INDICATORS:
+    1. Contact/SMS/Call log access patterns
+    2. Location tracking
+    3. Microphone/Camera usage
+    4. File system monitoring
+    5. Network activity patterns
+
+    OBJECTIVE: Create a spyware detection checklist with evidence.
+  belt: brown
+  difficulty: 3
+  script_type: adb
+
+  exploitation_complexity:
+    rating: 3
+    rationale: "Standard permission and content provider analysis"
+    required_skills:
+      - android_permissions
+      - content_providers
+      - privacy_analysis
+    steps_required: 5
+    tools_needed: [adb]
+    technique_maturity: established
+
+  inputs:
+    device_context:
+      task: detect spyware indicators
+
+  validation:
+    type: output_contains
+    expected: "SPYWARE"
+
+  hints:
+    - "Check runtime permissions: dumpsys package <pkg> | grep permission"
+    - "Content provider access leaves traces in logs"
+    - "Camera/microphone usage appears in dumpsys media.camera"
+    - "Location access in dumpsys location"
+
+  kata_solution: |
+    echo "=== SPYWARE DETECTION ANALYSIS ==="
+    echo ""
+
+    echo "[SPYWARE] Apps with SMS Read Permission"
+    adb shell dumpsys package | grep -B10 "READ_SMS" | grep "Package \[" | head -5
+    echo ""
+
+    echo "[SPYWARE] Apps with Contact Access"
+    adb shell dumpsys package | grep -B10 "READ_CONTACTS" | grep "Package \[" | head -5
+    echo ""
+
+    echo "[SPYWARE] Apps with Location Access"
+    adb shell dumpsys location | grep "package=" | head -10
+    echo ""
+
+    echo "[SPYWARE] Recent Camera Access"
+    adb shell dumpsys media.camera | grep "Camera access" | head -5
+    echo ""
+
+    echo "[SPYWARE] Apps with Microphone Permission"
+    adb shell dumpsys package | grep -B10 "RECORD_AUDIO" | grep "Package \[" | head -5
+    echo ""
+
+    echo "[SPYWARE] Background Data Usage (Network Exfil)"
+    adb shell dumpsys netstats | grep -A2 "UID=" | head -20
+    echo ""
+
+    echo "=== SPYWARE DETECTION COMPLETE ==="
+
+  tags:
+    - spyware
+    - data-exfiltration
+    - detection
+    - privacy
+
+- id: brown_018
+  name: "Botnet Client Detection - C2 Indicators"
+  compatibility: universal
+  description: |
+    Detect indicators of botnet client infection. Botnet clients like
+    those in Kimwolf campaigns exhibit specific behavioral patterns.
+
+    BOTNET INDICATORS:
+    1. Scheduled/periodic network activity
+    2. Wake lock abuse (keeping device awake)
+    3. Background service persistence
+    4. SMS command processing
+    5. Unusual broadcast receivers
+
+    OBJECTIVE: Identify botnet behavioral patterns via ADB analysis.
+  belt: brown
+  difficulty: 4
+  script_type: adb
+
+  exploitation_complexity:
+    rating: 4
+    rationale: "Requires understanding botnet C2 patterns"
+    required_skills:
+      - android_services
+      - network_analysis
+      - broadcast_receivers
+      - behavioral_analysis
+    steps_required: 5
+    tools_needed: [adb]
+    technique_maturity: established
+
+  inputs:
+    device_context:
+      task: detect botnet client indicators
+      malware_family: "Generic Botnet"
+
+  validation:
+    type: output_contains
+    expected: "BOTNET"
+
+  hints:
+    - "Check for wake locks: dumpsys power | grep 'Wake Locks'"
+    - "Background services: dumpsys activity services"
+    - "SMS receivers: dumpsys package | grep SMS_RECEIVED"
+    - "JobScheduler: dumpsys jobscheduler"
+
+  kata_solution: |
+    echo "=== BOTNET DETECTION ANALYSIS ==="
+    echo ""
+
+    echo "[BOTNET] Wake Lock Abuse (Keep-Alive)"
+    adb shell dumpsys power | grep -A5 "Wake Locks" | head -10
+    echo ""
+
+    echo "[BOTNET] Persistent Background Services"
+    adb shell dumpsys activity services | grep "ServiceRecord" | head -10
+    echo ""
+
+    echo "[BOTNET] SMS Command Receivers"
+    adb shell dumpsys package | grep -B5 "SMS_RECEIVED" | grep "Activity\|Service\|Receiver" | head -10
+    echo ""
+
+    echo "[BOTNET] Scheduled Jobs (Periodic Callbacks)"
+    adb shell dumpsys jobscheduler | grep -A3 "JOB" | head -15
+    echo ""
+
+    echo "[BOTNET] Alarm Manager (Timed Wake)"
+    adb shell dumpsys alarm | grep -A2 "Batch" | head -15
+    echo ""
+
+    echo "[BOTNET] Network Sockets (Active C2)"
+    adb shell cat /proc/net/tcp | head -10
+    adb shell cat /proc/net/tcp6 | head -10
+    echo ""
+
+    echo "=== BOTNET DETECTION COMPLETE ==="
+
+  tags:
+    - botnet
+    - c2-detection
+    - threat-hunting
+    - behavioral
