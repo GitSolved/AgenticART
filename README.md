@@ -22,6 +22,7 @@ AgenticART creates **AI agents that can actually perform security assessments** 
 
 | Audience | Why AgenticART? |
 |----------|-----------------|
+| **Learning AI Red Teaming** | Hands-on environment to understand how AI agents perform security tasks. See what works, what fails, and why. |
 | **AI Security Researchers** | Study curriculum-based training for security tasks. Benchmark improvements with real execution data. |
 | **Air-Gapped / Compliance Teams** | Train once, deploy offline forever. No cloud API dependencies in production. |
 | **Teams Building Security Agents** | Create a personalized Android security agent fine-tuned on your own verified execution traces. |
