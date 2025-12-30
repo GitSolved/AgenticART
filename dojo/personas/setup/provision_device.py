@@ -12,7 +12,6 @@ Configures an Android device to match a specified persona, including:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import random
 import subprocess
@@ -144,15 +143,16 @@ class DeviceProvisioner:
         for contact in vip_contacts:
             name = contact["name"]
             phone = contact.get("phone", "")
-            email = contact.get("email", "")
+            # email available for future contact insertion enhancement
+            _email = contact.get("email", "")
 
             if dry_run:
                 print(f"   [DRY RUN] Would insert: {name} ({phone})")
             else:
                 # Use content provider to insert contact
                 cmd = (
-                    f"content insert --uri content://com.android.contacts/raw_contacts "
-                    f"--bind account_type:s:null --bind account_name:s:null"
+                    "content insert --uri content://com.android.contacts/raw_contacts "
+                    "--bind account_type:s:null --bind account_name:s:null"
                 )
                 self._adb_shell(cmd)
 
@@ -307,7 +307,7 @@ class DeviceProvisioner:
             result["details"].append("Stay awake: enabled")
 
         result["success"] = True
-        print(f"   ✓ Device configured")
+        print("   ✓ Device configured")
 
         return result
 
