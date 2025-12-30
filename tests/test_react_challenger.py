@@ -84,7 +84,7 @@ ACTION: [DONE]"""
         parsed = challenger._parse_react_response(response)
 
         assert parsed.action_type == "done"
-        assert parsed.action == ""
+        assert parsed.action == "DONE"
 
     def test_detects_give_up(self, challenger):
         """Correctly detects [GIVE_UP] action."""
@@ -95,7 +95,7 @@ ACTION: [GIVE_UP]"""
         parsed = challenger._parse_react_response(response)
 
         assert parsed.action_type == "give_up"
-        assert parsed.action == ""
+        assert parsed.action == "GIVE_UP"
 
     def test_detects_continue_with_command(self, challenger):
         """Correctly handles [CONTINUE] with command."""
