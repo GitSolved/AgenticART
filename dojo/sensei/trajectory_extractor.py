@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from dojo.trajectory_schema import StepOutcome
+from dojo.trajectory_schema import StepOutcome  # noqa: E402
 
 
 class TrajectoryExtractor:

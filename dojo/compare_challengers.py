@@ -6,11 +6,11 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from dojo import Belt, ChallengeLoader
-from dojo.curriculum import Challenger, Executor
-from dojo.react_challenger import ReActChallenger
-from dojo.test_end_to_end import MLXLLMClient
-from dojo.trajectory_logger import TrajectoryLogger
+from dojo import Belt, ChallengeLoader  # noqa: E402
+from dojo.curriculum import Challenger, Executor  # noqa: E402
+from dojo.react_challenger import ReActChallenger  # noqa: E402
+from dojo.test_end_to_end import MLXLLMClient  # noqa: E402
+from dojo.trajectory_logger import TrajectoryLogger  # noqa: E402
 
 
 def main():
