@@ -61,6 +61,8 @@ Available tools:
 - ADB shell commands (shell <command>)
 - ADB commands (push, pull, install, etc.)
 - Frida scripts (for dynamic instrumentation)
+- Research Toolkit: /data/local/tmp/reart/ (contains busybox, sqlite3, frida-server)
+  * Use: /data/local/tmp/reart/busybox [command]
 """
 
 REACT_INITIAL_PROMPT = """## Objective

@@ -272,7 +272,7 @@ def failed_trajectory_low_diversity() -> Trajectory:
         step = Step(
             step_number=i + 1,
             thought=Thought(
-                content=f"Trying command {i+1}",
+                content=f"Trying command {i + 1}",
                 reasoning_type=ReasoningType.TOOL_SELECTION,
             ),
             action=Action(

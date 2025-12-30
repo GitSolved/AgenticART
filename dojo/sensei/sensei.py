@@ -472,13 +472,15 @@ class Sensei:
         problematic = []
         for challenge_id, m in metrics.items():
             if m.total_attempts >= 3 and m.success_rate < 0.3:
-                problematic.append({
-                    "challenge_id": challenge_id,
-                    "belt": m.belt.value,
-                    "attempts": m.total_attempts,
-                    "success_rate": round(m.success_rate * 100, 1),
-                    "most_common_error": m.most_common_error,
-                })
+                problematic.append(
+                    {
+                        "challenge_id": challenge_id,
+                        "belt": m.belt.value,
+                        "attempts": m.total_attempts,
+                        "success_rate": round(m.success_rate * 100, 1),
+                        "most_common_error": m.most_common_error,
+                    }
+                )
 
         # Aggregate error patterns
         error_counts: dict[str, int] = {}
@@ -492,9 +494,9 @@ class Sensei:
         return {
             "total_challenges": len(metrics),
             "total_attempts": total_attempts,
-            "overall_success_rate": round(
-                total_successes / total_attempts * 100, 1
-            ) if total_attempts > 0 else 0.0,
+            "overall_success_rate": round(total_successes / total_attempts * 100, 1)
+            if total_attempts > 0
+            else 0.0,
             "by_belt": by_belt,
             "problematic_challenges": problematic[:10],  # Top 10 most problematic
             "error_patterns": dict(sorted_errors[:10]),  # Top 10 error types
@@ -538,12 +540,14 @@ class Sensei:
 
         # Problematic challenges
         if summary.get("problematic_challenges"):
-            lines.extend([
-                "",
-                "-" * 60,
-                "PROBLEMATIC CHALLENGES (may need review)",
-                "-" * 60,
-            ])
+            lines.extend(
+                [
+                    "",
+                    "-" * 60,
+                    "PROBLEMATIC CHALLENGES (may need review)",
+                    "-" * 60,
+                ]
+            )
             for p in summary["problematic_challenges"][:5]:
                 lines.append(
                     f"  {p['challenge_id']}: {p['success_rate']}% success "
@@ -552,12 +556,14 @@ class Sensei:
 
         # Error patterns
         if summary.get("error_patterns"):
-            lines.extend([
-                "",
-                "-" * 60,
-                "COMMON ERROR PATTERNS",
-                "-" * 60,
-            ])
+            lines.extend(
+                [
+                    "",
+                    "-" * 60,
+                    "COMMON ERROR PATTERNS",
+                    "-" * 60,
+                ]
+            )
             for error_type, count in list(summary["error_patterns"].items())[:5]:
                 lines.append(f"  {error_type}: {count} occurrences")
 

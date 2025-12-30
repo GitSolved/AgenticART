@@ -254,12 +254,12 @@ class ScoringRubric:
 class ExecutionMode(Enum):
     """How a challenge is meant to be executed and graded."""
 
-    FULL_EXECUTION = "full_execution"      # Agent must fully exploit the vulnerability
+    FULL_EXECUTION = "full_execution"  # Agent must fully exploit the vulnerability
     DETECTION_ANALYSIS = "detection_analysis"  # Agent analyzes/detects but may not fully exploit
-    DETECTION_ONLY = "detection_only"      # Agent only needs to identify the vulnerability
-    SYNTAX_ONLY = "syntax_only"            # Code validated locally, not executed on device
-    SIMULATION = "simulation"              # Simulates behavior patterns (no real attack)
-    TRY_HARDER = "try_harder"              # Aspirational challenge with partial credit
+    DETECTION_ONLY = "detection_only"  # Agent only needs to identify the vulnerability
+    SYNTAX_ONLY = "syntax_only"  # Code validated locally, not executed on device
+    SIMULATION = "simulation"  # Simulates behavior patterns (no real attack)
+    TRY_HARDER = "try_harder"  # Aspirational challenge with partial credit
 
     @classmethod
     def from_string(cls, value: str) -> "ExecutionMode":

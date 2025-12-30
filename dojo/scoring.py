@@ -59,14 +59,15 @@ BELT_CHALLENGE_COUNTS = {
 # SUCCESS CRITERIA
 # =============================================================================
 
+
 class SuccessLevel(Enum):
     """How well a challenge was completed."""
 
-    PERFECT = "perfect"      # Grade A, first try, fast execution
-    COMPLETE = "complete"    # Grade A or B
-    PARTIAL = "partial"      # Grade C (functional but needs improvement)
-    FAILED = "failed"        # Grade D or F
-    SKIPPED = "skipped"      # Not attempted
+    PERFECT = "perfect"  # Grade A, first try, fast execution
+    COMPLETE = "complete"  # Grade A or B
+    PARTIAL = "partial"  # Grade C (functional but needs improvement)
+    FAILED = "failed"  # Grade D or F
+    SKIPPED = "skipped"  # Not attempted
 
 
 @dataclass
@@ -112,11 +113,11 @@ class SuccessCriteria:
     def point_multiplier(self) -> float:
         """Get point multiplier based on success level."""
         multipliers = {
-            SuccessLevel.PERFECT: 1.25,   # 25% bonus
-            SuccessLevel.COMPLETE: 1.0,   # Full points
-            SuccessLevel.PARTIAL: 0.5,    # Half points
-            SuccessLevel.FAILED: 0.0,     # No points
-            SuccessLevel.SKIPPED: 0.0,    # No points
+            SuccessLevel.PERFECT: 1.25,  # 25% bonus
+            SuccessLevel.COMPLETE: 1.0,  # Full points
+            SuccessLevel.PARTIAL: 0.5,  # Half points
+            SuccessLevel.FAILED: 0.0,  # No points
+            SuccessLevel.SKIPPED: 0.0,  # No points
         }
         return multipliers[self.success_level]
 
@@ -124,6 +125,7 @@ class SuccessCriteria:
 # =============================================================================
 # ACHIEVEMENTS / BADGES
 # =============================================================================
+
 
 @dataclass
 class Achievement:
@@ -149,94 +151,102 @@ class Achievement:
 ACHIEVEMENTS = {
     # Completion achievements
     "first_blood": Achievement(
-        "first_blood", "First Blood",
-        "Complete your first challenge", "🩸", "common"
+        "first_blood", "First Blood", "Complete your first challenge", "🩸", "common"
     ),
     "white_belt_master": Achievement(
-        "white_belt_master", "White Belt Master",
-        "Complete all White Belt challenges", "⬜", "common"
+        "white_belt_master",
+        "White Belt Master",
+        "Complete all White Belt challenges",
+        "⬜",
+        "common",
     ),
     "yellow_belt_master": Achievement(
-        "yellow_belt_master", "Yellow Belt Master",
-        "Complete all Yellow Belt challenges", "🟨", "common"
+        "yellow_belt_master",
+        "Yellow Belt Master",
+        "Complete all Yellow Belt challenges",
+        "🟨",
+        "common",
     ),
     "orange_belt_master": Achievement(
-        "orange_belt_master", "Orange Belt Master",
-        "Complete all Orange Belt challenges", "🟧", "rare"
+        "orange_belt_master",
+        "Orange Belt Master",
+        "Complete all Orange Belt challenges",
+        "🟧",
+        "rare",
     ),
     "green_belt_master": Achievement(
-        "green_belt_master", "Green Belt Master",
-        "Complete all Green Belt challenges", "🟩", "rare"
+        "green_belt_master", "Green Belt Master", "Complete all Green Belt challenges", "🟩", "rare"
     ),
     "blue_belt_master": Achievement(
-        "blue_belt_master", "Blue Belt Master",
-        "Complete all Blue Belt challenges", "🟦", "epic"
+        "blue_belt_master", "Blue Belt Master", "Complete all Blue Belt challenges", "🟦", "epic"
     ),
     "brown_belt_master": Achievement(
-        "brown_belt_master", "Brown Belt Master",
-        "Complete all Brown Belt challenges", "🟫", "epic"
+        "brown_belt_master", "Brown Belt Master", "Complete all Brown Belt challenges", "🟫", "epic"
     ),
     "purple_belt_master": Achievement(
-        "purple_belt_master", "Purple Belt Master",
-        "Complete all Purple Belt challenges", "🟪", "legendary"
+        "purple_belt_master",
+        "Purple Belt Master",
+        "Complete all Purple Belt challenges",
+        "🟪",
+        "legendary",
     ),
     "black_belt_master": Achievement(
-        "black_belt_master", "Black Belt Master",
-        "Complete all Black Belt challenges", "⬛", "legendary"
+        "black_belt_master",
+        "Black Belt Master",
+        "Complete all Black Belt challenges",
+        "⬛",
+        "legendary",
     ),
-
     # Performance achievements
     "perfectionist": Achievement(
-        "perfectionist", "Perfectionist",
-        "Get 10 PERFECT scores in a row", "💎", "epic"
+        "perfectionist", "Perfectionist", "Get 10 PERFECT scores in a row", "💎", "epic"
     ),
     "speed_demon": Achievement(
-        "speed_demon", "Speed Demon",
-        "Complete 5 challenges in under 10 seconds each", "⚡", "rare"
+        "speed_demon", "Speed Demon", "Complete 5 challenges in under 10 seconds each", "⚡", "rare"
     ),
     "no_retry": Achievement(
-        "no_retry", "First Try Champion",
-        "Complete 20 challenges without retries", "🎯", "rare"
+        "no_retry", "First Try Champion", "Complete 20 challenges without retries", "🎯", "rare"
     ),
     "comeback_kid": Achievement(
-        "comeback_kid", "Comeback Kid",
-        "Succeed after 3+ failed attempts", "🔄", "common"
+        "comeback_kid", "Comeback Kid", "Succeed after 3+ failed attempts", "🔄", "common"
     ),
-
     # Milestone achievements
-    "century": Achievement(
-        "century", "Century",
-        "Earn 1,000 total points", "💯", "common"
-    ),
+    "century": Achievement("century", "Century", "Earn 1,000 total points", "💯", "common"),
     "high_roller": Achievement(
-        "high_roller", "High Roller",
-        "Earn 5,000 total points", "🎰", "rare"
+        "high_roller", "High Roller", "Earn 5,000 total points", "🎰", "rare"
     ),
-    "elite": Achievement(
-        "elite", "Elite Hacker",
-        "Earn 10,000 total points", "👑", "epic"
-    ),
+    "elite": Achievement("elite", "Elite Hacker", "Earn 10,000 total points", "👑", "epic"),
     "grandmaster": Achievement(
-        "grandmaster", "Grandmaster",
-        "Complete all 192 challenges", "🏆", "legendary"
+        "grandmaster", "Grandmaster", "Complete all 192 challenges", "🏆", "legendary"
     ),
-
     # Technique achievements
     "recon_specialist": Achievement(
-        "recon_specialist", "Recon Specialist",
-        "Complete all device reconnaissance challenges", "🔍", "common"
+        "recon_specialist",
+        "Recon Specialist",
+        "Complete all device reconnaissance challenges",
+        "🔍",
+        "common",
     ),
     "permission_bypasser": Achievement(
-        "permission_bypasser", "Permission Bypasser",
-        "Complete all permission bypass challenges", "🔓", "rare"
+        "permission_bypasser",
+        "Permission Bypasser",
+        "Complete all permission bypass challenges",
+        "🔓",
+        "rare",
     ),
     "memory_manipulator": Achievement(
-        "memory_manipulator", "Memory Manipulator",
-        "Complete all memory corruption challenges", "🧠", "epic"
+        "memory_manipulator",
+        "Memory Manipulator",
+        "Complete all memory corruption challenges",
+        "🧠",
+        "epic",
     ),
     "kernel_hacker": Achievement(
-        "kernel_hacker", "Kernel Hacker",
-        "Complete a kernel exploitation challenge", "🐧", "legendary"
+        "kernel_hacker",
+        "Kernel Hacker",
+        "Complete a kernel exploitation challenge",
+        "🐧",
+        "legendary",
     ),
 }
 
@@ -244,6 +254,7 @@ ACHIEVEMENTS = {
 # =============================================================================
 # OVERALL GRADES
 # =============================================================================
+
 
 @dataclass
 class OverallGrade:
@@ -287,6 +298,7 @@ def get_overall_grade(percentage: float) -> OverallGrade:
 # =============================================================================
 # MODEL SCORER
 # =============================================================================
+
 
 @dataclass
 class ChallengeAttemptResult:
@@ -402,7 +414,9 @@ class ModelScorer:
     Tracks and scores model performance across the Dojo curriculum.
     """
 
-    def __init__(self, model_id: str = "unknown", teacher_benchmark: Optional[TeacherBenchmark] = None):
+    def __init__(
+        self, model_id: str = "unknown", teacher_benchmark: Optional[TeacherBenchmark] = None
+    ):
         self.model_id = model_id
         self.teacher_benchmark = teacher_benchmark
         self.results: list[ChallengeAttemptResult] = []
@@ -466,7 +480,10 @@ class ModelScorer:
             self._perfect_streak = 0
 
         # First try tracking
-        if result.attempts == 1 and result.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE):
+        if result.attempts == 1 and result.success_level in (
+            SuccessLevel.PERFECT,
+            SuccessLevel.COMPLETE,
+        ):
             self._first_try_count += 1
             if self._first_try_count >= 20 and "no_retry" not in earned_ids:
                 self.achievements_earned.append(ACHIEVEMENTS["no_retry"])
@@ -478,7 +495,10 @@ class ModelScorer:
                 self.achievements_earned.append(ACHIEVEMENTS["speed_demon"])
 
         # Comeback kid
-        if result.attempts >= 3 and result.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE):
+        if result.attempts >= 3 and result.success_level in (
+            SuccessLevel.PERFECT,
+            SuccessLevel.COMPLETE,
+        ):
             if "comeback_kid" not in earned_ids:
                 self.achievements_earned.append(ACHIEVEMENTS["comeback_kid"])
 
@@ -513,8 +533,10 @@ class ModelScorer:
 
             # Count completed challenges for this belt
             completed = sum(
-                1 for r in self.results
-                if r.belt == belt and r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
+                1
+                for r in self.results
+                if r.belt == belt
+                and r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
             )
 
             required = BELT_CHALLENGE_COUNTS.get(belt, 0)
@@ -534,10 +556,7 @@ class ModelScorer:
     @property
     def total_max_points(self) -> float:
         """Calculate maximum possible points for entire curriculum."""
-        return sum(
-            BELT_POINTS[belt] * count
-            for belt, count in BELT_CHALLENGE_COUNTS.items()
-        )
+        return sum(BELT_POINTS[belt] * count for belt, count in BELT_CHALLENGE_COUNTS.items())
 
     @property
     def percentage(self) -> float:
@@ -561,7 +580,8 @@ class ModelScorer:
                 continue
 
             completed = sum(
-                1 for r in belt_results
+                1
+                for r in belt_results
                 if r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
             )
             partial = sum(1 for r in belt_results if r.success_level == SuccessLevel.PARTIAL)
@@ -598,15 +618,19 @@ class ModelScorer:
 
         # Add technique-based analysis if we have enough data
         if len(self.results) >= 10:
-            perfect_rate = sum(1 for r in self.results if r.success_level == SuccessLevel.PERFECT) / len(self.results)
+            perfect_rate = sum(
+                1 for r in self.results if r.success_level == SuccessLevel.PERFECT
+            ) / len(self.results)
             if perfect_rate >= 0.3:
-                strengths.append(f"High precision ({perfect_rate*100:.0f}% perfect scores)")
+                strengths.append(f"High precision ({perfect_rate * 100:.0f}% perfect scores)")
 
             first_try_rate = sum(1 for r in self.results if r.attempts == 1) / len(self.results)
             if first_try_rate >= 0.7:
-                strengths.append(f"Efficient execution ({first_try_rate*100:.0f}% first-try)")
+                strengths.append(f"Efficient execution ({first_try_rate * 100:.0f}% first-try)")
             elif first_try_rate < 0.3:
-                weaknesses.append(f"Needs multiple attempts ({(1-first_try_rate)*100:.0f}% require retries)")
+                weaknesses.append(
+                    f"Needs multiple attempts ({(1 - first_try_rate) * 100:.0f}% require retries)"
+                )
 
         return strengths, weaknesses
 
@@ -620,10 +644,14 @@ class ModelScorer:
         # Overall comparison
         point_diff = self.total_points - tb.total_points
         pct_diff = self.percentage - tb.percentage
-        completion_diff = sum(
-            1 for r in self.results
-            if r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
-        ) - tb.challenges_completed
+        completion_diff = (
+            sum(
+                1
+                for r in self.results
+                if r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
+            )
+            - tb.challenges_completed
+        )
 
         # Determine transfer efficiency
         if tb.percentage > 0:
@@ -717,7 +745,8 @@ class ModelScorer:
                 "overall_grade": self.overall_grade.to_dict(),
                 "challenges_attempted": len(self.results),
                 "challenges_completed": sum(
-                    1 for r in self.results
+                    1
+                    for r in self.results
                     if r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
                 ),
                 "perfect_scores": sum(
@@ -745,6 +774,7 @@ class ModelScorer:
 # REPORT FORMATTING
 # =============================================================================
 
+
 def format_report_text(report: dict) -> str:
     """Format report as text for terminal display."""
     lines = []
@@ -758,7 +788,9 @@ def format_report_text(report: dict) -> str:
     title = "MODEL PERFORMANCE REPORT"
     if comparison:
         title = "DISTILLATION PERFORMANCE REPORT"
-    lines.append("║" + " " * ((68 - len(title)) // 2) + title + " " * ((69 - len(title)) // 2) + "║")
+    lines.append(
+        "║" + " " * ((68 - len(title)) // 2) + title + " " * ((69 - len(title)) // 2) + "║"
+    )
     lines.append("╠" + "═" * 68 + "╣")
 
     # Model info
@@ -774,7 +806,7 @@ def format_report_text(report: dict) -> str:
     lines.append("║" + " " * 68 + "║")
 
     # Progress bar
-    pct = min(100, summary['percentage'])
+    pct = min(100, summary["percentage"])
     filled = int(pct / 2)
     bar = "█" * filled + "░" * (50 - filled)
     lines.append(f"║     [{bar}] {pct:5.1f}%  ║")
@@ -784,8 +816,12 @@ def format_report_text(report: dict) -> str:
     # Quick stats
     lines.append("║  QUICK STATS" + " " * 55 + "║")
     lines.append("╟" + "─" * 68 + "╢")
-    lines.append(f"║    Challenges Attempted:  {summary['challenges_attempted']:<8}  Perfect Scores: {summary['perfect_scores']:<12} ║")
-    lines.append(f"║    Challenges Completed:  {summary['challenges_completed']:<8}  Session Time:   {summary['session_duration_seconds']:.0f}s{' '*10} ║")
+    lines.append(
+        f"║    Challenges Attempted:  {summary['challenges_attempted']:<8}  Perfect Scores: {summary['perfect_scores']:<12} ║"
+    )
+    lines.append(
+        f"║    Challenges Completed:  {summary['challenges_completed']:<8}  Session Time:   {summary['session_duration_seconds']:.0f}s{' ' * 10} ║"
+    )
     lines.append("╠" + "═" * 68 + "╣")
 
     # Belt breakdown
@@ -795,8 +831,14 @@ def format_report_text(report: dict) -> str:
     lines.append("╟" + "─" * 68 + "╢")
 
     belt_icons = {
-        "white": "⬜", "yellow": "🟨", "orange": "🟧", "green": "🟩",
-        "blue": "🟦", "brown": "🟫", "purple": "🟪", "black": "⬛",
+        "white": "⬜",
+        "yellow": "🟨",
+        "orange": "🟧",
+        "green": "🟩",
+        "blue": "🟦",
+        "brown": "🟫",
+        "purple": "🟪",
+        "black": "⬛",
     }
 
     for belt in ["white", "yellow", "orange", "green", "blue", "brown", "purple", "black"]:
@@ -805,9 +847,11 @@ def format_report_text(report: dict) -> str:
             icon = belt_icons.get(belt, " ")
             pts = f"{b['points']:.0f}/{b['max_points']:.0f}"
             rate = f"{b['pass_rate']:.0f}%"
-            bar_len = int(b['pass_rate'] / 10)
+            bar_len = int(b["pass_rate"] / 10)
             bar = "▓" * bar_len + "░" * (10 - bar_len)
-            lines.append(f"║    {icon} {belt.capitalize():<8} {b['attempted']:>5}      {b['completed']:>5}      {pts:<10}  {bar} {rate:>4} ║")
+            lines.append(
+                f"║    {icon} {belt.capitalize():<8} {b['attempted']:>5}      {b['completed']:>5}      {pts:<10}  {bar} {rate:>4} ║"
+            )
 
     lines.append("╠" + "═" * 68 + "╣")
 
@@ -858,9 +902,15 @@ def format_report_text(report: dict) -> str:
         transfer = overall["transfer_efficiency"]
 
         lines.append("║                        Teacher        Student        Δ            ║")
-        lines.append(f"║    Points:            {overall['teacher_points']:>7.0f}        {overall['student_points']:>7.0f}       {overall['point_difference']:>+6.0f}       ║")
-        lines.append(f"║    Percentage:        {t_pct:>7.1f}%       {s_pct:>7.1f}%      {overall['percentage_difference']:>+6.1f}%      ║")
-        lines.append(f"║    Completed:         {comparison['overall']['teacher_points']/10:>7.0f}        {overall['student_points']/10:>7.0f}       {overall['completion_difference']:>+6.0f}       ║")
+        lines.append(
+            f"║    Points:            {overall['teacher_points']:>7.0f}        {overall['student_points']:>7.0f}       {overall['point_difference']:>+6.0f}       ║"
+        )
+        lines.append(
+            f"║    Percentage:        {t_pct:>7.1f}%       {s_pct:>7.1f}%      {overall['percentage_difference']:>+6.1f}%      ║"
+        )
+        lines.append(
+            f"║    Completed:         {comparison['overall']['teacher_points'] / 10:>7.0f}        {overall['student_points'] / 10:>7.0f}       {overall['completion_difference']:>+6.0f}       ║"
+        )
 
         lines.append("╟" + "─" * 68 + "╢")
 
@@ -882,8 +932,14 @@ def format_report_text(report: dict) -> str:
         lines.append("╟" + "─" * 68 + "╢")
 
         belt_icons = {
-            "white": "⬜", "yellow": "🟨", "orange": "🟧", "green": "🟩",
-            "blue": "🟦", "brown": "🟫", "purple": "🟪", "black": "⬛",
+            "white": "⬜",
+            "yellow": "🟨",
+            "orange": "🟧",
+            "green": "🟩",
+            "blue": "🟦",
+            "brown": "🟫",
+            "purple": "🟪",
+            "black": "⬛",
         }
 
         for belt in ["white", "yellow", "orange", "green", "blue", "brown", "purple", "black"]:
@@ -904,7 +960,9 @@ def format_report_text(report: dict) -> str:
                 else:
                     indicator = "⚠ "
 
-                lines.append(f"║    {icon} {belt.capitalize():<8}   {t_val:>6.1f}%    {s_val:>6.1f}%     {rate:>5.1f}% {indicator}              ║")
+                lines.append(
+                    f"║    {icon} {belt.capitalize():<8}   {t_val:>6.1f}%    {s_val:>6.1f}%     {rate:>5.1f}% {indicator}              ║"
+                )
 
     lines.append("╚" + "═" * 68 + "╝")
     lines.append("")
@@ -928,6 +986,7 @@ def format_report_compact(report: dict) -> str:
 # =============================================================================
 # PERSISTENCE
 # =============================================================================
+
 
 def save_report(report: dict, path: Path | str) -> None:
     """Save report to JSON file."""

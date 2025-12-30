@@ -89,3 +89,5 @@ dojo_finetune_package/
 models/
 archived_runs/
 data/
+models/*adapters*
+dojo/tools/bin/

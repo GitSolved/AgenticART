@@ -297,9 +297,7 @@ class TargetManager:
             return vuln.requires_root
         return False
 
-    def list_vulnerabilities_for_mode(
-        self, app_id: str, device_is_rooted: bool
-    ) -> list[str]:
+    def list_vulnerabilities_for_mode(self, app_id: str, device_is_rooted: bool) -> list[str]:
         """
         List vulnerabilities for an app filtered by device root status.
 

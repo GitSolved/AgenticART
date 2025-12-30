@@ -298,16 +298,19 @@ Examples:
 
     # Global options
     parser.add_argument(
-        "--device", "-d",
+        "--device",
+        "-d",
         help="Device ID (default: auto-detect or EMULATOR_DEVICE env)",
     )
     parser.add_argument(
-        "--dry-run", "-n",
+        "--dry-run",
+        "-n",
         action="store_true",
         help="Show what would be done without making changes",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output results as JSON",
     )
@@ -315,7 +318,8 @@ Examples:
     # Mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
-        "--status", "-s",
+        "--status",
+        "-s",
         action="store_true",
         help="Show device status only",
     )
@@ -342,7 +346,8 @@ Examples:
 
     # Setup options
     parser.add_argument(
-        "--persona", "-p",
+        "--persona",
+        "-p",
         help="Persona name or path (e.g., rooted_android_14)",
     )
     parser.add_argument(

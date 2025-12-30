@@ -193,8 +193,7 @@ class DeviceManager:
         # Check if emulator
         fingerprint = self._shell("getprop ro.build.fingerprint")
         info.is_emulator = any(
-            x in fingerprint.lower()
-            for x in ["generic", "emulator", "genymotion", "vbox"]
+            x in fingerprint.lower() for x in ["generic", "emulator", "genymotion", "vbox"]
         )
 
         # Detect root status
@@ -565,20 +564,24 @@ class DeviceManager:
 
             # Check if already installed
             if self.is_app_installed(app.package):
-                results.append(SetupResult(
-                    step=f"install_{app_id}",
-                    success=True,
-                    message=f"{app.name} already installed",
-                ))
+                results.append(
+                    SetupResult(
+                        step=f"install_{app_id}",
+                        success=True,
+                        message=f"{app.name} already installed",
+                    )
+                )
                 continue
 
             if dry_run:
-                results.append(SetupResult(
-                    step=f"install_{app_id}",
-                    success=True,
-                    message=f"[DRY RUN] Would install {app.name}",
-                    details=[app.download_url],
-                ))
+                results.append(
+                    SetupResult(
+                        step=f"install_{app_id}",
+                        success=True,
+                        message=f"[DRY RUN] Would install {app.name}",
+                        details=[app.download_url],
+                    )
+                )
                 continue
 
             # Download and install
@@ -598,11 +601,13 @@ class DeviceManager:
                     result.step = f"install_{app_id}"
                     results.append(result)
                 else:
-                    results.append(SetupResult(
-                        step=f"install_{app_id}",
-                        success=False,
-                        message=f"Local APK not found: {local_path}",
-                    ))
+                    results.append(
+                        SetupResult(
+                            step=f"install_{app_id}",
+                            success=False,
+                            message=f"Local APK not found: {local_path}",
+                        )
+                    )
 
         return results
 
@@ -637,42 +642,50 @@ class DeviceManager:
             for vuln in app.vulnerabilities:
                 # Skip root-only vulnerabilities if device isn't rooted
                 if vuln.requires_root and not device_info.is_rooted:
-                    results.append(SetupResult(
-                        step=f"plant_{app_id}/{vuln.id}",
-                        success=True,
-                        message=f"Skipped (requires root): {vuln.id}",
-                    ))
+                    results.append(
+                        SetupResult(
+                            step=f"plant_{app_id}/{vuln.id}",
+                            success=True,
+                            message=f"Skipped (requires root): {vuln.id}",
+                        )
+                    )
                     continue
 
                 if dry_run:
-                    results.append(SetupResult(
-                        step=f"plant_{app_id}/{vuln.id}",
-                        success=True,
-                        message=f"[DRY RUN] Would plant flag for {vuln.id}",
-                        details=[f"Flag: {vuln.flag.value}"],
-                    ))
+                    results.append(
+                        SetupResult(
+                            step=f"plant_{app_id}/{vuln.id}",
+                            success=True,
+                            message=f"[DRY RUN] Would plant flag for {vuln.id}",
+                            details=[f"Flag: {vuln.flag.value}"],
+                        )
+                    )
                     continue
 
                 # Plant the flag
                 if vuln.flag.plant_method == "none":
                     # Flag is inherent
-                    results.append(SetupResult(
-                        step=f"plant_{app_id}/{vuln.id}",
-                        success=True,
-                        message=f"Flag inherent: {vuln.id}",
-                    ))
+                    results.append(
+                        SetupResult(
+                            step=f"plant_{app_id}/{vuln.id}",
+                            success=True,
+                            message=f"Flag inherent: {vuln.id}",
+                        )
+                    )
                 elif vuln.flag.plant_command:
                     # Execute plant command
                     cmd = vuln.flag.plant_command.strip()
                     if cmd.startswith("shell "):
                         cmd = cmd[6:]
                     output = self._shell(cmd)
-                    results.append(SetupResult(
-                        step=f"plant_{app_id}/{vuln.id}",
-                        success=True,
-                        message=f"Planted flag: {vuln.id}",
-                        details=[output] if output else [],
-                    ))
+                    results.append(
+                        SetupResult(
+                            step=f"plant_{app_id}/{vuln.id}",
+                            success=True,
+                            message=f"Planted flag: {vuln.id}",
+                            details=[output] if output else [],
+                        )
+                    )
 
         return results
 

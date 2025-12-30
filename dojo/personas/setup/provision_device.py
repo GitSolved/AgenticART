@@ -34,11 +34,13 @@ def main() -> int:
         help="Persona name (e.g., android_14_user) or path to YAML file",
     )
     parser.add_argument(
-        "--device", "-d",
+        "--device",
+        "-d",
         help="Device ID (default: from EMULATOR_DEVICE env or auto-detect)",
     )
     parser.add_argument(
-        "--dry-run", "-n",
+        "--dry-run",
+        "-n",
         action="store_true",
         help="Show what would be done without making changes",
     )

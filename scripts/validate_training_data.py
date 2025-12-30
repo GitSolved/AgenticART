@@ -60,16 +60,12 @@ class TrainingDataValidator:
     def validate_file(self, filepath: Path) -> bool:
         """Validate a single JSONL file."""
         if not filepath.exists():
-            self.errors.append(
-                ValidationError(str(filepath), 0, "File does not exist")
-            )
+            self.errors.append(ValidationError(str(filepath), 0, "File does not exist"))
             return False
 
         if not filepath.suffix == ".jsonl":
             self.warnings.append(
-                ValidationError(
-                    str(filepath), 0, "File does not have .jsonl extension", "warning"
-                )
+                ValidationError(str(filepath), 0, "File does not have .jsonl extension", "warning")
             )
 
         entries = []
@@ -86,9 +82,7 @@ class TrainingDataValidator:
                     entry = json.loads(line)
                 except json.JSONDecodeError as e:
                     self.errors.append(
-                        ValidationError(
-                            str(filepath), line_num, f"Invalid JSON: {e}"
-                        )
+                        ValidationError(str(filepath), line_num, f"Invalid JSON: {e}")
                     )
                     continue
 
@@ -96,9 +90,7 @@ class TrainingDataValidator:
                 entry_hash = hashlib.md5(line.encode(), usedforsecurity=False).hexdigest()
                 if entry_hash in hashes:
                     self.errors.append(
-                        ValidationError(
-                            str(filepath), line_num, "Duplicate entry detected"
-                        )
+                        ValidationError(str(filepath), line_num, "Duplicate entry detected")
                     )
                 else:
                     hashes.add(entry_hash)
@@ -129,16 +121,12 @@ class TrainingDataValidator:
                 )
             )
 
-    def _validate_trajectory_format(
-        self, filepath: Path, line_num: int, entry: dict
-    ) -> None:
+    def _validate_trajectory_format(self, filepath: Path, line_num: int, entry: dict) -> None:
         """Validate trajectory format entry."""
         for field in self.REQUIRED_TRAJECTORY_FIELDS:
             if field not in entry:
                 self.errors.append(
-                    ValidationError(
-                        str(filepath), line_num, f"Missing required field: {field}"
-                    )
+                    ValidationError(str(filepath), line_num, f"Missing required field: {field}")
                 )
 
         # Validate steps if present
@@ -146,29 +134,21 @@ class TrainingDataValidator:
             steps = entry["steps"]
             if not isinstance(steps, list):
                 self.errors.append(
-                    ValidationError(
-                        str(filepath), line_num, "'steps' must be a list"
-                    )
+                    ValidationError(str(filepath), line_num, "'steps' must be a list")
                 )
             elif len(steps) == 0:
                 self.warnings.append(
-                    ValidationError(
-                        str(filepath), line_num, "Empty steps list", "warning"
-                    )
+                    ValidationError(str(filepath), line_num, "Empty steps list", "warning")
                 )
             else:
                 for i, step in enumerate(steps):
                     self._validate_step(filepath, line_num, step, i)
 
-    def _validate_step(
-        self, filepath: Path, line_num: int, step: dict, step_idx: int
-    ) -> None:
+    def _validate_step(self, filepath: Path, line_num: int, step: dict, step_idx: int) -> None:
         """Validate a single step in a trajectory."""
         if not isinstance(step, dict):
             self.errors.append(
-                ValidationError(
-                    str(filepath), line_num, f"Step {step_idx} is not a dict"
-                )
+                ValidationError(str(filepath), line_num, f"Step {step_idx} is not a dict")
             )
             return
 
@@ -183,49 +163,35 @@ class TrainingDataValidator:
                 )
             )
 
-    def _validate_chat_format(
-        self, filepath: Path, line_num: int, entry: dict
-    ) -> None:
+    def _validate_chat_format(self, filepath: Path, line_num: int, entry: dict) -> None:
         """Validate chat/messages format entry."""
         messages = entry.get("messages", [])
 
         if not isinstance(messages, list):
             self.errors.append(
-                ValidationError(
-                    str(filepath), line_num, "'messages' must be a list"
-                )
+                ValidationError(str(filepath), line_num, "'messages' must be a list")
             )
             return
 
         if len(messages) == 0:
-            self.errors.append(
-                ValidationError(
-                    str(filepath), line_num, "Empty messages list"
-                )
-            )
+            self.errors.append(ValidationError(str(filepath), line_num, "Empty messages list"))
             return
 
         for i, msg in enumerate(messages):
             if not isinstance(msg, dict):
                 self.errors.append(
-                    ValidationError(
-                        str(filepath), line_num, f"Message {i} is not a dict"
-                    )
+                    ValidationError(str(filepath), line_num, f"Message {i} is not a dict")
                 )
                 continue
 
             if "role" not in msg:
                 self.errors.append(
-                    ValidationError(
-                        str(filepath), line_num, f"Message {i} missing 'role'"
-                    )
+                    ValidationError(str(filepath), line_num, f"Message {i} missing 'role'")
                 )
 
             if "content" not in msg:
                 self.errors.append(
-                    ValidationError(
-                        str(filepath), line_num, f"Message {i} missing 'content'"
-                    )
+                    ValidationError(str(filepath), line_num, f"Message {i} missing 'content'")
                 )
 
     def _validate_quality_metrics(self, filepath: Path, entries: list[dict]) -> None:
@@ -245,9 +211,7 @@ class TrainingDataValidator:
 
         # Check success rate for trajectory format
         if entries and "final_outcome" in entries[0]:
-            success_count = sum(
-                1 for e in entries if e.get("final_outcome") == "success"
-            )
+            success_count = sum(1 for e in entries if e.get("final_outcome") == "success")
             success_rate = success_count / total
 
             if success_rate < 0.3:
@@ -266,9 +230,7 @@ class TrainingDataValidator:
 
         if not jsonl_files:
             self.warnings.append(
-                ValidationError(
-                    str(dirpath), 0, "No JSONL files found", "warning"
-                )
+                ValidationError(str(dirpath), 0, "No JSONL files found", "warning")
             )
             return True
 
@@ -316,9 +278,7 @@ def find_training_data_dirs() -> list[Path]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Validate JSONL training data files"
-    )
+    parser = argparse.ArgumentParser(description="Validate JSONL training data files")
     parser.add_argument(
         "--file",
         type=Path,

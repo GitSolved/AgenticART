@@ -127,15 +127,11 @@ class PersonaValidator:
 
         # Check minimum contacts
         if "min_contacts" in requirements:
-            validation.results.append(
-                self._check_contact_count(requirements["min_contacts"])
-            )
+            validation.results.append(self._check_contact_count(requirements["min_contacts"]))
 
         # Check minimum SMS
         if "min_sms" in requirements:
-            validation.results.append(
-                self._check_sms_count(requirements["min_sms"])
-            )
+            validation.results.append(self._check_sms_count(requirements["min_sms"]))
 
         # Check required apps
         if "required_apps" in requirements:
@@ -149,9 +145,7 @@ class PersonaValidator:
 
         # Check minimum app count
         if "min_apps" in requirements:
-            validation.results.append(
-                self._check_app_count(requirements["min_apps"])
-            )
+            validation.results.append(self._check_app_count(requirements["min_apps"]))
 
         # Determine overall pass/fail
         validation.passed = all(r.passed for r in validation.results)
@@ -198,9 +192,7 @@ class PersonaValidator:
 
     def _check_sms_count(self, min_count: int) -> ValidationResult:
         """Check minimum number of SMS messages."""
-        output = self._adb_shell(
-            "content query --uri content://sms 2>/dev/null | wc -l"
-        )
+        output = self._adb_shell("content query --uri content://sms 2>/dev/null | wc -l")
 
         try:
             actual = int(output.strip())
@@ -256,15 +248,14 @@ class PersonaValidator:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Validate device matches persona requirements"
-    )
+    parser = argparse.ArgumentParser(description="Validate device matches persona requirements")
     parser.add_argument(
         "persona",
         help="Persona name or path to YAML file",
     )
     parser.add_argument(
-        "--device", "-d",
+        "--device",
+        "-d",
         help="Device ID",
     )
     parser.add_argument(

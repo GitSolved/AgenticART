@@ -44,8 +44,14 @@ def load_challenges_from_curriculum(curriculum_dir: Path) -> list[Challenge]:
     challenges = []
 
     belt_dirs = [
-        "white_belt", "yellow_belt", "orange_belt", "green_belt",
-        "blue_belt", "brown_belt", "purple_belt", "black_belt",
+        "white_belt",
+        "yellow_belt",
+        "orange_belt",
+        "green_belt",
+        "blue_belt",
+        "brown_belt",
+        "purple_belt",
+        "black_belt",
     ]
 
     for belt_dir in belt_dirs:
@@ -139,9 +145,15 @@ def print_summary(report: dict) -> None:
 
     # Recommendations
     print("RECOMMENDATIONS:")
-    print(f"  Keep:   {summary['keep']:3d} ({100*summary['keep']/summary['total_challenges']:.0f}%)")
-    print(f"  Review: {summary['review']:3d} ({100*summary['review']/summary['total_challenges']:.0f}%)")
-    print(f"  Prune:  {summary['prune']:3d} ({100*summary['prune']/summary['total_challenges']:.0f}%)")
+    print(
+        f"  Keep:   {summary['keep']:3d} ({100 * summary['keep'] / summary['total_challenges']:.0f}%)"
+    )
+    print(
+        f"  Review: {summary['review']:3d} ({100 * summary['review'] / summary['total_challenges']:.0f}%)"
+    )
+    print(
+        f"  Prune:  {summary['prune']:3d} ({100 * summary['prune'] / summary['total_challenges']:.0f}%)"
+    )
 
     # By belt
     print("\n" + "-" * 70)
@@ -153,7 +165,9 @@ def print_summary(report: dict) -> None:
     for belt in ["white", "yellow", "orange", "green", "blue", "brown", "purple", "black"]:
         if belt in report["by_belt"]:
             b = report["by_belt"][belt]
-            print(f"{belt.capitalize():<10} {b['count']:>6} {b['average_value']:>10.3f} {b['keep']:>6} {b['review']:>8} {b['prune']:>7}")
+            print(
+                f"{belt.capitalize():<10} {b['count']:>6} {b['average_value']:>10.3f} {b['keep']:>6} {b['review']:>8} {b['prune']:>7}"
+            )
 
     # Technique coverage
     print("\n" + "-" * 70)

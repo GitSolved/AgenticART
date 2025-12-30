@@ -576,7 +576,9 @@ def run_end_to_end(
                 with open(benchmark_path) as f:
                     benchmark_data = json.load(f)
                 teacher_benchmark = TeacherBenchmark.from_dict(benchmark_data)
-                print(f"  Teacher: {teacher_benchmark.model_id} ({teacher_benchmark.percentage:.1f}%)")
+                print(
+                    f"  Teacher: {teacher_benchmark.model_id} ({teacher_benchmark.percentage:.1f}%)"
+                )
             except Exception as e:
                 print(f"  WARNING: Could not load benchmark: {e}")
         else:

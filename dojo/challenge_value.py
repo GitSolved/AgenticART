@@ -223,63 +223,100 @@ class ChallengeValueScore:
 TECHNIQUE_PATTERNS = {
     # Reconnaissance
     "device_recon": [
-        r"getprop", r"dumpsys", r"pm list", r"service list",
-        r"settings get", r"cat /proc", r"uname",
+        r"getprop",
+        r"dumpsys",
+        r"pm list",
+        r"service list",
+        r"settings get",
+        r"cat /proc",
+        r"uname",
     ],
     "package_analysis": [
-        r"pm dump", r"pm path", r"apk", r"dex2jar", r"jadx",
+        r"pm dump",
+        r"pm path",
+        r"apk",
+        r"dex2jar",
+        r"jadx",
     ],
     "logcat_analysis": [
-        r"logcat", r"dmesg", r"kmsg",
+        r"logcat",
+        r"dmesg",
+        r"kmsg",
     ],
-
     # Information Disclosure
     "file_read": [
-        r"cat /", r"read.*file", r"/sdcard", r"/data/data",
+        r"cat /",
+        r"read.*file",
+        r"/sdcard",
+        r"/data/data",
     ],
     "database_access": [
-        r"sqlite", r"\.db", r"content://",
+        r"sqlite",
+        r"\.db",
+        r"content://",
     ],
     "credential_leak": [
-        r"password", r"credential", r"token", r"secret",
+        r"password",
+        r"credential",
+        r"token",
+        r"secret",
     ],
-
     # IPC Attacks
     "intent_attack": [
-        r"am start", r"am broadcast", r"intent", r"deep.*link",
+        r"am start",
+        r"am broadcast",
+        r"intent",
+        r"deep.*link",
     ],
     "content_provider": [
-        r"content://", r"content query", r"ContentResolver",
+        r"content://",
+        r"content query",
+        r"ContentResolver",
     ],
     "binder": [
-        r"binder", r"service call", r"transact",
+        r"binder",
+        r"service call",
+        r"transact",
     ],
-
     # Memory/Native
     "buffer_overflow": [
-        r"overflow", r"buffer", r"stack", r"heap",
+        r"overflow",
+        r"buffer",
+        r"stack",
+        r"heap",
     ],
     "use_after_free": [
-        r"use.after.free", r"uaf", r"dangling",
+        r"use.after.free",
+        r"uaf",
+        r"dangling",
     ],
     "race_condition": [
-        r"race", r"toctou", r"concurrent",
+        r"race",
+        r"toctou",
+        r"concurrent",
     ],
-
     # Privilege Escalation
     "permission_bypass": [
-        r"permission", r"bypass", r"grant",
+        r"permission",
+        r"bypass",
+        r"grant",
     ],
     "root_escalation": [
-        r"root", r"su ", r"privilege",
+        r"root",
+        r"su ",
+        r"privilege",
     ],
-
     # Frida/Hooking
     "frida_hook": [
-        r"Interceptor", r"Java\.use", r"frida", r"hook",
+        r"Interceptor",
+        r"Java\.use",
+        r"frida",
+        r"hook",
     ],
     "ssl_pinning": [
-        r"ssl.*pin", r"certificate", r"trustmanager",
+        r"ssl.*pin",
+        r"certificate",
+        r"trustmanager",
     ],
 }
 
@@ -427,8 +464,14 @@ class ChallengeValueScorer:
 
         # Reduce clarity for ambiguous language
         ambiguous_terms = [
-            "analyze", "investigate", "explore", "study",
-            "examine", "review", "assess", "evaluate",
+            "analyze",
+            "investigate",
+            "explore",
+            "study",
+            "examine",
+            "review",
+            "assess",
+            "evaluate",
         ]
         for term in ambiguous_terms:
             if term in description:
@@ -436,8 +479,15 @@ class ChallengeValueScorer:
 
         # Increase clarity for concrete objectives
         concrete_terms = [
-            "extract", "dump", "read", "write", "execute",
-            "bypass", "intercept", "hook", "find",
+            "extract",
+            "dump",
+            "read",
+            "write",
+            "execute",
+            "bypass",
+            "intercept",
+            "hook",
+            "find",
         ]
         for term in concrete_terms:
             if term in description:
@@ -507,9 +557,7 @@ class ChallengeValueScorer:
         Full execution > Detection analysis > Detection only > Syntax only
         """
         # Try to get execution mode from additional context
-        exec_mode = challenge.inputs.additional_context.get(
-            "execution_mode", "full_execution"
-        )
+        exec_mode = challenge.inputs.additional_context.get("execution_mode", "full_execution")
 
         # Also infer from script type
         script_type = challenge.expected_output.script_type.value
@@ -665,10 +713,7 @@ class ChallengeValueScorer:
                 technique_coverage[t] += 1
 
         # Find gaps (techniques with low coverage)
-        technique_gaps = [
-            t for t in TECHNIQUE_PATTERNS.keys()
-            if technique_coverage.get(t, 0) < 3
-        ]
+        technique_gaps = [t for t in TECHNIQUE_PATTERNS.keys() if technique_coverage.get(t, 0) < 3]
 
         return {
             "summary": {
@@ -676,9 +721,9 @@ class ChallengeValueScorer:
                 "keep": keep_count,
                 "review": review_count,
                 "prune": prune_count,
-                "average_value": round(
-                    sum(s.value_score for s in scores) / len(scores), 3
-                ) if scores else 0,
+                "average_value": round(sum(s.value_score for s in scores) / len(scores), 3)
+                if scores
+                else 0,
             },
             "by_belt": {
                 belt: {
@@ -692,12 +737,8 @@ class ChallengeValueScorer:
             },
             "technique_coverage": dict(technique_coverage),
             "technique_gaps": technique_gaps,
-            "prune_candidates": [
-                s.to_dict() for s in scores if s.recommendation == "prune"
-            ],
-            "review_candidates": [
-                s.to_dict() for s in scores if s.recommendation == "review"
-            ],
+            "prune_candidates": [s.to_dict() for s in scores if s.recommendation == "prune"],
+            "review_candidates": [s.to_dict() for s in scores if s.recommendation == "review"],
             "all_scores": [s.to_dict() for s in scores],
             "generated_at": datetime.now().isoformat(),
         }
@@ -754,10 +795,7 @@ def save_metrics(metrics_map: dict[str, ChallengeMetrics], path: Path | str) -> 
     path.parent.mkdir(parents=True, exist_ok=True)
 
     data = {
-        "challenges": {
-            cid: metrics.to_dict()
-            for cid, metrics in metrics_map.items()
-        },
+        "challenges": {cid: metrics.to_dict() for cid, metrics in metrics_map.items()},
         "generated_at": datetime.now().isoformat(),
     }
 

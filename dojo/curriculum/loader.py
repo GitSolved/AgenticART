@@ -251,9 +251,7 @@ class ChallengeLoader:
         """Clear the challenge cache."""
         self._cache.clear()
 
-    def load_belt_for_device(
-        self, belt: Belt, api_level: int
-    ) -> list[Challenge]:
+    def load_belt_for_device(self, belt: Belt, api_level: int) -> list[Challenge]:
         """
         Load challenges for a belt filtered by device compatibility.
 
@@ -265,10 +263,7 @@ class ChallengeLoader:
             List of Challenge objects compatible with the device.
         """
         all_challenges = self.load_belt(belt)
-        return [
-            c for c in all_challenges
-            if c.compatibility.is_compatible_with_api(api_level)
-        ]
+        return [c for c in all_challenges if c.compatibility.is_compatible_with_api(api_level)]
 
     def filter_by_compatibility(
         self, challenges: list[Challenge], api_level: int
@@ -283,10 +278,7 @@ class ChallengeLoader:
         Returns:
             Filtered list of compatible challenges.
         """
-        return [
-            c for c in challenges
-            if c.compatibility.is_compatible_with_api(api_level)
-        ]
+        return [c for c in challenges if c.compatibility.is_compatible_with_api(api_level)]
 
     def filter_by_device_mode(
         self, challenges: list[Challenge], device_is_rooted: bool
@@ -301,14 +293,9 @@ class ChallengeLoader:
         Returns:
             Filtered list of challenges compatible with device mode.
         """
-        return [
-            c for c in challenges
-            if c.device_mode.is_compatible_with(device_is_rooted)
-        ]
+        return [c for c in challenges if c.device_mode.is_compatible_with(device_is_rooted)]
 
-    def load_belt_for_device_mode(
-        self, belt: Belt, device_is_rooted: bool
-    ) -> list[Challenge]:
+    def load_belt_for_device_mode(self, belt: Belt, device_is_rooted: bool) -> list[Challenge]:
         """
         Load challenges for a belt filtered by device root status.
 
@@ -346,7 +333,8 @@ class ChallengeLoader:
 
         # Apply both filters
         compatible = [
-            c for c in all_challenges
+            c
+            for c in all_challenges
             if c.compatibility.is_compatible_with_api(api_level)
             and c.device_mode.is_compatible_with(device_is_rooted)
         ]
@@ -389,7 +377,4 @@ class ChallengeLoader:
             for b in Belt:
                 challenges.extend(self.load_belt(b))
 
-        return [
-            c for c in challenges
-            if c.device_mode in (DeviceMode.UNROOTED, DeviceMode.EITHER)
-        ]
+        return [c for c in challenges if c.device_mode in (DeviceMode.UNROOTED, DeviceMode.EITHER)]

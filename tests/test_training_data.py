@@ -18,9 +18,7 @@ class TestJSONLFormat:
 
     def test_valid_jsonl(self):
         """Valid JSONL files pass validation."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write(json.dumps({"messages": [{"role": "user", "content": "test"}]}) + "\n")
             f.write(json.dumps({"messages": [{"role": "assistant", "content": "response"}]}) + "\n")
             filepath = Path(f.name)
@@ -33,9 +31,7 @@ class TestJSONLFormat:
 
     def test_invalid_json_line(self):
         """Invalid JSON lines are caught."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write('{"valid": true}\n')
             f.write('{"invalid: json}\n')  # Missing quote
             filepath = Path(f.name)
@@ -52,9 +48,7 @@ class TestRequiredFields:
 
     def test_chat_format_requires_messages(self):
         """Chat format requires messages field."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write(json.dumps({"not_messages": []}) + "\n")
             filepath = Path(f.name)
 
@@ -66,9 +60,7 @@ class TestRequiredFields:
 
     def test_chat_format_requires_role_and_content(self):
         """Chat messages require role and content."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write(json.dumps({"messages": [{"role": "user"}]}) + "\n")  # Missing content
             filepath = Path(f.name)
 
@@ -80,14 +72,17 @@ class TestRequiredFields:
 
     def test_trajectory_format_validates(self):
         """Trajectory format is validated correctly."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
-            f.write(json.dumps({
-                "challenge_id": "test_001",
-                "objective": "Test objective",
-                "steps": [{"thought": "thinking", "action": "doing"}],
-            }) + "\n")
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+            f.write(
+                json.dumps(
+                    {
+                        "challenge_id": "test_001",
+                        "objective": "Test objective",
+                        "steps": [{"thought": "thinking", "action": "doing"}],
+                    }
+                )
+                + "\n"
+            )
             filepath = Path(f.name)
 
         validator = TrainingDataValidator()
@@ -102,9 +97,7 @@ class TestDuplicateDetection:
     def test_detects_duplicates(self):
         """Duplicate entries are detected."""
         entry = {"messages": [{"role": "user", "content": "same content"}]}
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write(json.dumps(entry) + "\n")
             f.write(json.dumps(entry) + "\n")  # Duplicate
             filepath = Path(f.name)
@@ -117,9 +110,7 @@ class TestDuplicateDetection:
 
     def test_allows_unique_entries(self):
         """Unique entries don't trigger duplicate error."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             f.write(json.dumps({"messages": [{"role": "user", "content": "first"}]}) + "\n")
             f.write(json.dumps({"messages": [{"role": "user", "content": "second"}]}) + "\n")
             filepath = Path(f.name)
@@ -136,17 +127,20 @@ class TestQualityThresholds:
 
     def test_warns_on_low_success_rate(self):
         """Warns when success rate is below threshold."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             # 1 success, 9 failures = 10% success rate
             for i in range(10):
-                f.write(json.dumps({
-                    "challenge_id": f"test_{i}",
-                    "objective": "Test",
-                    "steps": [{"thought": "t", "action": "a"}],
-                    "final_outcome": "success" if i == 0 else "failure",
-                }) + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "challenge_id": f"test_{i}",
+                            "objective": "Test",
+                            "steps": [{"thought": "t", "action": "a"}],
+                            "final_outcome": "success" if i == 0 else "failure",
+                        }
+                    )
+                    + "\n"
+                )
             filepath = Path(f.name)
 
         validator = TrainingDataValidator(strict=True)
@@ -157,14 +151,10 @@ class TestQualityThresholds:
 
     def test_warns_on_small_dataset(self):
         """Warns when dataset is too small in strict mode."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             # Only 3 entries
             for i in range(3):
-                f.write(json.dumps({
-                    "messages": [{"role": "user", "content": f"msg {i}"}]
-                }) + "\n")
+                f.write(json.dumps({"messages": [{"role": "user", "content": f"msg {i}"}]}) + "\n")
             filepath = Path(f.name)
 
         validator = TrainingDataValidator(strict=True)
@@ -186,9 +176,7 @@ class TestFileOperations:
 
     def test_empty_file(self):
         """Handles empty file."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".jsonl", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             filepath = Path(f.name)
 
         validator = TrainingDataValidator()

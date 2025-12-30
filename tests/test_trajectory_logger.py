@@ -30,10 +30,13 @@ class TestIsHighQuality:
     def test_filters_retry_loops(self, failed_trajectory_retry_loop: Trajectory):
         """Trajectories with consecutive identical commands are filtered."""
         logger = TrajectoryLogger(output_dir=tempfile.mkdtemp())
-        assert logger.is_high_quality(
-            failed_trajectory_retry_loop,
-            max_consecutive_failures=2,
-        ) is False
+        assert (
+            logger.is_high_quality(
+                failed_trajectory_retry_loop,
+                max_consecutive_failures=2,
+            )
+            is False
+        )
 
     def test_allows_strategy_pivots(self, failed_trajectory_with_pivot: Trajectory):
         """Failed trajectories with strategy pivots are high quality."""
@@ -44,10 +47,13 @@ class TestIsHighQuality:
         """Trajectories with low action diversity are filtered."""
         logger = TrajectoryLogger(output_dir=tempfile.mkdtemp())
         # 2 unique commands out of 5 = 40% diversity, below 70% threshold
-        assert logger.is_high_quality(
-            failed_trajectory_low_diversity,
-            min_action_diversity=0.7,
-        ) is False
+        assert (
+            logger.is_high_quality(
+                failed_trajectory_low_diversity,
+                min_action_diversity=0.7,
+            )
+            is False
+        )
 
 
 class TestGetHighQualityTrajectories:
