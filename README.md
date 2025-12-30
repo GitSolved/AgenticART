@@ -37,7 +37,7 @@ AgenticART creates **AI agents that can actually perform security assessments** 
 │  ❌ Traditional LLM Training    ✅ AgenticART Approach           │
 │  ─────────────────────────────  ─────────────────────────────── │
 │  • Static text datasets         • Execution-verified traces     │
-│  • Synthetic examples           • Real CVEs from NVD (166+)     │
+│  • Synthetic examples           • Real CVEs from NVD (118+)     │
 │  • No difficulty scaling        • 8-tier belt progression       │
 │  • Generic security knowledge   • Android-specific expertise    │
 │  • Cloud-dependent              • 100% offline capable          │
@@ -305,7 +305,7 @@ The framework tracks:
 ### What AgenticART IS
 
 - ✅ Training framework for Android security assessment agents
-- ✅ Curriculum of 283 real-world CVE challenges
+- ✅ Curriculum of 192 real-world CVE-based challenges
 - ✅ Execution-verified feedback loop for model improvement
 - ✅ Realistic non-rooted environment matching real targets
 - ✅ Research prototype for studying AI security capabilities
