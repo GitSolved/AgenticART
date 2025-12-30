@@ -1,0 +1,194 @@
+# Base Persona - Common Settings
+# =============================================================================
+# This file defines settings inherited by all personas.
+# Override specific values in child personas.
+# =============================================================================
+
+name: "Base Persona"
+description: "Common settings for all device personas"
+compatibility: universal
+
+# =============================================================================
+# DEVICE IDENTITY
+# =============================================================================
+device:
+  # These are overridden per-persona based on Android version
+  locale: "en_US"
+  timezone: "America/New_York"
+
+  # ADB settings (required for testing)
+  adb:
+    usb_debugging: true
+    wireless_debugging: false
+
+  # Developer options
+  developer_options:
+    enabled: true
+    stay_awake: true
+    show_touches: false
+
+# =============================================================================
+# CORE APPS (Present on all personas)
+# =============================================================================
+apps:
+  # AgenticART Test Apps (required for challenges)
+  test_apps:
+    - package: com.agentic.sslpinned
+      name: "ART SSL Test"
+      required: true
+
+    - package: com.agentic.nativecheck
+      name: "ART Native Security"
+      required: true
+
+    - package: com.agentic.cryptovault
+      name: "ART Crypto Vault"
+      required: true
+
+    - package: com.agentic.fortified
+      name: "ART Fortified"
+      required: true
+
+  # Common vulnerability test apps
+  vuln_apps:
+    - package: com.android.insecurebankv2
+      name: "InsecureBankv2"
+      required: false
+      notes: "Popular intentionally vulnerable banking app"
+
+# =============================================================================
+# USER DATA TEMPLATES
+# =============================================================================
+user_data:
+  # Contact generation settings
+  contacts:
+    count: 50
+    include_types:
+      - family    # Mom, Dad, Sister, etc.
+      - work      # Boss, Colleague, HR
+      - friends   # Random names
+      - services  # Bank, Doctor, etc.
+
+    # VIP contacts that should always be present (for targeted challenges)
+    vip_contacts:
+      - name: "Mom"
+        phone: "+1-555-0101"
+        notes: "Family contact"
+      - name: "Boss - John Smith"
+        phone: "+1-555-0102"
+        email: "jsmith@company.com"
+      - name: "Bank Support"
+        phone: "+1-800-555-0199"
+        notes: "Financial institution"
+
+  # SMS generation settings
+  sms:
+    count: 100
+    categories:
+      normal: 70        # Regular conversations
+      notifications: 15 # App notifications
+      sensitive: 15     # 2FA, bank alerts, etc.
+
+    # Sensitive message templates
+    sensitive_templates:
+      - type: "2fa"
+        sender: "Google"
+        template: "Your verification code is {code}. Don't share this code."
+      - type: "bank"
+        sender: "Chase"
+        template: "Alert: ${amount} withdrawal from account ending {last4}"
+      - type: "shipping"
+        sender: "Amazon"
+        template: "Your package has shipped! Track: {tracking}"
+
+  # File system data
+  files:
+    photos:
+      count: 30
+      locations:
+        - /sdcard/DCIM/Camera
+        - /sdcard/Pictures
+      types: [jpg, png]
+
+    documents:
+      count: 10
+      locations:
+        - /sdcard/Documents
+        - /sdcard/Download
+      types: [pdf, docx, xlsx]
+      names:
+        - "Tax_Return_2024.pdf"
+        - "Medical_Records.pdf"
+        - "Bank_Statement.pdf"
+        - "Resume.docx"
+        - "Budget_2024.xlsx"
+
+  # Browser data
+  browser:
+    history_entries: 50
+    categories:
+      social: 20
+      banking: 10
+      shopping: 15
+      news: 5
+
+    saved_passwords:
+      - domain: "facebook.com"
+        username: "testuser@email.com"
+      - domain: "amazon.com"
+        username: "buyer@email.com"
+      - domain: "bank.chase.com"
+        username: "customer123"
+
+  # WiFi networks
+  wifi:
+    networks:
+      - ssid: "HomeWiFi_5G"
+        security: "WPA2"
+        password: "home_password_123"
+        saved: true
+      - ssid: "CoffeeShop_Free"
+        security: "OPEN"
+        saved: true
+      - ssid: "CorpNetwork"
+        security: "WPA2-Enterprise"
+        saved: true
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+security:
+  lock_screen:
+    type: "pin"  # none, pin, pattern, password
+    value: "1234"
+
+  biometrics:
+    fingerprint: false  # Emulator limitation
+    face: false
+
+  encryption:
+    device_encrypted: true
+
+  permissions:
+    # Pre-grant these permissions for test apps
+    auto_grant:
+      - android.permission.READ_CONTACTS
+      - android.permission.READ_SMS
+      - android.permission.READ_EXTERNAL_STORAGE
+      - android.permission.ACCESS_FINE_LOCATION
+
+# =============================================================================
+# ACCOUNTS
+# =============================================================================
+accounts:
+  google:
+    configured: false  # Usually skip for test devices
+
+  email:
+    - type: "imap"
+      address: "testuser@testdomain.com"
+
+  social:
+    # Mock accounts for social apps
+    - app: "com.instagram.android"
+      username: "test_user_art"

@@ -1,0 +1,388 @@
+# Android 14 Everyday User Persona
+# =============================================================================
+# Simulates a typical smartphone user on Android 14 (API 34)
+# Inherits from: base_persona.yaml
+# =============================================================================
+
+name: "Android 14 Everyday User"
+description: |
+  A modern smartphone user on Android 14 with current apps and security
+  features. This persona reflects the stricter permissions model and
+  newer security controls in Android 14.
+
+inherits: base_persona
+compatibility: android_14
+
+# =============================================================================
+# DEVICE IDENTITY
+# =============================================================================
+device:
+  android_version: "14"
+  api_level: 34
+  security_patch: "2024-10-01"
+
+  # Emulated as Pixel 8 (realistic for Android 14)
+  model: "Pixel 8"
+  manufacturer: "Google"
+  brand: "google"
+  product: "shiba"
+  hardware: "shiba"
+
+  fingerprint: "google/shiba/shiba:14/UQ1A.240105.002/11206455:user/release-keys"
+
+  screen:
+    density: 420
+    resolution: "1080x2400"
+
+  # Android 14 specific features
+  features:
+    photo_picker: true           # New restricted photo access
+    partial_media_access: true   # Granular media permissions
+    credential_manager: true     # New credential API
+
+# =============================================================================
+# INSTALLED APPS (Updated for 2024)
+# =============================================================================
+apps:
+  # Banking & Finance
+  banking:
+    - package: com.chase.sig.android
+      name: "Chase Mobile"
+      category: banking
+      has_login: true
+      uses_biometric: true
+      sensitive_data: [credentials, transactions, account_info]
+
+    - package: com.venmo
+      name: "Venmo"
+      category: finance
+      has_login: true
+
+    - package: com.squareup.cash
+      name: "Cash App"
+      category: finance
+      has_login: true
+
+    - package: com.coinbase.android
+      name: "Coinbase"
+      category: crypto
+      has_login: true
+      sensitive_data: [wallet_keys, transactions]
+      notes: "Cryptocurrency wallet - high value target"
+
+  # Social Media (2024 popular apps)
+  social:
+    - package: com.instagram.android
+      name: "Instagram"
+      has_login: true
+
+    - package: com.twitter.android
+      name: "X (Twitter)"
+      has_login: true
+
+    - package: com.zhiliaoapp.musically
+      name: "TikTok"
+      has_login: true
+
+    - package: com.bereal.ft
+      name: "BeReal"
+      has_login: true
+      sensitive_data: [photos, location, friends]
+
+    - package: com.discord
+      name: "Discord"
+      has_login: true
+      sensitive_data: [messages, servers, voice_data]
+
+  # Messaging
+  messaging:
+    - package: com.whatsapp
+      name: "WhatsApp"
+      has_login: true
+      encryption: "e2e"
+
+    - package: org.telegram.messenger
+      name: "Telegram"
+      has_login: true
+
+    - package: com.google.android.apps.messaging
+      name: "Google Messages"
+      system_app: true
+      rcs_enabled: true
+
+    - package: org.thoughtcrime.securesms
+      name: "Signal"
+      has_login: true
+      encryption: "e2e"
+      notes: "Privacy-focused messaging"
+
+  # Productivity
+  productivity:
+    - package: com.google.android.gm
+      name: "Gmail"
+      has_login: true
+
+    - package: com.microsoft.teams
+      name: "Microsoft Teams"
+      has_login: true
+
+    - package: com.notion.id
+      name: "Notion"
+      has_login: true
+      sensitive_data: [notes, documents, work_data]
+
+  # Security & Auth (Modern)
+  security:
+    - package: com.google.android.apps.authenticator2
+      name: "Google Authenticator"
+      sensitive_data: [totp_secrets]
+
+    - package: com.onepassword.android
+      name: "1Password"
+      has_login: true
+      sensitive_data: [all_passwords, secure_notes, cards]
+      notes: "Password manager - critical target"
+
+    - package: com.yubico.yubioath
+      name: "Yubico Authenticator"
+      sensitive_data: [hardware_totp]
+
+  # AI & Productivity (2024 apps)
+  ai:
+    - package: com.openai.chatgpt
+      name: "ChatGPT"
+      has_login: true
+      sensitive_data: [chat_history, api_keys]
+
+  # Health & Fitness
+  health:
+    - package: com.google.android.apps.fitness
+      name: "Google Fit"
+      has_login: true
+      sensitive_data: [health_metrics, activity_data]
+
+    - package: com.strava
+      name: "Strava"
+      has_login: true
+      sensitive_data: [location_history, routes]
+
+  # Shopping
+  shopping:
+    - package: com.amazon.mShop.android.shopping
+      name: "Amazon"
+      has_login: true
+
+    - package: com.shopify.shop
+      name: "Shop"
+      has_login: true
+      sensitive_data: [order_history, payment_methods]
+
+# =============================================================================
+# USER DATA
+# =============================================================================
+user_data:
+  contacts:
+    count: 134
+    include_types:
+      - family: 15
+      - work: 40
+      - friends: 55
+      - services: 24
+
+    vip_contacts:
+      - name: "Mom"
+        phone: "+1-555-0101"
+        email: "mom@family.com"
+      - name: "Dad"
+        phone: "+1-555-0102"
+      - name: "Manager - Alex Chen"
+        phone: "+1-555-0200"
+        email: "achen@techcorp.com"
+        organization: "TechCorp"
+      - name: "CTO - Maria Garcia"
+        phone: "+1-555-0201"
+        email: "mgarcia@techcorp.com"
+      - name: "Crypto Advisor"
+        phone: "+1-555-0350"
+        notes: "Has wallet recovery phrases"
+      - name: "Personal Lawyer"
+        phone: "+1-555-0400"
+        email: "lawyer@lawfirm.com"
+
+  sms:
+    count: 312
+    categories:
+      normal: 200
+      notifications: 70
+      sensitive: 42
+
+    required_sensitive:
+      # Banking
+      - sender: "+1-800-935-9935"
+        body: "Chase Alert: $2,450.00 Zelle payment sent to John D. on 12/20"
+      - sender: "737474"
+        body: "Cash App: You sent $500 to $CryptoInvestor. Tap to view."
+
+      # 2FA
+      - sender: "GOOGLE"
+        body: "G-582910 is your Google verification code."
+      - sender: "22000"
+        body: "Your Coinbase verification code is 847291"
+      - sender: "1Password"
+        body: "Your 1Password unlock code is 391847. Expires in 30 seconds."
+
+      # Work
+      - sender: "+1-555-0200"
+        body: "FYI the AWS root password is: TechC0rp2024!Admin - change after setup"
+      - sender: "+1-555-0201"
+        body: "Quarterly results: $4.2M revenue, don't share until announcement"
+
+      # Crypto
+      - sender: "Coinbase"
+        body: "Your BTC withdrawal of 0.5 BTC to wallet 1A1zP1... is confirmed"
+
+  call_log:
+    count: 234
+    include_missed: 35
+    include_voicemail: 12
+
+  files:
+    photos:
+      count: 487
+      include_screenshots: 65  # Often contain sensitive info
+      include_selfies: 120
+
+    documents:
+      required:
+        - path: "/sdcard/Documents/Tax_Return_2024.pdf"
+          size: "3.1MB"
+        - path: "/sdcard/Documents/Medical_Records.pdf"
+          size: "1.2MB"
+        - path: "/sdcard/Documents/Employment_Contract.pdf"
+          size: "890KB"
+        - path: "/sdcard/Download/Crypto_Wallet_Backup.pdf"
+          content: |
+            WALLET RECOVERY PHRASE - KEEP SECURE
+            abandon abandon abandon abandon abandon
+            abandon abandon abandon abandon abandon
+            abandon about
+
+            NEVER SHARE THIS WITH ANYONE
+        - path: "/sdcard/Documents/passwords_backup.txt"
+          content: |
+            Personal Passwords Backup
+            -------------------------
+            Netflix: Stream2024!
+            Home WiFi: FamilyNetwork2024
+            Work VPN: TechCorp#SecureVPN
+            AWS Console: admin@techcorp.com / CloudAdmin2024!
+            1Password Master: MySuperSecure#Master123
+            Coinbase: crypto@email.com / Blockchain2024!
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_bank_balance.png"
+          notes: "Screenshot showing account balance"
+
+        - path: "/sdcard/DCIM/Screenshots/Screenshot_2fa_codes.png"
+          notes: "Screenshot of authenticator app"
+
+  browser:
+    history_entries: 350
+    required_sites:
+      - url: "https://secure.chase.com"
+        title: "Chase Online Banking"
+        visits: 67
+      - url: "https://www.coinbase.com/portfolio"
+        title: "Coinbase Portfolio"
+        visits: 89
+      - url: "https://console.aws.amazon.com"
+        title: "AWS Console"
+        visits: 45
+      - url: "https://1password.com/my"
+        title: "1Password"
+        visits: 34
+
+    cookies:
+      persist_sessions: true
+      sites:
+        - domain: ".chase.com"
+        - domain: ".coinbase.com"
+        - domain: ".aws.amazon.com"
+        - domain: ".google.com"
+
+  wifi:
+    networks:
+      - ssid: "HomeNetwork_5G"
+        security: "WPA3"
+        password: "FamilyNetwork2024!"
+      - ssid: "TechCorp-Secure"
+        security: "WPA2-Enterprise"
+        identity: "achen"
+      - ssid: "iPhone (Alex)"
+        security: "WPA2"
+        password: "hotspot123"
+      - ssid: "Hilton_Guest"
+        security: "OPEN"
+      - ssid: "WeWork-Members"
+        security: "WPA2"
+
+  clipboard:
+    history:
+      - "aws-access-key-id: AKIAIOSFODNN7EXAMPLE"
+      - "Wallet: 0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+      - "Meeting passcode: 2024Quarterly!"
+
+# =============================================================================
+# ANDROID 14 SECURITY (Stricter)
+# =============================================================================
+security:
+  lock_screen:
+    type: "pattern"
+    timeout_seconds: 30
+
+  biometrics:
+    fingerprint: true
+    face: false
+
+  # Android 14 specific permissions
+  permissions:
+    # Partial media access (Android 14+)
+    media_access: "selected"  # Not full access
+
+    # Notification access
+    notification_access:
+      - com.whatsapp
+      - com.google.android.apps.messaging
+
+    granted:
+      com.whatsapp:
+        - READ_CONTACTS
+        - READ_SMS
+        - CAMERA
+        - RECORD_AUDIO
+        - ACCESS_FINE_LOCATION
+        - READ_MEDIA_IMAGES  # Android 14 specific
+        - READ_MEDIA_VIDEO
+      com.coinbase.android:
+        - CAMERA  # For QR scanning
+        - USE_BIOMETRIC
+
+  # Credential Manager (Android 14)
+  credential_manager:
+    passkeys_enabled: true
+    autofill_service: "com.onepassword.android"
+
+# =============================================================================
+# CHALLENGE VALIDATION
+# =============================================================================
+validation:
+  min_contacts: 75
+  min_sms: 150
+  min_apps: 20
+  required_apps:
+    - com.whatsapp
+    - com.chase.sig.android
+    - com.coinbase.android
+    - com.onepassword.android
+  required_files:
+    - /sdcard/Documents/passwords_backup.txt
+    - /sdcard/Download/Crypto_Wallet_Backup.pdf

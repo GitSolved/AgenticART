@@ -1,0 +1,315 @@
+# Android 11 Everyday User Persona
+# =============================================================================
+# Simulates a typical smartphone user on Android 11 (API 30)
+# Inherits from: base_persona.yaml
+# =============================================================================
+
+name: "Android 11 Everyday User"
+description: |
+  A typical smartphone user with common apps, realistic data, and
+  standard security settings. This persona makes challenges meaningful
+  by providing actual data to exfiltrate and apps to analyze.
+
+inherits: base_persona
+compatibility: android_11
+
+# =============================================================================
+# DEVICE IDENTITY
+# =============================================================================
+device:
+  android_version: "11"
+  api_level: 30
+  security_patch: "2021-06-01"
+
+  # Emulated as Pixel 4 (realistic for Android 11)
+  model: "Pixel 4"
+  manufacturer: "Google"
+  brand: "google"
+  product: "flame"
+  hardware: "flame"
+
+  fingerprint: "google/flame/flame:11/RQ3A.210605.005/7349499:user/release-keys"
+
+  # Screen settings
+  screen:
+    density: 440
+    resolution: "1080x2280"
+
+# =============================================================================
+# INSTALLED APPS
+# =============================================================================
+apps:
+  # Banking & Finance - High value targets
+  banking:
+    - package: com.chase.sig.android
+      name: "Chase Mobile"
+      category: banking
+      has_login: true
+      sensitive_data: [credentials, transactions, account_info]
+      notes: "Primary banking app target"
+
+    - package: com.venmo
+      name: "Venmo"
+      category: finance
+      has_login: true
+      sensitive_data: [payment_history, contacts, balance]
+
+    - package: com.paypal.android.p2pmobile
+      name: "PayPal"
+      category: finance
+      has_login: true
+
+  # Social Media - Data exfiltration targets
+  social:
+    - package: com.instagram.android
+      name: "Instagram"
+      has_login: true
+      sensitive_data: [messages, photos, contacts]
+
+    - package: com.twitter.android
+      name: "Twitter"
+      has_login: true
+
+    - package: com.facebook.katana
+      name: "Facebook"
+      has_login: true
+      sensitive_data: [messages, photos, location_history]
+
+    - package: com.zhiliaoapp.musically
+      name: "TikTok"
+      has_login: true
+
+  # Messaging - Sensitive communications
+  messaging:
+    - package: com.whatsapp
+      name: "WhatsApp"
+      has_login: true
+      sensitive_data: [messages, media, contacts, call_logs]
+      encryption: "e2e"
+      notes: "Primary messaging target"
+
+    - package: org.telegram.messenger
+      name: "Telegram"
+      has_login: true
+      sensitive_data: [messages, secret_chats]
+
+    - package: com.Slack
+      name: "Slack"
+      has_login: true
+      sensitive_data: [work_messages, files]
+
+  # Productivity - Corporate data
+  productivity:
+    - package: com.google.android.gm
+      name: "Gmail"
+      has_login: true
+      sensitive_data: [emails, attachments, contacts]
+
+    - package: com.google.android.apps.docs
+      name: "Google Drive"
+      has_login: true
+      sensitive_data: [documents, shared_files]
+
+    - package: com.microsoft.office.outlook
+      name: "Outlook"
+      has_login: true
+
+  # Security & Auth - 2FA targets
+  security:
+    - package: com.google.android.apps.authenticator2
+      name: "Google Authenticator"
+      sensitive_data: [totp_secrets]
+      notes: "2FA bypass target"
+
+    - package: com.authy.authy
+      name: "Authy"
+      sensitive_data: [totp_secrets, backup_password]
+
+  # Shopping - Financial data
+  shopping:
+    - package: com.amazon.mShop.android.shopping
+      name: "Amazon"
+      has_login: true
+      sensitive_data: [payment_methods, order_history, addresses]
+
+  # Dating - Sensitive personal data
+  dating:
+    - package: com.tinder
+      name: "Tinder"
+      has_login: true
+      sensitive_data: [messages, matches, photos, location]
+      notes: "Highly sensitive personal data"
+
+  # Health - Protected data
+  health:
+    - package: com.myfitnesspal.android
+      name: "MyFitnessPal"
+      has_login: true
+      sensitive_data: [health_data, weight, diet]
+
+# =============================================================================
+# USER DATA (Extended from base)
+# =============================================================================
+user_data:
+  contacts:
+    count: 87
+    include_types:
+      - family: 12
+      - work: 25
+      - friends: 35
+      - services: 15
+
+    # Additional VIP contacts for Android 11 persona
+    vip_contacts:
+      - name: "Mom"
+        phone: "+1-555-0101"
+        email: "mom@family.com"
+      - name: "Dad"
+        phone: "+1-555-0102"
+      - name: "Boss - Sarah Johnson"
+        phone: "+1-555-0200"
+        email: "sjohnson@company.com"
+        organization: "TechCorp Inc."
+      - name: "IT Support"
+        phone: "+1-555-0201"
+        email: "it@company.com"
+      - name: "Doctor - Dr. Smith"
+        phone: "+1-555-0300"
+      - name: "Chase Bank"
+        phone: "+1-800-935-9935"
+      - name: "Lawyer - Mike Brown"
+        phone: "+1-555-0400"
+        email: "mbrown@lawfirm.com"
+
+  sms:
+    count: 234
+    categories:
+      normal: 150
+      notifications: 50
+      sensitive: 34
+
+    # Sensitive messages that should be present
+    required_sensitive:
+      - sender: "+1-800-935-9935"
+        body: "Chase Alert: $500.00 withdrawal from checking ****1234 on 12/15"
+      - sender: "72458"
+        body: "Your Amazon verification code is 847291. Don't share this code."
+      - sender: "GOOGLE"
+        body: "G-482910 is your Google verification code."
+      - sender: "+1-555-0200"
+        body: "Don't forget the board meeting password is: Q4Revenue2024!"
+
+  call_log:
+    count: 150
+    include_missed: 20
+    include_voicemail: 5
+
+  files:
+    photos:
+      count: 127
+      include_screenshots: 15
+      include_selfies: 30
+
+    documents:
+      required:
+        - path: "/sdcard/Documents/Tax_Return_2024.pdf"
+          size: "2.3MB"
+        - path: "/sdcard/Documents/Medical_Records_Summary.pdf"
+          size: "890KB"
+        - path: "/sdcard/Documents/Bank_Statement_Nov2024.pdf"
+          size: "156KB"
+        - path: "/sdcard/Download/Employee_Handbook.pdf"
+          size: "4.1MB"
+        - path: "/sdcard/Documents/passwords.txt"
+          content: |
+            Netflix: streaming123
+            WiFi: home_password_123
+            Work VPN: CorpNet2024!
+
+  browser:
+    history_entries: 200
+    required_sites:
+      - url: "https://secure.chase.com/web/auth/"
+        title: "Chase Online Banking"
+        visits: 45
+      - url: "https://www.amazon.com/gp/css/order-history"
+        title: "Amazon Order History"
+        visits: 23
+      - url: "https://mail.google.com"
+        title: "Gmail"
+        visits: 89
+
+    cookies:
+      persist_sessions: true
+      sites:
+        - domain: ".chase.com"
+        - domain: ".amazon.com"
+        - domain: ".google.com"
+
+  wifi:
+    networks:
+      - ssid: "HomeNetwork_5G"
+        security: "WPA2"
+        password: "FamilyWifi2024!"
+        priority: 1
+      - ssid: "iPhone (Personal Hotspot)"
+        security: "WPA2"
+        password: "mobile123"
+      - ssid: "Starbucks WiFi"
+        security: "OPEN"
+      - ssid: "TechCorp-Employee"
+        security: "WPA2-Enterprise"
+        identity: "sjohnson"
+      - ssid: "Marriott_Guest"
+        security: "OPEN"
+        captive_portal: true
+
+  clipboard:
+    # Recent clipboard entries
+    history:
+      - "Meeting ID: 847 2910 4856"
+      - "Passcode: 2024Corp"
+      - "SSN: 123-45-6789"
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+security:
+  lock_screen:
+    type: "pin"
+    value: "1234"
+    timeout_seconds: 30
+
+  permissions:
+    # Apps with dangerous permissions granted
+    granted:
+      com.whatsapp:
+        - READ_CONTACTS
+        - READ_SMS
+        - CAMERA
+        - RECORD_AUDIO
+        - ACCESS_FINE_LOCATION
+      com.instagram.android:
+        - READ_CONTACTS
+        - CAMERA
+        - ACCESS_FINE_LOCATION
+      com.chase.sig.android:
+        - CAMERA  # For check deposits
+
+  # Notification access
+  notification_listeners:
+    - com.whatsapp
+
+# =============================================================================
+# CHALLENGE VALIDATION
+# =============================================================================
+# Minimum requirements for persona-dependent challenges
+validation:
+  min_contacts: 50
+  min_sms: 100
+  min_apps: 15
+  required_apps:
+    - com.whatsapp
+    - com.chase.sig.android
+  required_files:
+    - /sdcard/Documents/passwords.txt
