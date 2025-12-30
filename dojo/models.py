@@ -251,6 +251,49 @@ class ScoringRubric:
         return score
 
 
+class ExecutionMode(Enum):
+    """How a challenge is meant to be executed and graded."""
+
+    FULL_EXECUTION = "full_execution"      # Agent must fully exploit the vulnerability
+    DETECTION_ANALYSIS = "detection_analysis"  # Agent analyzes/detects but may not fully exploit
+    DETECTION_ONLY = "detection_only"      # Agent only needs to identify the vulnerability
+    SYNTAX_ONLY = "syntax_only"            # Code validated locally, not executed on device
+    SIMULATION = "simulation"              # Simulates behavior patterns (no real attack)
+    TRY_HARDER = "try_harder"              # Aspirational challenge with partial credit
+
+    @classmethod
+    def from_string(cls, value: str) -> "ExecutionMode":
+        """Create ExecutionMode from string value."""
+        if not value:
+            return cls.FULL_EXECUTION
+        try:
+            return cls(value.lower())
+        except ValueError:
+            # Default to full_execution if not recognized
+            return cls.FULL_EXECUTION
+
+    @property
+    def requires_full_exploit(self) -> bool:
+        """Check if this mode requires full exploitation for success."""
+        return self == ExecutionMode.FULL_EXECUTION
+
+    @property
+    def is_detection_based(self) -> bool:
+        """Check if this mode is detection/analysis focused."""
+        return self in (
+            ExecutionMode.DETECTION_ANALYSIS,
+            ExecutionMode.DETECTION_ONLY,
+        )
+
+    @property
+    def allows_partial_credit(self) -> bool:
+        """Check if this mode allows partial credit for progress."""
+        return self in (
+            ExecutionMode.DETECTION_ANALYSIS,
+            ExecutionMode.TRY_HARDER,
+        )
+
+
 class Compatibility(Enum):
     """Android version compatibility for challenges."""
 
@@ -302,6 +345,7 @@ class Challenge:
     hints: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     compatibility: Compatibility = Compatibility.UNIVERSAL  # Android version compatibility
+    execution_mode: ExecutionMode = ExecutionMode.FULL_EXECUTION  # How to grade this challenge
 
     def to_prompt(self) -> str:
         """Generate the challenge prompt for the model."""

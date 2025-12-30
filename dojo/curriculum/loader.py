@@ -13,6 +13,7 @@ from dojo.models import (
     Challenge,
     ChallengeInput,
     Compatibility,
+    ExecutionMode,
     ExpectedOutput,
     ScoringRubric,
     ScriptType,
@@ -94,6 +95,10 @@ class ChallengeLoader:
             compat_str = data.get("compatibility", "universal")
             compatibility = Compatibility.from_string(compat_str)
 
+            # Parse execution mode
+            exec_mode_str = data.get("execution_mode", "full_execution")
+            execution_mode = ExecutionMode.from_string(exec_mode_str)
+
             return Challenge(
                 id=data["id"],
                 name=data["name"],
@@ -107,6 +112,7 @@ class ChallengeLoader:
                 hints=data.get("hints", []),
                 tags=data.get("tags", []),
                 compatibility=compatibility,
+                execution_mode=execution_mode,
             )
 
         except KeyError as e:
