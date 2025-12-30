@@ -1,0 +1,41 @@
+site_name: AgenticART
+site_description: Framework for creating AI security agents through execution-verified training
+site_url: https://gitsolved.github.io/AgenticART
+repo_url: https://github.com/GitSolved/AgenticART
+repo_name: GitSolved/AgenticART
+docs_dir: docs_site
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: red
+      accent: orange
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: getting-started/quickstart.md
+    - Installation: getting-started/installation.md
+  - Training Guide:
+    - Overview: training/overview.md
+    - Fine-tuning with LoRA: training/finetuning.md
+    - Exporting Data: training/exporting.md
+  - Research:
+    - Methodology: research/methodology.md
+    - Lab Environment: research/lab-environment.md
+  - Reference:
+    - Scoring System: reference/scoring.md
+    - Challenge Format: reference/challenges.md
+    - API: reference/api.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - admonition
+  - tables
