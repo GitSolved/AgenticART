@@ -556,10 +556,19 @@ This project builds on research demonstrating that LLMs can automate Android sec
 - AI-generated exploitation scripts streamline security workflows
 - But: LLMs need human oversight to ensure accuracy—outputs aren't universally reliable
 
-**How AgenticART addresses this:**
-- **Execution verification** solves the accuracy problem—commands are tested on real devices, not just generated
-- **Structured curriculum** replaces ad-hoc prompting with progressive skill building
-- **Training data pipeline** captures what actually works, creating a feedback loop for improvement
+**Where AgenticART aligns:**
+- ✅ Validates that LLMs can perform Android security tasks
+- ✅ Confirms that raw LLM outputs aren't universally reliable (that's why grading exists)
+
+**Where AgenticART deviates:**
+The paper concluded that *human oversight* is needed for accuracy. AgenticART tests an alternative hypothesis: **can automated execution verification achieve the same goal without human-in-the-loop?**
+
+Instead of humans checking LLM outputs, AgenticART:
+- Runs commands on real devices and checks if they actually work
+- Grades outputs based on execution results, not human judgment
+- Creates training data only from verified successes
+
+This is an open research question—not a proven solution.
 
 ---
 
