@@ -10,6 +10,12 @@ from dojo.sensei.event_logger import (
     generate_config_hash,
     get_schema_documentation,
 )
+from dojo.sensei.exploitation_validator import (
+    ExploitationConfig,
+    ExploitationResult,
+    ExploitationType,
+    ExploitationValidator,
+)
 from dojo.sensei.exporter import DPOPair, ExportFormat, TrainingDataExporter
 from dojo.sensei.grader import Grader, GradingCriteria, GradingResult
 from dojo.sensei.progress_tracker import ProgressTracker
@@ -24,6 +30,11 @@ __all__ = [
     "Grader",
     "GradingCriteria",
     "GradingResult",
+    # Exploitation Validation
+    "ExploitationValidator",
+    "ExploitationResult",
+    "ExploitationType",
+    "ExploitationConfig",
     # Extraction
     "TrainingExtractor",
     "ExtractionConfig",

@@ -16,6 +16,7 @@ from dojo.models import (
     ScriptType,
     SenseiAssessment,
 )
+from dojo.sensei.exploitation_validator import ExploitationValidator
 
 
 @dataclass
@@ -112,16 +113,23 @@ class Grader:
         Belt.BLACK:  (32, 30, 20, 18),   # Maximum precision required
     }
 
-    def __init__(self, attempt_penalty: int = 5, use_belt_scaling: bool = True):
+    def __init__(
+        self,
+        attempt_penalty: int = 5,
+        use_belt_scaling: bool = True,
+        exploitation_validator: Optional[ExploitationValidator] = None,
+    ):
         """
         Initialize the grader.
 
         Args:
             attempt_penalty: Points deducted per retry attempt.
             use_belt_scaling: Whether to use belt-specific rubric weights.
+            exploitation_validator: Optional validator for exploitation challenges.
         """
         self.attempt_penalty = attempt_penalty
         self.use_belt_scaling = use_belt_scaling
+        self.exploitation_validator = exploitation_validator or ExploitationValidator()
 
     def get_belt_rubric(self, belt: Belt) -> ScoringRubric:
         """
@@ -403,6 +411,9 @@ class Grader:
         - SIMULATION: Demonstrating the pattern is sufficient
         - TRY_HARDER: Partial progress counts
 
+        Also handles exploitation validation for challenges that define
+        CTF-style flags or exploitation success indicators.
+
         Args:
             session: The challenge session.
 
@@ -412,6 +423,14 @@ class Grader:
         issues = []
         challenge = session.challenge
         exec_mode = challenge.execution_mode
+
+        # Check for exploitation validation configuration
+        # This provides ground-truth verification via CTF-style flags
+        exploit_config = challenge.inputs.additional_context.get(
+            "exploitation_validation", {}
+        )
+        if exploit_config:
+            return self._evaluate_exploitation_objective(session)
 
         # Route to appropriate evaluation based on execution mode
         if exec_mode.is_detection_based:
@@ -441,6 +460,50 @@ class Grader:
                         return False, issues
 
         return True, issues
+
+    def _evaluate_exploitation_objective(
+        self,
+        session: ChallengeSession,
+    ) -> tuple[bool, list[str]]:
+        """
+        Evaluate objective using exploitation validation (CTF-style flags).
+
+        This provides ground-truth verification by checking for flags that
+        only appear when actual exploitation succeeds, not just when commands run.
+
+        Args:
+            session: The challenge session.
+
+        Returns:
+            Tuple of (is_valid, list of issues).
+        """
+        issues = []
+        challenge = session.challenge
+
+        # Use the exploitation validator
+        result = self.exploitation_validator.validate(
+            challenge=challenge,
+            session=session,
+            executor=None,  # No live executor during grading
+        )
+
+        if result.success:
+            # Log what type of exploitation was validated
+            if result.flag_captured:
+                issues.append(f"Flag captured: {result.flag_captured}")
+            elif result.evidence:
+                issues.append(f"Exploitation verified: {result.evidence}")
+            return True, issues
+
+        # Exploitation failed - provide context
+        if result.reason:
+            issues.append(f"Exploitation not verified: {result.reason}")
+        else:
+            issues.append(
+                f"Exploitation validation failed for {result.exploitation_type.value}"
+            )
+
+        return False, issues
 
     def _evaluate_detection_objective(
         self,

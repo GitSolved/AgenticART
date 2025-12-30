@@ -40,8 +40,16 @@ class ChallengeLoader:
         return self.curriculum_dir / f"{belt.value}_belt"
 
     def _get_challenges_file(self, belt: Belt) -> Path:
-        """Get the challenges.yaml file for a belt."""
+        """Get the primary challenges.yaml file for a belt."""
         return self._get_belt_dir(belt) / "challenges.yaml"
+
+    def _get_all_challenge_files(self, belt: Belt) -> list[Path]:
+        """Get all challenge YAML files for a belt."""
+        belt_dir = self._get_belt_dir(belt)
+        if not belt_dir.exists():
+            return []
+        # Load all YAML files that contain 'challenge' in the name
+        return sorted(belt_dir.glob("*challenge*.yaml"))
 
     def _parse_challenge(self, data: dict, belt: Belt) -> Challenge:
         """Parse a challenge dictionary into a Challenge object."""
@@ -125,6 +133,8 @@ class ChallengeLoader:
         """
         Load all challenges for a specific belt.
 
+        Loads from all YAML files matching *challenge*.yaml in the belt directory.
+
         Args:
             belt: The belt level to load challenges for.
 
@@ -132,31 +142,33 @@ class ChallengeLoader:
             List of Challenge objects.
 
         Raises:
-            CurriculumError: If the challenges file cannot be loaded.
+            CurriculumError: If a challenges file cannot be loaded.
         """
-        challenges_file = self._get_challenges_file(belt)
+        challenge_files = self._get_all_challenge_files(belt)
 
-        if not challenges_file.exists():
-            return []
-
-        try:
-            with open(challenges_file, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            raise CurriculumError(
-                f"Invalid YAML in challenges file: {e}",
-                file_path=str(challenges_file),
-                cause=e,
-            )
-
-        if not data or "challenges" not in data:
+        if not challenge_files:
             return []
 
         challenges = []
-        for challenge_data in data["challenges"]:
-            challenge = self._parse_challenge(challenge_data, belt)
-            challenges.append(challenge)
-            self._cache[challenge.id] = challenge
+
+        for challenges_file in challenge_files:
+            try:
+                with open(challenges_file, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                raise CurriculumError(
+                    f"Invalid YAML in challenges file: {e}",
+                    file_path=str(challenges_file),
+                    cause=e,
+                )
+
+            if not data or "challenges" not in data:
+                continue
+
+            for challenge_data in data["challenges"]:
+                challenge = self._parse_challenge(challenge_data, belt)
+                challenges.append(challenge)
+                self._cache[challenge.id] = challenge
 
         return challenges
 

