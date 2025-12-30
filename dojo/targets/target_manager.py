@@ -183,8 +183,8 @@ class TargetManager:
         # Download URL handling
         if app.download_url.startswith("local://"):
             # Local APK path
-            apk_path = app.download_url.replace("local://", "")
-            apk_path = Path(__file__).parent.parent / apk_path
+            local_path = app.download_url.replace("local://", "")
+            apk_path = Path(__file__).parent.parent / local_path
         else:
             # Would need to download - for now just return False
             # In production, implement download logic

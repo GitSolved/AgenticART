@@ -234,11 +234,10 @@ class Grader:
 
         # Calculate performance metrics
         attempt_count = session.total_attempts
-        execution_time = sum(
-            attempt.execution_result.execution_time
-            for attempt in session.attempts
-            if attempt.execution_result
-        )
+        execution_time = 0.0
+        for attempt in session.attempts:
+            if attempt.execution_result:
+                execution_time += attempt.execution_result.duration
 
         return SenseiAssessment(
             challenge_id=challenge.id,

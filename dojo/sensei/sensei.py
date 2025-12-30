@@ -100,6 +100,7 @@ class Sensei:
 
         # Metrics collection for curriculum analysis
         self.collect_metrics = collect_metrics
+        self.metrics_collector: Optional[MetricsCollector] = None
         if collect_metrics:
             self.metrics_collector = metrics_collector or MetricsCollector(
                 output_path=self.output_dir / "metrics.json"
@@ -109,8 +110,6 @@ class Sensei:
                 self.metrics_collector.load()
             except (FileNotFoundError, Exception):
                 pass  # Start fresh if no existing metrics
-        else:
-            self.metrics_collector = None
 
     def evaluate_session(
         self,

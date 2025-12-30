@@ -114,7 +114,8 @@ class DeviceManager:
             CompletedProcess with stdout/stderr.
         """
         # Build command
-        cmd = [self.adb_path]
+        adb = self.adb_path or "adb"
+        cmd: list[str] = [adb]
         if self.device_id:
             cmd.extend(["-s", self.device_id])
         cmd.extend(command.split())
@@ -135,8 +136,9 @@ class DeviceManager:
     def _auto_detect_device(self) -> Optional[str]:
         """Auto-detect connected device."""
         try:
+            adb = self.adb_path or "adb"
             result = subprocess.run(
-                [self.adb_path, "devices"],
+                [adb, "devices"],
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -209,8 +211,8 @@ class DeviceManager:
         """
         # Method 1: Try su command
         try:
-            result = self._adb("shell su -c id", timeout=5)
-            if "uid=0" in result.stdout:
+            adb_result = self._adb("shell su -c id", timeout=5)
+            if "uid=0" in adb_result.stdout:
                 # Check for Magisk
                 magisk_check = self._shell("su -c 'ls /data/adb/magisk'")
                 if "No such file" not in magisk_check and magisk_check:
@@ -222,13 +224,13 @@ class DeviceManager:
         # Method 2: Check for su binary
         su_paths = ["/system/bin/su", "/system/xbin/su", "/sbin/su"]
         for path in su_paths:
-            result = self._shell(f"ls {path}")
-            if "No such file" not in result and path in result:
+            ls_output = self._shell(f"ls {path}")
+            if "No such file" not in ls_output and path in ls_output:
                 return True, "su_binary"
 
         # Method 3: Check for Magisk app
-        result = self._shell("pm list packages | grep magisk")
-        if "magisk" in result.lower():
+        packages = self._shell("pm list packages | grep magisk")
+        if "magisk" in packages.lower():
             return True, "magisk"
 
         # Method 4: Check build tags (some ROMs)

@@ -156,7 +156,7 @@ class ChallengeMetrics:
         """Get the most common error type."""
         if not self.error_counts:
             return None
-        return max(self.error_counts, key=self.error_counts.get)
+        return max(self.error_counts, key=lambda k: self.error_counts.get(k, 0))
 
     def to_dict(self) -> dict:
         return {
@@ -480,7 +480,7 @@ class ChallengeValueScorer:
             return 0.7  # No comparison data = assume moderately unique
 
         # Calculate technique frequency
-        technique_freq = defaultdict(int)
+        technique_freq: dict[str, int] = defaultdict(int)
         total = len(all_techniques)
 
         for c_techniques in all_techniques.values():
@@ -657,7 +657,7 @@ class ChallengeValueScorer:
 
         # Identify technique coverage
         all_techniques = set()
-        technique_coverage = defaultdict(int)
+        technique_coverage: dict[str, int] = defaultdict(int)
         for challenge in challenges:
             techniques = identify_techniques(challenge)
             all_techniques.update(techniques)

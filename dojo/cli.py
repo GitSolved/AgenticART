@@ -11,6 +11,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional, TypedDict, cast
 
 
 @dataclass
@@ -45,8 +46,16 @@ class DojoConfig:
     verbose: bool = False
 
 
+class BeltStats(TypedDict):
+    """Type for belt statistics."""
+    challenges: int
+    focus: str
+    exec_mode: str
+    skill: str
+
+
 # Belt statistics (after value-based pruning)
-BELT_STATS = {
+BELT_STATS: dict[str, BeltStats] = {
     'white':  {'challenges': 5,  'focus': 'Device recon, basic ADB', 'exec_mode': 'full_execution', 'skill': 'Beginner'},
     'yellow': {'challenges': 11, 'focus': 'Info disclosure, DoS', 'exec_mode': 'full_execution', 'skill': 'Novice'},
     'orange': {'challenges': 30, 'focus': 'Permission bypass, logic bugs', 'exec_mode': 'full_execution', 'skill': 'Intermediate'},
@@ -188,7 +197,7 @@ def select_environment(config: DojoConfig) -> None:
     choice = print_menu("STEP 1/8: SELECT ENVIRONMENT", options)
     if choice == 0:
         sys.exit(0)
-    config.rooted = options[choice - 1]['value']
+    config.rooted = cast(bool, options[choice - 1]['value'])
 
 
 def select_android_version(config: DojoConfig) -> None:
@@ -229,9 +238,9 @@ def select_android_version(config: DojoConfig) -> None:
         sys.exit(0)
 
     selected = options[choice - 1]
-    config.android_version = selected['value']
-    config.android_api = selected['api']
-    config.persona = selected['persona']
+    config.android_version = cast(str, selected['value'])
+    config.android_api = cast(int, selected['api'])
+    config.persona = cast(str, selected['persona'])
 
 
 def select_device(config: DojoConfig) -> None:
@@ -320,8 +329,8 @@ def select_belt(config: DojoConfig) -> None:
         sys.exit(0)
 
     selected = options[choice - 1]
-    config.belt = selected['value']
-    config.challenge_count = selected['challenges']
+    config.belt = cast(str, selected['value'])
+    config.challenge_count = cast(int, selected['challenges'])
 
 
 def select_workflow(config: DojoConfig) -> None:
@@ -345,7 +354,7 @@ def select_workflow(config: DojoConfig) -> None:
     if choice == 0:
         sys.exit(0)
 
-    config.distillation_mode = options[choice - 1]['value']
+    config.distillation_mode = cast(bool, options[choice - 1]['value'])
 
 
 def select_inference_mode(config: DojoConfig) -> None:
@@ -620,7 +629,7 @@ def build_command(config: DojoConfig) -> list[str]:
     return cmd
 
 
-def show_summary(config: DojoConfig) -> bool:
+def show_summary(config: DojoConfig) -> Optional[bool]:
     """Show configuration summary and confirm."""
     clear_screen()
     print_banner()
