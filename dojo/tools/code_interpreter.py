@@ -23,16 +23,55 @@ class CodeExecutionResult:
 class CodeInterpreter:
     """A safe execution environment for model-generated Python logic."""
 
+    # Restricted set of safe built-in functions
+    # Excludes dangerous functions: open, __import__, eval, exec, compile, etc.
+    SAFE_BUILTINS = {
+        "print": print,
+        "len": len,
+        "range": range,
+        "str": str,
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "list": list,
+        "dict": dict,
+        "set": set,
+        "tuple": tuple,
+        "enumerate": enumerate,
+        "zip": zip,
+        "sorted": sorted,
+        "reversed": reversed,
+        "min": min,
+        "max": max,
+        "sum": sum,
+        "any": any,
+        "all": all,
+        "abs": abs,
+        "round": round,
+        "isinstance": isinstance,
+        "type": type,
+        "hasattr": hasattr,
+        "getattr": getattr,
+        "True": True,
+        "False": False,
+        "None": None,
+        "Exception": Exception,
+        "ValueError": ValueError,
+        "TypeError": TypeError,
+        "KeyError": KeyError,
+        "IndexError": IndexError,
+    }
+
     def __init__(self):
-        # We define a base set of allowed globals to give the model 'Tools'
-        # without exposing the entire system.
+        # We define a restricted set of allowed globals to give the model 'Tools'
+        # without exposing dangerous functions like open, __import__, eval, exec.
         self.base_globals = {
-            "__builtins__": __builtins__,
+            "__builtins__": self.SAFE_BUILTINS,
             "print": print,
             "json": __import__("json"),
             "re": __import__("re"),
-            "os": __import__("os"),
             "base64": __import__("base64"),
+            # NOTE: 'os' removed - too dangerous (file/process access)
         }
 
     def execute(

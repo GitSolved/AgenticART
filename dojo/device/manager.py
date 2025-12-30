@@ -8,6 +8,7 @@ a single interface for setting up training environments.
 from __future__ import annotations
 
 import os
+import shlex
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -459,12 +460,14 @@ class DeviceManager:
             if dry_run:
                 details.append(f"[DRY RUN] SMS from {sender}")
             else:
-                escaped_body = body.replace('"', '\\"')
+                # Use shlex.quote to prevent shell injection
+                safe_sender = shlex.quote(sender)
+                safe_body = shlex.quote(body)
                 self._shell(
-                    f'content insert --uri content://sms '
-                    f'--bind address:s:"{sender}" '
-                    f'--bind body:s:"{escaped_body}" '
-                    f'--bind type:i:1 --bind read:i:1'
+                    f"content insert --uri content://sms "
+                    f"--bind address:s:{safe_sender} "
+                    f"--bind body:s:{safe_body} "
+                    f"--bind type:i:1 --bind read:i:1"
                 )
                 details.append(f"SMS from {sender}")
 
@@ -488,13 +491,17 @@ class DeviceManager:
             if dry_run:
                 details.append(f"[DRY RUN] Would create: {path}")
             else:
-                # Create directory
+                # Use shlex.quote to prevent shell injection
+                safe_path = shlex.quote(path)
                 dir_path = "/".join(path.split("/")[:-1])
-                self._shell(f"mkdir -p {dir_path}")
+                safe_dir = shlex.quote(dir_path)
 
-                # Create file
-                escaped = content.replace("'", "'\\''")
-                self._shell(f"echo '{escaped}' > {path}")
+                # Create directory
+                self._shell(f"mkdir -p {safe_dir}")
+
+                # Create file using printf for safer content handling
+                safe_content = shlex.quote(content)
+                self._shell(f"printf %s {safe_content} > {safe_path}")
                 details.append(f"Created: {path}")
 
         return SetupResult(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -133,8 +134,11 @@ class Executor:
             command = command[4:].strip()
 
         # Build command with device specifier
-        assert self.adb_path is not None
-        assert self.device_id is not None
+        # Use explicit checks instead of assert (assert is stripped with -O flag)
+        if not self.adb_path:
+            raise ValueError("adb_path cannot be None or empty")
+        if not self.device_id:
+            raise ValueError("device_id cannot be None or empty")
         cmd_parts = [self.adb_path, "-s", self.device_id]
 
         # Handle shell commands specially to preserve quoting
@@ -247,7 +251,6 @@ class Executor:
         This method avoids shell escaping issues with multi-line scripts.
         """
         start_time = time.time()
-        temp_js = Path("temp_frida_script.js")
 
         # Ensure we write valid UTF-8 and strip any accidental markdown backticks the model might have added
         clean_script = (
@@ -256,9 +259,16 @@ class Executor:
             .replace("```", "")
             .strip()
         )
-        temp_js.write_text(clean_script, encoding="utf-8")
+
+        # Use system temp directory for security (not cwd)
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".js", prefix="frida_script_")
+        temp_js = Path(temp_path)
 
         try:
+            # Write script to temp file
+            with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+                f.write(clean_script)
+
             # We use -f (spawn) instead of -n (attach) for better stability in automated tests
             # and --runtime=v8 for modern JS support.
             cmd = [
@@ -337,11 +347,16 @@ class Executor:
         Note: This does not run on the device yet (requires NDK).
         """
         start_time = time.time()
-        temp_c = Path("temp_exploit.c")
-        temp_obj = Path("temp_exploit.out")
-        temp_c.write_text(script_content)
+
+        # Use system temp directory for security (not cwd)
+        temp_fd, temp_path = tempfile.mkstemp(suffix=".c", prefix="exploit_")
+        temp_c = Path(temp_path)
 
         try:
+            # Write C code to temp file
+            with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+                f.write(script_content)
+
             # 1. Attempt to compile locally (Syntax Check)
             # We use -fsyntax-only to just check code correctness
             cmd = ["clang", "-fsyntax-only", str(temp_c)]
@@ -382,8 +397,6 @@ class Executor:
         finally:
             if temp_c.exists():
                 temp_c.unlink()
-            if temp_obj.exists():
-                temp_obj.unlink()
 
     def execute(
         self,
