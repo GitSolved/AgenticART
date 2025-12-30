@@ -33,6 +33,10 @@ dev = [
     "types-PyYAML",
     "types-requests",
 ]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/GitSolved/AgenticART"
@@ -57,6 +61,7 @@ ignore = ["E501"]
 "dojo/test_*.py" = ["E402"]
 "dojo/sensei/sensei.py" = ["E402"]
 "scripts/generate_nvd_challenges.py" = ["E402"]
+"tests/*.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.10"
@@ -68,3 +73,9 @@ exclude = [
     "dojo_finetune_package/",
     "models/",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

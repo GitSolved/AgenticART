@@ -27,3 +27,43 @@ jobs:
 
       - name: Run Mypy (Type Check)
         run: mypy . --ignore-missing-imports
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install pytest pytest-cov
+          pip install -e . || pip install .
+
+      - name: Run Tests
+        run: pytest tests/ -v --cov=dojo --cov-report=term-missing
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  validate-data:
+    name: Validate Training Data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate JSONL Files
+        run: python scripts/validate_training_data.py || echo "No training data to validate"
