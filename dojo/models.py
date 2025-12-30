@@ -415,6 +415,10 @@ class SenseiAssessment:
     model_id: Optional[str] = None
     execution_output: Optional[str] = None
 
+    # Performance metrics (for scoring system)
+    execution_time: float = 0.0  # Total execution time in seconds
+    attempt_count: int = 1  # Number of attempts taken
+
     @property
     def is_positive_example(self) -> bool:
         """Check if this qualifies as a positive training example."""
@@ -455,6 +459,8 @@ class SenseiAssessment:
             "correction_explanation": self.correction_explanation,
             "timestamp": self.timestamp.isoformat(),
             "model_id": self.model_id,
+            "execution_time": round(self.execution_time, 3),
+            "attempt_count": self.attempt_count,
             "is_positive_example": self.is_positive_example,
             "is_negative_example": self.is_negative_example,
             "is_error_recovery_example": self.is_error_recovery_example,

@@ -705,19 +705,13 @@ def run_end_to_end(
             for issue in assessment.all_issues[:2]:
                 print(f"    - {issue}")
 
-        # Record attempt in scorer
-        # Calculate execution time from session attempts
-        exec_time = sum(
-            a.execution_result.execution_time
-            for a in session.attempts
-            if a.execution_result
-        )
+        # Record attempt in scorer (using metrics from assessment)
         scorer.record_attempt(
             challenge_id=challenge.id,
             belt=challenge.belt,
             assessment=assessment,
-            attempts=len(session.attempts),
-            execution_time=exec_time,
+            attempts=assessment.attempt_count,
+            execution_time=assessment.execution_time,
         )
 
     print()

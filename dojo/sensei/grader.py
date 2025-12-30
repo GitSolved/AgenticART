@@ -168,6 +168,14 @@ class Grader:
             last_attempt = session.attempts[-1]
             exec_output = last_attempt.execution_result.stdout
 
+        # Calculate performance metrics
+        attempt_count = session.total_attempts
+        execution_time = sum(
+            attempt.execution_result.execution_time
+            for attempt in session.attempts
+            if attempt.execution_result
+        )
+
         return SenseiAssessment(
             challenge_id=challenge.id,
             model_output=model_output,
@@ -180,6 +188,8 @@ class Grader:
             corrected_output=corrected_output,
             correction_explanation=correction_explanation,
             execution_output=exec_output,
+            execution_time=execution_time,
+            attempt_count=attempt_count,
         )
 
     def _evaluate_syntax(
