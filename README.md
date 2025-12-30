@@ -86,21 +86,23 @@ AgenticART implements a "Dojo" training system where AI agents learn Android vul
 
 ## Curriculum Statistics
 
-**Last Updated:** December 2025
+**Last Updated:** December 2025 (after value-based pruning)
 
 | Belt | Challenges | Skill Level | Focus Area |
 |------|------------|-------------|------------|
-| White | 17 | Beginner | Device reconnaissance, basic ADB |
-| Yellow | 23 | Novice | Information disclosure, simple DoS |
-| Orange | 43 | Intermediate | Permission bypass, logic bugs |
+| White | 5 | Beginner | Device reconnaissance, basic ADB |
+| Yellow | 11 | Novice | Information disclosure, simple DoS |
+| Orange | 30 | Intermediate | Permission bypass, logic bugs |
 | Green | 43 | Intermediate+ | IPC, content providers, intents |
-| Blue | 58 | Advanced | Buffer overflows, high-severity EoP |
+| Blue | 24 | Advanced | Buffer overflows, high-severity EoP |
 | Brown | 47 | Expert | UAF, race conditions, memory corruption |
-| Purple | 28 | Elite | Qualcomm critical, RCE vectors |
-| Black | 24 | Master | Kernel exploits, zero-click analysis |
-| **Total** | **283** | | |
+| Purple | 16 | Elite | Qualcomm critical, RCE vectors |
+| Black | 16 | Master | Kernel exploits, zero-click analysis |
+| **Total** | **192** | | |
 
 **CVE Sources:** NIST National Vulnerability Database, Android Security Bulletins (2019-2025)
+
+*91 low-value challenges pruned using automated value scoring (see `scripts/evaluate_curriculum.py`)*
 
 ---
 

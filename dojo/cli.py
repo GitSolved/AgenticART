@@ -47,16 +47,16 @@ class DojoConfig:
     verbose: bool = False
 
 
-# Belt statistics
+# Belt statistics (after value-based pruning)
 BELT_STATS = {
-    'white':  {'challenges': 17, 'focus': 'Device recon, basic ADB', 'exec_mode': 'full_execution', 'skill': 'Beginner'},
-    'yellow': {'challenges': 23, 'focus': 'Info disclosure, DoS', 'exec_mode': 'full_execution', 'skill': 'Novice'},
-    'orange': {'challenges': 43, 'focus': 'Permission bypass, logic bugs', 'exec_mode': 'full_execution', 'skill': 'Intermediate'},
+    'white':  {'challenges': 5,  'focus': 'Device recon, basic ADB', 'exec_mode': 'full_execution', 'skill': 'Beginner'},
+    'yellow': {'challenges': 11, 'focus': 'Info disclosure, DoS', 'exec_mode': 'full_execution', 'skill': 'Novice'},
+    'orange': {'challenges': 30, 'focus': 'Permission bypass, logic bugs', 'exec_mode': 'full_execution', 'skill': 'Intermediate'},
     'green':  {'challenges': 43, 'focus': 'IPC, content providers, intents', 'exec_mode': 'full_execution', 'skill': 'Intermediate+'},
-    'blue':   {'challenges': 58, 'focus': 'Buffer overflows, EoP', 'exec_mode': 'detection_analysis', 'skill': 'Advanced'},
+    'blue':   {'challenges': 24, 'focus': 'Buffer overflows, EoP', 'exec_mode': 'detection_analysis', 'skill': 'Advanced'},
     'brown':  {'challenges': 47, 'focus': 'UAF, race conditions', 'exec_mode': 'detection_analysis', 'skill': 'Expert'},
-    'purple': {'challenges': 28, 'focus': 'Qualcomm critical, RCE', 'exec_mode': 'detection_only', 'skill': 'Elite'},
-    'black':  {'challenges': 24, 'focus': 'Kernel exploits, zero-click', 'exec_mode': 'detection_only', 'skill': 'Master'},
+    'purple': {'challenges': 16, 'focus': 'Qualcomm critical, RCE', 'exec_mode': 'detection_only', 'skill': 'Elite'},
+    'black':  {'challenges': 16, 'focus': 'Kernel exploits, zero-click', 'exec_mode': 'detection_only', 'skill': 'Master'},
 }
 
 
