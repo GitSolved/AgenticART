@@ -1339,3 +1339,1600 @@ challenges:
   - cwe-368
   source: NVD API - Android Security Bulletin 2024
   published: '2024-08-15'
+- id: nvd_cve_2024_36972
+  name: CVE-2024-36972 - HIGH Vulnerability Analysis
+  description: "Real-world CVE from Android Security Bulletin (2024-06-10)\n\nCVE: CVE-2024-36972\nCVSS: 7.5 (HIGH)\nAttack\
+    \ Vector: NETWORK\nCWE: CWE-476\n\nIn the Linux kernel, the following vulnerability has been resolved:\n\naf_unix: Update\
+    \ unix_sk(sk)->oob_skb under sk_receive_queue lock.\n\nBilly Jheng Bing-Jhong reported a race between __unix_gc() and\n\
+    queue_oob().\n\n__unix_gc() tries to garbage-collect close()d inflight sockets,\nand then if the socket has MSG_OOB in\
+    \ unix_sk(sk)->oob_skb, GC\nwill drop the reference and set NULL to it locklessly.\n\nHowever, the peer socket still can\
+    \ send MSG_OOB message and\nqueue_oob() can update unix_sk(sk)->oob_skb concurrently, leading\nNULL pointer dereference.\
+    \ [0]\n\nTo fix the issue, let's update unix_sk(sk)->oob_skb under the\nsk_receive_queue's lock and take it everywhere\
+    \ we touch oob_skb.\n\nNote that we defer kfree_skb() in manage_oob() to silence lockdep\nfalse-positive (See [1]).\n\n\
+    [0]:\nBUG: kernel NULL pointer dereference, address: 0000000000000008\n PF: supervisor write access in kernel mode\n PF:\
+    \ error_code(0x0002) - not-present page\nPGD 8000000009f5e067 P4D 8000000009f5e067 PUD 9f5d067 PMD 0\nOops: 0002 [#1]\
+    \ PREEMPT SMP PTI\nCPU: 3 PID: 50 Comm: kworker/3:1 Not tainted 6.9.0-rc5-00191-gd091e579b864 #110\nHardware name: QEMU\
+    \ Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.0-0-gd239552ce722-prebuilt.qemu.org 04/01/2014\nWorkqueue: events delayed_fput\n\
+    RIP: 0010:skb_dequeue (./include/linux/skbuff.h:2386 ./include/linux/skbuff.h:2402 net/core/skbuff.c:3847)\nCode: 39 e3\
+    \ 74 3e 8b 43 10 48 89 ef 83 e8 01 89 43 10 49 8b 44 24 08 49 c7 44 24 08 00 00 00 00 49 8b 14 24 49 c7 04 24 00 00 00\
+    \ 00 <48> 89 42 08 48 89 10 e8 e7 c5 42 00 4c 89 e0 5b 5d 41 5c c3 cc cc\nRSP: 0018:ffffc900001bfd48 EFLAGS: 00000002\n\
+    RAX: 0000000000000000 RBX: ffff8880088f5ae8 RCX: 00000000361289f9\nRDX: 0000000000000000 RSI: 0000000000000206 RDI: ffff8880088f5b00\n\
+    RBP: ffff8880088f5b00 R08: 0000000000080000 R09: 0000000000000001\nR10: 0000000000000003 R11: 0000000000000001 R12: ffff8880056b6a00\n\
+    R13: ffff8880088f5280 R14: 0000000000000001 R15: ffff8880088f5a80\nFS:  0000000000000000(0000) GS:ffff88807dd80000(0000)\
+    \ knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 0000000000000008 CR3: 0000000006314000\
+    \ CR4: 00000000007506f0\nPKRU: 55555554\nCall Trace:\n <TASK>\n unix_release_sock (net/unix/af_unix.c:654)\n unix_release\
+    \ (net/unix/af_unix.c:1050)\n __sock_release (net/socket.c:660)\n sock_close (net/socket.c:1423)\n __fput (fs/file_table.c:423)\n\
+    \ delayed_fput (fs/file_table.c:444 (discriminator 3))\n process_one_work (kernel/workqueue.c:3259)\n worker_thread (kernel/workqueue.c:3329\
+    \ kernel/workqueue.c:3416)\n kthread (kernel/kthread.c:388)\n ret_from_fork (arch/x86/kernel/process.c:153)\n ret_from_fork_asm\
+    \ (arch/x86/entry/entry_64.S:257)\n </TASK>\nModules linked in:\nCR2: 0000000000000008\n\nThis is a BROWN BELT challenge\
+    \ focusing on:\n- Memory corruption vulnerabilities\n- Use-after-free (UAF) conditions\n- Race conditions\n- Kernel/driver\
+    \ security issues\n\nOBJECTIVE: Analyze the device to determine vulnerability status and identify affected components."
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36972
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-476
+  expected_output:
+    must_contain:
+    - CVE-2024-36972
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36972
+  - cwe-476
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-10'
+- id: nvd_cve_2024_36973
+  name: CVE-2024-36973 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-17)
+
+
+    CVE: CVE-2024-36973
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-415
+
+
+    In the Linux kernel, the following vulnerability has been resolved:
+
+
+    misc: microchip: pci1xxxx: fix double free in the error handling of gp_aux_bus_probe()
+
+
+    When auxiliary_device_add() returns error and then calls
+
+    auxiliary_device_uninit(), callback function
+
+    gp_auxiliary_device_release() calls ida_free() and
+
+    kfree(aux_device_wrapper) to free memory. We should''t
+
+    call them again in the error handling path.
+
+
+    Fix this by skipping the redundant cleanup functions.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36973
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-415
+  expected_output:
+    must_contain:
+    - CVE-2024-36973
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36973
+  - cwe-415
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-17'
+- id: nvd_cve_2024_36975
+  name: CVE-2024-36975 - MEDIUM Vulnerability Analysis
+  description: "Real-world CVE from Android Security Bulletin (2024-06-18)\n\nCVE: CVE-2024-36975\nCVSS: 5.5 (MEDIUM)\nAttack\
+    \ Vector: LOCAL\nCWE: N/A\n\nIn the Linux kernel, the following vulnerability has been resolved:\n\nKEYS: trusted: Do\
+    \ not use WARN when encode fails\n\nWhen asn1_encode_sequence() fails, WARN is not the correct solution.\n\n1. asn1_encode_sequence()\
+    \ is not an internal function (located\n   in lib/asn1_encode.c).\n2. Location is known, which makes the stack trace useless.\n\
+    3. Results a crash if panic_on_warn is set.\n\nIt is also noteworthy that the use of WARN is undocumented, and it\nshould\
+    \ be avoided unless there is a carefully considered rationale to\nuse it.\n\nReplace WARN with pr_err, and print the return\
+    \ value instead, which is\nonly useful piece of information.\n\nThis is a BROWN BELT challenge focusing on:\n- Memory\
+    \ corruption vulnerabilities\n- Use-after-free (UAF) conditions\n- Race conditions\n- Kernel/driver security issues\n\n\
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components."
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36975
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes: []
+  expected_output:
+    must_contain:
+    - CVE-2024-36975
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36975
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-18'
+- id: nvd_cve_2024_36976
+  name: CVE-2024-36976 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-18)
+
+
+    CVE: CVE-2024-36976
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-667
+
+
+    In the Linux kernel, the following vulnerability has been resolved:
+
+
+    Revert "media: v4l2-ctrls: show all owned controls in log_status"
+
+
+    This reverts commit 9801b5b28c6929139d6fceeee8d739cc67bb2739.
+
+
+    This patch introduced a potential deadlock scenario:
+
+
+    [Wed May  8 10:02:06 2024]  Possible unsafe locking scenario:
+
+
+    [Wed May  8 10:02:06 2024]        CPU0                    CPU1
+
+    [Wed May  8 10:02:06 2024]        ----                    ----
+
+    [Wed May  8 10:02:06 2024]   lock(vivid_ctrls:1620:(hdl_vid_cap)->_lock);
+
+    [Wed May  8 10:02:06 2024]                                lock(vivid_ctrls:1608:(hdl_user_vid)->_lock);
+
+    [Wed May  8 10:02:06 2024]                                lock(vivid_ctrls:1620:(hdl_vid_cap)->_lock);
+
+    [Wed May  8 10:02:06 2024]   lock(vivid_ctrls:1608:(hdl_user_vid)->_lock);
+
+
+    For now just revert.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36976
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-667
+  expected_output:
+    must_contain:
+    - CVE-2024-36976
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36976
+  - cwe-667
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-18'
+- id: nvd_cve_2024_36977
+  name: CVE-2024-36977 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-18)
+
+
+    CVE: CVE-2024-36977
+
+    CVSS: 5.5 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: N/A
+
+
+    In the Linux kernel, the following vulnerability has been resolved:
+
+
+    usb: dwc3: Wait unconditionally after issuing EndXfer command
+
+
+    Currently all controller IP/revisions except DWC3_usb3 >= 310a
+
+    wait 1ms unconditionally for ENDXFER completion when IOC is not
+
+    set. This is because DWC_usb3 controller revisions >= 3.10a
+
+    supports GUCTL2[14: Rst_actbitlater] bit which allows polling
+
+    CMDACT bit to know whether ENDXFER command is completed.
+
+
+    Consider a case where an IN request was queued, and parallelly
+
+    soft_disconnect was called (due to ffs_epfile_release). This
+
+    eventually calls stop_active_transfer with IOC cleared, hence
+
+    send_gadget_ep_cmd() skips waiting for CMDACT cleared during
+
+    EndXfer. For DWC3 controllers with revisions >= 310a, we don''t
+
+    forcefully wait for 1ms either, and we proceed by unmapping the
+
+    requests. If ENDXFER didn''t complete by this time, it leads to
+
+    SMMU faults since the controller would still be accessing those
+
+    requests.
+
+
+    Fix this by ensuring ENDXFER completion by adding 1ms delay in
+
+    __dwc3_stop_active_transfer() unconditionally.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36977
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes: []
+  expected_output:
+    must_contain:
+    - CVE-2024-36977
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36977
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-18'
+- id: nvd_cve_2024_36978
+  name: CVE-2024-36978 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-19)
+
+
+    CVE: CVE-2024-36978
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787
+
+
+    In the Linux kernel, the following vulnerability has been resolved:
+
+
+    net: sched: sch_multiq: fix possible OOB write in multiq_tune()
+
+
+    q->bands will be assigned to qopt->bands to execute subsequent code logic
+
+    after kmalloc. So the old q->bands should not be used in kmalloc.
+
+    Otherwise, an out-of-bounds write will occur.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36978
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-36978
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36978
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-19'
+- id: nvd_cve_2024_36979
+  name: CVE-2024-36979 - HIGH Vulnerability Analysis
+  description: "Real-world CVE from Android Security Bulletin (2024-06-19)\n\nCVE: CVE-2024-36979\nCVSS: 7.8 (HIGH)\nAttack\
+    \ Vector: LOCAL\nCWE: CWE-416\n\nIn the Linux kernel, the following vulnerability has been resolved:\n\nnet: bridge: mst:\
+    \ fix vlan use-after-free\n\nsyzbot reported a suspicious rcu usage[1] in bridge's mst code. While\nfixing it I noticed\
+    \ that nothing prevents a vlan to be freed while\nwalking the list from the same path (br forward delay timer). Fix the\
+    \ rcu\nusage and also make sure we are not accessing freed memory by making\nbr_mst_vlan_set_state use rcu read lock.\n\
+    \n[1]\n WARNING: suspicious RCU usage\n 6.9.0-rc6-syzkaller #0 Not tainted\n -----------------------------\n net/bridge/br_private.h:1599\
+    \ suspicious rcu_dereference_protected() usage!\n ...\n stack backtrace:\n CPU: 1 PID: 8017 Comm: syz-executor.1 Not tainted\
+    \ 6.9.0-rc6-syzkaller #0\n Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/27/2024\n\
+    \ Call Trace:\n  <IRQ>\n  __dump_stack lib/dump_stack.c:88 [inline]\n  dump_stack_lvl+0x241/0x360 lib/dump_stack.c:114\n\
+    \  lockdep_rcu_suspicious+0x221/0x340 kernel/locking/lockdep.c:6712\n  nbp_vlan_group net/bridge/br_private.h:1599 [inline]\n\
+    \  br_mst_set_state+0x1ea/0x650 net/bridge/br_mst.c:105\n  br_set_state+0x28a/0x7b0 net/bridge/br_stp.c:47\n  br_forward_delay_timer_expired+0x176/0x440\
+    \ net/bridge/br_stp_timer.c:88\n  call_timer_fn+0x18e/0x650 kernel/time/timer.c:1793\n  expire_timers kernel/time/timer.c:1844\
+    \ [inline]\n  __run_timers kernel/time/timer.c:2418 [inline]\n  __run_timer_base+0x66a/0x8e0 kernel/time/timer.c:2429\n\
+    \  run_timer_base kernel/time/timer.c:2438 [inline]\n  run_timer_softirq+0xb7/0x170 kernel/time/timer.c:2448\n  __do_softirq+0x2c6/0x980\
+    \ kernel/softirq.c:554\n  invoke_softirq kernel/softirq.c:428 [inline]\n  __irq_exit_rcu+0xf2/0x1c0 kernel/softirq.c:633\n\
+    \  irq_exit_rcu+0x9/0x30 kernel/softirq.c:645\n  instr_sysvec_apic_timer_interrupt arch/x86/kernel/apic/apic.c:1043 [inline]\n\
+    \  sysvec_apic_timer_interrupt+0xa6/0xc0 arch/x86/kernel/apic/apic.c:1043\n  </IRQ>\n  <TASK>\n asm_sysvec_apic_timer_interrupt+0x1a/0x20\
+    \ arch/x86/include/asm/idtentry.h:702\n RIP: 0010:lock_acquire+0x264/0x550 kernel/locking/lockdep.c:5758\n Code: 2b 00\
+    \ 74 08 4c 89 f7 e8 ba d1 84 00 f6 44 24 61 02 0f 85 85 01 00 00 41 f7 c7 00 02 00 00 74 01 fb 48 c7 44 24 40 0e 36 e0\
+    \ 45 <4b> c7 44 25 00 00 00 00 00 43 c7 44 25 09 00 00 00 00 43 c7 44 25\n RSP: 0018:ffffc90013657100 EFLAGS: 00000206\n\
+    \ RAX: 0000000000000001 RBX: 1ffff920026cae2c RCX: 0000000000000001\n RDX: dffffc0000000000 RSI: ffffffff8bcaca00 RDI:\
+    \ ffffffff8c1eaa60\n RBP: ffffc90013657260 R08: ffffffff92efe507 R09: 1ffffffff25dfca0\n R10: dffffc0000000000 R11: fffffbfff25dfca1\
+    \ R12: 1ffff920026cae28\n R13: dffffc0000000000 R14: ffffc90013657160 R15: 0000000000000246\n\nThis is a BROWN BELT challenge\
+    \ focusing on:\n- Memory corruption vulnerabilities\n- Use-after-free (UAF) conditions\n- Race conditions\n- Kernel/driver\
+    \ security issues\n\nOBJECTIVE: Analyze the device to determine vulnerability status and identify affected components."
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-36979
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-36979
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-36979
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-19'
+- id: nvd_cve_2024_38385
+  name: CVE-2024-38385 - MEDIUM Vulnerability Analysis
+  description: "Real-world CVE from Android Security Bulletin (2024-06-25)\n\nCVE: CVE-2024-38385\nCVSS: 5.5 (MEDIUM)\nAttack\
+    \ Vector: LOCAL\nCWE: CWE-416\n\nIn the Linux kernel, the following vulnerability has been resolved:\n\ngenirq/irqdesc:\
+    \ Prevent use-after-free in irq_find_at_or_after()\n\nirq_find_at_or_after() dereferences the interrupt descriptor which\
+    \ is\nreturned by mt_find() while neither holding sparse_irq_lock nor RCU read\nlock, which means the descriptor can be\
+    \ freed between mt_find() and the\ndereference:\n\n    CPU0                            CPU1\n    desc = mt_find()\n  \
+    \                                  delayed_free_desc(desc)\n    irq_desc_get_irq(desc)\n\nThe use-after-free is reported\
+    \ by KASAN:\n\n    Call trace:\n     irq_get_next_irq+0x58/0x84\n     show_stat+0x638/0x824\n     seq_read_iter+0x158/0x4ec\n\
+    \     proc_reg_read_iter+0x94/0x12c\n     vfs_read+0x1e0/0x2c8\n\n    Freed by task 4471:\n     slab_free_freelist_hook+0x174/0x1e0\n\
+    \     __kmem_cache_free+0xa4/0x1dc\n     kfree+0x64/0x128\n     irq_kobj_release+0x28/0x3c\n     kobject_put+0xcc/0x1e0\n\
+    \     delayed_free_desc+0x14/0x2c\n     rcu_do_batch+0x214/0x720\n\nGuard the access with a RCU read lock section.\n\n\
+    This is a BROWN BELT challenge focusing on:\n- Memory corruption vulnerabilities\n- Use-after-free (UAF) conditions\n\
+    - Race conditions\n- Kernel/driver security issues\n\nOBJECTIVE: Analyze the device to determine vulnerability status\
+    \ and identify affected components."
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38385
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-38385
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38385
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-25'
+- id: nvd_cve_2024_38386
+  name: CVE-2024-38386 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-38386
+
+    CVSS: 8.4 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-787, CWE-787
+
+
+    in OpenHarmony v4.1.0 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through
+    out-of-bounds write.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38386
+    cvss_score: 8.4
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-787
+    - CWE-787
+  expected_output:
+    must_contain:
+    - CVE-2024-38386
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38386
+  - cwe-787
+  - cwe-787
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_38387
+  name: CVE-2024-38387 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-13)
+
+
+    CVE: CVE-2024-38387
+
+    CVSS: 6.7 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-427
+
+
+    Uncontrolled search path in the Intel(R) Graphics Driver installers for versions 15.40 and 15.45 may allow an authenticated
+    user to potentially enable escalation of privilege via local access.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38387
+    cvss_score: 6.7
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-427
+  expected_output:
+    must_contain:
+    - CVE-2024-38387
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38387
+  - cwe-427
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-13'
+- id: nvd_cve_2024_38388
+  name: CVE-2024-38388 - LOW Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-21)
+
+
+    CVE: CVE-2024-38388
+
+    CVSS: 3.3 (LOW)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-401
+
+
+    In the Linux kernel, the following vulnerability has been resolved:
+
+
+    ALSA: hda/cs_dsp_ctl: Use private_free for control cleanup
+
+
+    Use the control private_free callback to free the associated data
+
+    block. This ensures that the memory won''t leak, whatever way the
+
+    control gets destroyed.
+
+
+    The original implementation didn''t actually remove the ALSA
+
+    controls in hda_cs_dsp_control_remove(). It only freed the internal
+
+    tracking structure. This meant it was possible to remove/unload the
+
+    amp driver while leaving its ALSA controls still present in the
+
+    soundcard. Obviously attempting to access them could cause segfaults
+
+    or at least dereferencing stale pointers.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38388
+    cvss_score: 3.3
+    severity: LOW
+    attack_vector: LOCAL
+    cwes:
+    - CWE-401
+  expected_output:
+    must_contain:
+    - CVE-2024-38388
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38388
+  - cwe-401
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-21'
+- id: nvd_cve_2024_38389
+  name: CVE-2024-38389 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-28)
+
+
+    CVE: CVE-2024-38389
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-125
+
+
+    There is an Out-of-bounds read vulnerability in TELLUS (v4.0.19.0 and earlier) and TELLUS Lite (v4.0.19.0 and earlier).
+    If a user opens a specially crafted file, information may be disclosed and/or arbitrary code may be executed.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38389
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-38389
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38389
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-28'
+- id: nvd_cve_2024_38390
+  name: CVE-2024-38390 - MEDIUM Vulnerability Analysis
+  description: "Real-world CVE from Android Security Bulletin (2024-06-21)\n\nCVE: CVE-2024-38390\nCVSS: 5.5 (MEDIUM)\nAttack\
+    \ Vector: LOCAL\nCWE: CWE-476\n\nIn the Linux kernel, the following vulnerability has been resolved:\n\ndrm/msm/a6xx:\
+    \ Avoid a nullptr dereference when speedbin setting fails\n\nCalling a6xx_destroy() before adreno_gpu_init() leads to\
+    \ a null pointer\ndereference on:\n\nmsm_gpu_cleanup() : platform_set_drvdata(gpu->pdev, NULL);\n\nas gpu->pdev is only\
+    \ assigned in:\n\na6xx_gpu_init()\n|_ adreno_gpu_init\n    |_ msm_gpu_init()\n\nInstead of relying on handwavy null checks\
+    \ down the cleanup chain,\nexplicitly de-allocate the LLC data and free a6xx_gpu instead.\n\nPatchwork: https://patchwork.freedesktop.org/patch/588919/\n\
+    \nThis is a BROWN BELT challenge focusing on:\n- Memory corruption vulnerabilities\n- Use-after-free (UAF) conditions\n\
+    - Race conditions\n- Kernel/driver security issues\n\nOBJECTIVE: Analyze the device to determine vulnerability status\
+    \ and identify affected components."
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38390
+    cvss_score: 5.5
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes:
+    - CWE-476
+  expected_output:
+    must_contain:
+    - CVE-2024-38390
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38390
+  - cwe-476
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-21'
+- id: nvd_cve_2024_38391
+  name: CVE-2024-38391 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-21)
+
+
+    CVE: CVE-2024-38391
+
+    CVSS: 0.0 (MEDIUM)
+
+    Attack Vector: LOCAL
+
+    CWE: N/A
+
+
+    Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38391
+    cvss_score: 0.0
+    severity: MEDIUM
+    attack_vector: LOCAL
+    cwes: []
+  expected_output:
+    must_contain:
+    - CVE-2024-38391
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38391
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-21'
+- id: nvd_cve_2024_38392
+  name: CVE-2024-38392 - CRITICAL Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-04-02)
+
+
+    CVE: CVE-2024-38392
+
+    CVSS: 9.1 (CRITICAL)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-863
+
+
+    Pexip Infinity Connect before 1.13.0 lacks sufficient authenticity checks during the loading of resources, and thus remote
+    attackers can cause the application to run untrusted code.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38392
+    cvss_score: 9.1
+    severity: CRITICAL
+    attack_vector: NETWORK
+    cwes:
+    - CWE-863
+  expected_output:
+    must_contain:
+    - CVE-2024-38392
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38392
+  - cwe-863
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-04-02'
+- id: nvd_cve_2024_38394
+  name: CVE-2024-38394 - MEDIUM Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-16)
+
+
+    CVE: CVE-2024-38394
+
+    CVSS: 4.3 (MEDIUM)
+
+    Attack Vector: PHYSICAL
+
+    CWE: N/A
+
+
+    Mismatches in interpreting USB authorization policy between GNOME Settings Daemon (GSD) through 46.0 and the Linux kernel''s
+    underlying device matching logic allow a physically proximate attacker to access some unintended Linux kernel USB functionality,
+    such as USB device-specific kernel modules and filesystem implementations. NOTE: the GSD supplier indicates that consideration
+    of a mitigation for this within GSD would be in the context of "a new feature, not a CVE."
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 3
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38394
+    cvss_score: 4.3
+    severity: MEDIUM
+    attack_vector: PHYSICAL
+    cwes: []
+  expected_output:
+    must_contain:
+    - CVE-2024-38394
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38394
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-16'
+- id: nvd_cve_2024_38395
+  name: CVE-2024-38395 - CRITICAL Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-16)
+
+
+    CVE: CVE-2024-38395
+
+    CVSS: 9.8 (CRITICAL)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-94
+
+
+    In iTerm2 before 3.5.2, the "Terminal may report window title" setting is not honored, and thus remote code execution
+    might occur but "is not trivially exploitable."
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38395
+    cvss_score: 9.8
+    severity: CRITICAL
+    attack_vector: NETWORK
+    cwes:
+    - CWE-94
+  expected_output:
+    must_contain:
+    - CVE-2024-38395
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38395
+  - cwe-94
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-16'
+- id: nvd_cve_2024_38396
+  name: CVE-2024-38396 - CRITICAL Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-06-16)
+
+
+    CVE: CVE-2024-38396
+
+    CVSS: 9.8 (CRITICAL)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-94
+
+
+    An issue was discovered in iTerm2 3.5.x before 3.5.2. Unfiltered use of an escape sequence to report a window title, in
+    combination with the built-in tmux integration feature (enabled by default), allows an attacker to inject arbitrary code
+    into the terminal, a different vulnerability than CVE-2024-38395.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38396
+    cvss_score: 9.8
+    severity: CRITICAL
+    attack_vector: NETWORK
+    cwes:
+    - CWE-94
+  expected_output:
+    must_contain:
+    - CVE-2024-38396
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38396
+  - cwe-94
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-06-16'
+- id: nvd_cve_2024_38397
+  name: CVE-2024-38397 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-10-07)
+
+
+    CVE: CVE-2024-38397
+
+    CVSS: 7.5 (HIGH)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS while parsing probe response and assoc response frame.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38397
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-38397
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38397
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-10-07'
+- id: nvd_cve_2024_38399
+  name: CVE-2024-38399 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-10-07)
+
+
+    CVE: CVE-2024-38399
+
+    CVSS: 8.4 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-416, CWE-416
+
+
+    Memory corruption while processing user packets to generate page faults.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38399
+    cvss_score: 8.4
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-416
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-38399
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38399
+  - cwe-416
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-10-07'
+- id: nvd_cve_2024_38401
+  name: CVE-2024-38401 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-38401
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-416, CWE-416
+
+
+    Memory corruption while processing concurrent IOCTL calls.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38401
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-416
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-38401
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38401
+  - cwe-416
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_38402
+  name: CVE-2024-38402 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-09-02)
+
+
+    CVE: CVE-2024-38402
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-416, CWE-416
+
+
+    Memory corruption while processing IOCTL call for getting group info.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38402
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-416
+    - CWE-416
+  expected_output:
+    must_contain:
+    - CVE-2024-38402
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38402
+  - cwe-416
+  - cwe-416
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-09-02'
+- id: nvd_cve_2024_38403
+  name: CVE-2024-38403 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-04)
+
+
+    CVE: CVE-2024-38403
+
+    CVSS: 7.5 (HIGH)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS while parsing BTM ML IE when per STA profile is not included.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38403
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-38403
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38403
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-04'
+- id: nvd_cve_2024_38404
+  name: CVE-2024-38404 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2025-02-03)
+
+
+    CVE: CVE-2024-38404
+
+    CVSS: 7.5 (HIGH)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS when registration accept OTA is received with incorrect ciphering key data IE in modem.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38404
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-38404
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38404
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2025-02-03'
+- id: nvd_cve_2024_38405
+  name: CVE-2024-38405 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-04)
+
+
+    CVE: CVE-2024-38405
+
+    CVSS: 7.5 (HIGH)
+
+    Attack Vector: NETWORK
+
+    CWE: CWE-126, CWE-125
+
+
+    Transient DOS while processing the CU information from RNR IE.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38405
+    cvss_score: 7.5
+    severity: HIGH
+    attack_vector: NETWORK
+    cwes:
+    - CWE-126
+    - CWE-125
+  expected_output:
+    must_contain:
+    - CVE-2024-38405
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38405
+  - cwe-126
+  - cwe-125
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-04'
+- id: nvd_cve_2024_38406
+  name: CVE-2024-38406 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-04)
+
+
+    CVE: CVE-2024-38406
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-367, CWE-367
+
+
+    Memory corruption while handling IOCTL calls in JPEG Encoder driver.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38406
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-367
+    - CWE-367
+  expected_output:
+    must_contain:
+    - CVE-2024-38406
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38406
+  - cwe-367
+  - cwe-367
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-04'
+- id: nvd_cve_2024_38407
+  name: CVE-2024-38407 - HIGH Vulnerability Analysis
+  description: 'Real-world CVE from Android Security Bulletin (2024-11-04)
+
+
+    CVE: CVE-2024-38407
+
+    CVSS: 7.8 (HIGH)
+
+    Attack Vector: LOCAL
+
+    CWE: CWE-367, CWE-367
+
+
+    Memory corruption while processing input parameters for any IOCTL call in the JPEG Encoder driver.
+
+
+    This is a BROWN BELT challenge focusing on:
+
+    - Memory corruption vulnerabilities
+
+    - Use-after-free (UAF) conditions
+
+    - Race conditions
+
+    - Kernel/driver security issues
+
+
+    OBJECTIVE: Analyze the device to determine vulnerability status and identify affected components.'
+  difficulty: 4
+  script_type: adb
+  execution_mode: detection_analysis
+  compatibility: universal
+  inputs:
+    cve_id: CVE-2024-38407
+    cvss_score: 7.8
+    severity: HIGH
+    attack_vector: LOCAL
+    cwes:
+    - CWE-367
+    - CWE-367
+  expected_output:
+    must_contain:
+    - CVE-2024-38407
+  scoring:
+    cve_identified: 15
+    patch_level_checked: 20
+    component_analysis: 25
+    vulnerability_assessment: 25
+    report_quality: 15
+  tags:
+  - nvd-generated
+  - android-2024
+  - cve-2024-38407
+  - cwe-367
+  - cwe-367
+  source: NVD API - Android Security Bulletin 2024
+  published: '2024-11-04'
