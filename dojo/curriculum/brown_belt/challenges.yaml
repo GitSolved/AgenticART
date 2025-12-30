@@ -1,36 +1,731 @@
+# Brown Belt Challenges
+# =============================================================================
+# Purpose: Advanced Application Security & Pentesting
+# Focus: Defeating real-world app protections (SSL pinning, anti-tampering,
+#        crypto extraction, native analysis, traffic interception)
+# =============================================================================
+# Target: Android 11 (API 30) on Genymotion
+# Prerequisite: Green Belt (basic Frida skills)
+# Leads to: Purple Belt (1-day exploitation)
+# =============================================================================
+
+device_requirements:
+  target_android: 11
+  target_api: 30
+  required_apps:
+    - id: com.agentic.sslpinned
+      name: "ART SSL Pinned App"
+      protections: [okhttp_cert_pinning, trustmanager_override]
+
+    - id: com.agentic.nativecheck
+      name: "ART Native Security App"
+      protections: [jni_root_detection, native_integrity_check, anti_frida]
+
+    - id: com.agentic.cryptovault
+      name: "ART Crypto Vault"
+      protections: [aes_encryption, rsa_keystore, key_derivation]
+
+    - id: com.agentic.fortified
+      name: "ART Fortified App"
+      protections: [ssl_pinning, root_detection, emulator_detection, frida_detection]
+
 challenges:
-- id: brown_cve_2015_0568
-  name: 'CVE Analysis: CVE-2015-0568'
-  description: 'Target: CVE-2015-0568
 
+# =============================================================================
+# SSL PINNING BYPASS
+# =============================================================================
 
-    Use-after-free vulnerability in the msm_set_crop function in drivers/media/video/msm/msm_camera.c
-    in the MSM-Camera driver for the Linux kernel 3.x, as used in Qualcomm Innovation
-    Center (QuIC) Android contributions for MSM devices and other products, allows
-    attackers to gain privileges or cause a denial of service (memory corruption)
-    via an application that makes a crafted ioctl call.
+- id: brown_001
+  name: "OkHttp Certificate Pinning Bypass"
+  description: |
+    The target app (com.agentic.sslpinned) uses OkHttp's CertificatePinner
+    to pin its SSL certificates. Write a Frida script that bypasses this
+    pinning, allowing traffic interception via a proxy.
 
-
-    Goal: Probe the device to determine if it is vulnerable to this specific issue.'
+    OBJECTIVE: Make the app accept any certificate, enabling MITM.
+    VERIFICATION: App connects through proxy with self-signed cert.
   belt: brown
   difficulty: 3
-  script_type: c_exploit
+  script_type: frida
+  android_version: 11
   inputs:
-    cve_id: CVE-2015-0568
+    target_package: com.agentic.sslpinned
     device_context:
-      connection: adb
-      task: vulnerability_probing
-      severity: HIGH
-  expected_output:
-    must_contain:
-    - CVE-2015-0568
-    expected_patterns: []
-  scoring:
-    syntax_correct: 25
-    api_valid: 25
-    executes_successfully: 30
-    achieves_objective: 20
+      task: bypass SSL certificate pinning
+      target_class: okhttp3.CertificatePinner
+  validation:
+    type: output_contains
+    expected: "Pinning bypassed"
+  hints:
+    - "Hook okhttp3.CertificatePinner.check() method"
+    - "The check method throws on pin mismatch - make it return cleanly"
+    - "Multiple overloads exist - hook all of them"
+  kata_solution: |
+    Java.perform(function() {
+        var CertificatePinner = Java.use('okhttp3.CertificatePinner');
+        CertificatePinner.check.overload('java.lang.String', 'java.util.List').implementation = function(hostname, peerCertificates) {
+            console.log('[+] Pinning bypassed for: ' + hostname);
+            return;
+        };
+    });
   tags:
-  - nvd-generated
-  - cve-2015-0568
-  - cwe-416
+    - ssl-pinning
+    - okhttp
+    - mitm
+    - android-11
+
+- id: brown_002
+  name: "TrustManager Universal Bypass"
+  description: |
+    Write a Frida script that implements a universal SSL bypass by
+    replacing the system TrustManager with one that accepts all certificates.
+
+    This should work against apps using custom TrustManagers or the
+    default Android SSL stack.
+
+    OBJECTIVE: Create a universal SSL bypass that works against any app.
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.sslpinned
+    device_context:
+      task: universal SSL bypass via TrustManager
+      target_class: javax.net.ssl.X509TrustManager
+  validation:
+    type: output_contains
+    expected: "TrustManager replaced"
+  hints:
+    - "Create a custom TrustManager that trusts everything"
+    - "Hook SSLContext.init() to inject your TrustManager"
+    - "Handle both X509TrustManager and X509ExtendedTrustManager"
+  kata_solution: |
+    Java.perform(function() {
+        var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');
+        var SSLContext = Java.use('javax.net.ssl.SSLContext');
+
+        var TrustManager = Java.registerClass({
+            name: 'com.bypass.TrustManager',
+            implements: [X509TrustManager],
+            methods: {
+                checkClientTrusted: function(chain, authType) {},
+                checkServerTrusted: function(chain, authType) {},
+                getAcceptedIssuers: function() { return []; }
+            }
+        });
+
+        SSLContext.init.overload('[Ljavax.net.ssl.KeyManager;', '[Ljavax.net.ssl.TrustManager;', 'java.security.SecureRandom').implementation = function(km, tm, sr) {
+            console.log('[+] TrustManager replaced');
+            this.init(km, [TrustManager.$new()], sr);
+        };
+    });
+  tags:
+    - ssl-pinning
+    - trustmanager
+    - universal-bypass
+    - android-11
+
+- id: brown_003
+  name: "Native SSL Pinning Bypass (BoringSSL)"
+  description: |
+    Some apps implement SSL pinning at the native level using BoringSSL
+    or OpenSSL directly. Write a Frida script that hooks native SSL
+    verification functions.
+
+    OBJECTIVE: Bypass SSL_CTX_set_verify and related native functions.
+  belt: brown
+  difficulty: 5
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.nativecheck
+    device_context:
+      task: native SSL pinning bypass
+      target_library: libssl.so
+  validation:
+    type: output_contains
+    expected: "Native SSL verify hooked"
+  hints:
+    - "Use Module.findExportByName to locate SSL functions"
+    - "Hook SSL_CTX_set_verify in libssl.so"
+    - "The callback function pointer is the second argument"
+    - "Replace with a function that always returns success"
+  kata_solution: |
+    var ssl_set_verify = Module.findExportByName('libssl.so', 'SSL_CTX_set_verify');
+    if (ssl_set_verify) {
+        Interceptor.attach(ssl_set_verify, {
+            onEnter: function(args) {
+                console.log('[+] Native SSL verify hooked');
+                args[1] = ptr(0); // SSL_VERIFY_NONE
+            }
+        });
+    }
+  tags:
+    - ssl-pinning
+    - native
+    - boringssl
+    - android-11
+
+# =============================================================================
+# ANTI-TAMPERING & ROOT DETECTION
+# =============================================================================
+
+- id: brown_004
+  name: "Multi-Layer Root Detection Bypass"
+  description: |
+    The target app (com.agentic.fortified) implements multiple root
+    detection techniques:
+    - File existence checks (su, busybox, Superuser.apk)
+    - Package checks (com.topjohnwu.magisk)
+    - Property checks (ro.debuggable, ro.secure)
+    - Native checks via JNI
+
+    Write a comprehensive Frida script that defeats ALL detection layers.
+
+    OBJECTIVE: App should report "Device is not rooted" when checked.
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.fortified
+    device_context:
+      task: comprehensive root detection bypass
+      detection_methods:
+        - file_checks
+        - package_checks
+        - property_checks
+        - native_checks
+  validation:
+    type: output_contains
+    expected: "not rooted"
+  hints:
+    - "Hook java.io.File.exists() for file checks"
+    - "Hook PackageManager.getPackageInfo() for package checks"
+    - "Hook android.os.SystemProperties.get() for property checks"
+    - "Don't forget Runtime.exec() for command-based checks"
+  kata_solution: |
+    Java.perform(function() {
+        var File = Java.use('java.io.File');
+        File.exists.implementation = function() {
+            var path = this.getAbsolutePath();
+            if (path.indexOf('su') >= 0 || path.indexOf('magisk') >= 0) {
+                console.log('[+] Hiding root file: ' + path);
+                return false;
+            }
+            return this.exists();
+        };
+
+        var PM = Java.use('android.app.ApplicationPackageManager');
+        PM.getPackageInfo.overload('java.lang.String', 'int').implementation = function(pkg, flags) {
+            if (pkg.indexOf('magisk') >= 0 || pkg.indexOf('supersu') >= 0) {
+                console.log('[+] Hiding root package: ' + pkg);
+                throw Java.use('android.content.pm.PackageManager$NameNotFoundException').$new();
+            }
+            return this.getPackageInfo(pkg, flags);
+        };
+
+        console.log('[+] Root detection bypass active');
+    });
+  tags:
+    - root-detection
+    - bypass
+    - multi-layer
+    - android-11
+
+- id: brown_005
+  name: "Frida Detection Bypass"
+  description: |
+    The app actively detects Frida by:
+    - Checking for frida-server process
+    - Scanning /proc/self/maps for frida libraries
+    - Detecting frida's default port (27042)
+    - Checking for frida-gadget in loaded modules
+
+    Write a Frida script that hides Frida from the app's detection.
+
+    OBJECTIVE: Frida should remain undetected while active.
+  belt: brown
+  difficulty: 5
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.fortified
+    device_context:
+      task: hide Frida from detection
+      detection_vectors:
+        - process_name
+        - maps_file
+        - port_scan
+        - module_enumeration
+  validation:
+    type: output_contains
+    expected: "Frida hidden"
+  hints:
+    - "Hook libc's open() to filter /proc/self/maps reads"
+    - "Hook fgets/read to filter out frida-related strings"
+    - "Hook socket connect to block port 27042 checks"
+    - "Consider hooking opendir/readdir for /proc scanning"
+  kata_solution: |
+    var fgetsPtr = Module.findExportByName('libc.so', 'fgets');
+    Interceptor.attach(fgetsPtr, {
+        onLeave: function(retval) {
+            if (retval.isNull()) return;
+            var content = Memory.readUtf8String(retval);
+            if (content && content.indexOf('frida') >= 0) {
+                Memory.writeUtf8String(retval, '');
+            }
+        }
+    });
+    console.log('[+] Frida hidden from maps detection');
+  tags:
+    - anti-frida
+    - detection-bypass
+    - stealth
+    - android-11
+
+- id: brown_006
+  name: "Emulator Detection Bypass"
+  description: |
+    The app detects emulator environments by checking:
+    - Build properties (ro.hardware, ro.product.model)
+    - Sensor availability (accelerometer, gyroscope)
+    - Telephony properties (IMEI, phone number)
+    - File system artifacts (/system/bin/qemu-props)
+
+    Make the app believe it's running on a real device.
+
+    OBJECTIVE: App should pass all emulator detection checks.
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.fortified
+    device_context:
+      task: emulator detection bypass
+      spoof_target: Samsung Galaxy S21
+  validation:
+    type: output_contains
+    expected: "Real device detected"
+  hints:
+    - "Hook android.os.Build fields - they're static"
+    - "Hook TelephonyManager for IMEI/phone number"
+    - "Hook SensorManager to fake sensor presence"
+    - "Override Build.FINGERPRINT, Build.MODEL, Build.MANUFACTURER"
+  kata_solution: |
+    Java.perform(function() {
+        var Build = Java.use('android.os.Build');
+        Build.FINGERPRINT.value = 'samsung/o1s/o1s:11/RP1A.200720.012/G991BXXU3AUB3:user/release-keys';
+        Build.MODEL.value = 'SM-G991B';
+        Build.MANUFACTURER.value = 'samsung';
+        Build.BRAND.value = 'samsung';
+        Build.DEVICE.value = 'o1s';
+        Build.PRODUCT.value = 'o1sxeea';
+        Build.HARDWARE.value = 'exynos2100';
+        console.log('[+] Emulator spoofed as Samsung Galaxy S21');
+    });
+  tags:
+    - emulator-detection
+    - device-spoofing
+    - bypass
+    - android-11
+
+# =============================================================================
+# CRYPTO KEY EXTRACTION
+# =============================================================================
+
+- id: brown_007
+  name: "AES Key Extraction at Runtime"
+  description: |
+    The app (com.agentic.cryptovault) encrypts sensitive data using AES.
+    The key is derived at runtime and never stored in plaintext.
+
+    Write a Frida script that hooks the crypto operations and extracts
+    the AES key when it's used for encryption/decryption.
+
+    OBJECTIVE: Extract the 256-bit AES key and output it in hex.
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.cryptovault
+    device_context:
+      task: extract AES encryption key
+      target_class: javax.crypto.Cipher
+  validation:
+    type: regex_match
+    pattern: "AES Key: [0-9a-fA-F]{64}"
+  hints:
+    - "Hook javax.crypto.Cipher.init()"
+    - "The key is passed as a java.security.Key object"
+    - "Use key.getEncoded() to get the raw bytes"
+    - "Convert bytes to hex for output"
+  kata_solution: |
+    Java.perform(function() {
+        var Cipher = Java.use('javax.crypto.Cipher');
+        Cipher.init.overload('int', 'java.security.Key').implementation = function(mode, key) {
+            var keyBytes = key.getEncoded();
+            var hexKey = '';
+            for (var i = 0; i < keyBytes.length; i++) {
+                var b = (keyBytes[i] & 0xff).toString(16);
+                hexKey += (b.length == 1 ? '0' + b : b);
+            }
+            console.log('[+] AES Key: ' + hexKey);
+            return this.init(mode, key);
+        };
+    });
+  tags:
+    - crypto
+    - key-extraction
+    - aes
+    - android-11
+
+- id: brown_008
+  name: "RSA Signature Capture"
+  description: |
+    The app stores an RSA private key in the Android Keystore and uses
+    it for signing operations. Capture signatures and their plaintexts
+    to enable offline analysis.
+
+    Note: Keystore-backed keys may not be extractable - capture the
+    signing operation instead.
+
+    OBJECTIVE: Capture RSA signatures with their corresponding plaintexts.
+  belt: brown
+  difficulty: 5
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.cryptovault
+    device_context:
+      task: RSA signature capture
+      target_class: java.security.Signature
+  validation:
+    type: output_contains
+    expected: "RSA Signature captured"
+  hints:
+    - "Hook java.security.Signature.sign()"
+    - "Also hook Signature.update() to capture the plaintext"
+    - "Store both plaintext and signature for correlation"
+    - "Keystore keys return null from getEncoded() - focus on operations"
+  kata_solution: |
+    Java.perform(function() {
+        var Signature = Java.use('java.security.Signature');
+        var capturedData = [];
+
+        Signature.update.overload('[B').implementation = function(data) {
+            capturedData.push(data);
+            return this.update(data);
+        };
+
+        Signature.sign.overload().implementation = function() {
+            var sig = this.sign();
+            console.log('[+] RSA Signature captured');
+            console.log('    Plaintext chunks: ' + capturedData.length);
+            console.log('    Signature length: ' + sig.length + ' bytes');
+            capturedData = [];
+            return sig;
+        };
+    });
+  tags:
+    - crypto
+    - rsa
+    - keystore
+    - android-11
+
+- id: brown_009
+  name: "Keystore Enumeration"
+  description: |
+    Enumerate all keys stored in the Android Keystore for the target
+    app. For each key, extract:
+    - Key alias
+    - Key algorithm
+    - Key size
+    - Whether key is extractable
+
+    OBJECTIVE: Produce a complete inventory of the app's Keystore keys.
+  belt: brown
+  difficulty: 3
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.cryptovault
+    device_context:
+      task: enumerate Android Keystore
+      target_class: java.security.KeyStore
+  validation:
+    type: output_contains
+    expected: "Keystore enumeration complete"
+  hints:
+    - "Get KeyStore instance with KeyStore.getInstance('AndroidKeyStore')"
+    - "Use keyStore.aliases() to enumerate"
+    - "getEntry() and getCertificate() provide key metadata"
+  kata_solution: |
+    Java.perform(function() {
+        var KeyStore = Java.use('java.security.KeyStore');
+        var ks = KeyStore.getInstance('AndroidKeyStore');
+        ks.load(null);
+
+        var aliases = ks.aliases();
+        while (aliases.hasMoreElements()) {
+            var alias = aliases.nextElement();
+            console.log('[+] Key alias: ' + alias);
+            try {
+                var cert = ks.getCertificate(alias);
+                if (cert) {
+                    console.log('    Algorithm: ' + cert.getPublicKey().getAlgorithm());
+                }
+            } catch(e) {}
+        }
+        console.log('[+] Keystore enumeration complete');
+    });
+  tags:
+    - crypto
+    - keystore
+    - enumeration
+    - android-11
+
+# =============================================================================
+# NATIVE CODE ANALYSIS
+# =============================================================================
+
+- id: brown_010
+  name: "JNI Function Hooking"
+  description: |
+    The app uses a native library (libnative-lib.so) with a JNI function
+    that performs sensitive validation. Hook this native function to:
+    1. Log all arguments passed to it
+    2. Log the return value
+    3. Optionally modify the return value
+
+    OBJECTIVE: Intercept and log native JNI calls.
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.nativecheck
+    device_context:
+      task: hook JNI native function
+      target_library: libnative-lib.so
+      target_function: Java_com_agentic_nativecheck_NativeValidator_validate
+  validation:
+    type: output_contains
+    expected: "JNI function hooked"
+  hints:
+    - "Use Module.findExportByName() to locate the JNI function"
+    - "JNI function names follow Java_package_class_method pattern"
+    - "First two args are JNIEnv* and jobject (this)"
+    - "Actual parameters start from args[2]"
+  kata_solution: |
+    var targetLib = 'libnative-lib.so';
+    var targetFunc = 'Java_com_agentic_nativecheck_NativeValidator_validate';
+
+    var funcPtr = Module.findExportByName(targetLib, targetFunc);
+    if (funcPtr) {
+        Interceptor.attach(funcPtr, {
+            onEnter: function(args) {
+                console.log('[+] JNI function hooked');
+                console.log('    JNIEnv: ' + args[0]);
+                console.log('    this: ' + args[1]);
+                console.log('    arg0: ' + args[2]);
+            },
+            onLeave: function(retval) {
+                console.log('    Return: ' + retval);
+            }
+        });
+    }
+  tags:
+    - native
+    - jni
+    - hooking
+    - android-11
+
+- id: brown_011
+  name: "Native Function Tracing"
+  description: |
+    Trace all function calls within a native library to understand its
+    execution flow. Create a call tree showing which functions are called
+    and in what order.
+
+    OBJECTIVE: Generate an execution trace of libnative-lib.so
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.nativecheck
+    device_context:
+      task: trace native library execution
+      target_library: libnative-lib.so
+  validation:
+    type: output_contains
+    expected: "Trace complete"
+  hints:
+    - "Use Module.enumerateExports() to find all exported functions"
+    - "Attach Interceptor to each export"
+    - "Track call depth for indentation"
+    - "Be careful of performance impact - limit scope if needed"
+  kata_solution: |
+    var lib = Process.findModuleByName('libnative-lib.so');
+    var depth = 0;
+
+    lib.enumerateExports().forEach(function(exp) {
+        if (exp.type === 'function') {
+            Interceptor.attach(exp.address, {
+                onEnter: function(args) {
+                    console.log('  '.repeat(depth) + '-> ' + exp.name);
+                    depth++;
+                },
+                onLeave: function(retval) {
+                    depth--;
+                }
+            });
+        }
+    });
+    console.log('[+] Trace complete');
+  tags:
+    - native
+    - tracing
+    - reverse-engineering
+    - android-11
+
+- id: brown_012
+  name: "Memory String Search"
+  description: |
+    Search the process memory for sensitive strings like API keys,
+    tokens, or passwords that may be stored in plaintext.
+
+    OBJECTIVE: Find and dump all memory regions containing sensitive data.
+  belt: brown
+  difficulty: 3
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.cryptovault
+    device_context:
+      task: memory string scanning
+      search_patterns:
+        - "API_KEY"
+        - "Bearer"
+        - "password"
+  validation:
+    type: output_contains
+    expected: "Memory scan complete"
+  hints:
+    - "Use Memory.scan() or Memory.scanSync()"
+    - "Enumerate readable memory ranges first"
+    - "Process.enumerateRanges('r--') gives readable regions"
+    - "Be careful with large memory ranges - may be slow"
+  kata_solution: |
+    var pattern = '41 50 49 5f 4b 45 59'; // "API_KEY" in hex
+
+    Process.enumerateRanges('r--').forEach(function(range) {
+        Memory.scan(range.base, range.size, pattern, {
+            onMatch: function(address, size) {
+                console.log('[+] Found at: ' + address);
+                console.log('    Context: ' + Memory.readUtf8String(address, 50));
+            },
+            onComplete: function() {}
+        });
+    });
+    console.log('[+] Memory scan complete');
+  tags:
+    - memory
+    - strings
+    - secrets
+    - android-11
+
+# =============================================================================
+# TRAFFIC INTERCEPTION
+# =============================================================================
+
+- id: brown_013
+  name: "HTTP Traffic Logger"
+  description: |
+    Hook the app's HTTP client to log all requests and responses,
+    including headers and body content.
+
+    OBJECTIVE: Capture and display full HTTP traffic from the app.
+  belt: brown
+  difficulty: 3
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.sslpinned
+    device_context:
+      task: log HTTP traffic
+      target_classes:
+        - okhttp3.OkHttpClient
+        - java.net.HttpURLConnection
+  validation:
+    type: output_contains
+    expected: "HTTP traffic captured"
+  hints:
+    - "Hook OkHttp's RealCall.execute() or enqueue()"
+    - "For HttpURLConnection, hook getInputStream/getOutputStream"
+    - "Log request URL, method, headers, and body"
+  kata_solution: |
+    Java.perform(function() {
+        var RealCall = Java.use('okhttp3.RealCall');
+        RealCall.execute.implementation = function() {
+            var request = this.request();
+            console.log('[+] HTTP traffic captured');
+            console.log('    URL: ' + request.url());
+            console.log('    Method: ' + request.method());
+            var response = this.execute();
+            console.log('    Status: ' + response.code());
+            return response;
+        };
+    });
+  tags:
+    - traffic
+    - http
+    - logging
+    - android-11
+
+- id: brown_014
+  name: "Request Modification Attack"
+  description: |
+    Modify HTTP requests in-flight to change parameters, headers,
+    or body content before they're sent to the server.
+
+    OBJECTIVE: Change the "user_id" parameter to "admin" in requests.
+  belt: brown
+  difficulty: 4
+  script_type: frida
+  android_version: 11
+  inputs:
+    target_package: com.agentic.sslpinned
+    device_context:
+      task: modify HTTP requests
+      modification:
+        find: "user_id"
+        replace_value: "admin"
+  validation:
+    type: output_contains
+    expected: "Request modified"
+  hints:
+    - "Hook Request.Builder to modify before build()"
+    - "Or hook the body encoding step"
+    - "For JSON, hook JSONObject.put()"
+    - "For form data, hook FormBody.Builder"
+  kata_solution: |
+    Java.perform(function() {
+        var JSONObject = Java.use('org.json.JSONObject');
+        JSONObject.put.overload('java.lang.String', 'java.lang.Object').implementation = function(key, value) {
+            if (key === 'user_id') {
+                console.log('[+] Request modified: user_id -> admin');
+                return this.put(key, 'admin');
+            }
+            return this.put(key, value);
+        };
+    });
+  tags:
+    - traffic
+    - modification
+    - tampering
+    - android-11
