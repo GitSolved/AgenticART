@@ -551,10 +551,15 @@ This project builds on research demonstrating that LLMs can automate Android sec
 > arXiv:2509.07933
 > [https://arxiv.org/abs/2509.07933](https://arxiv.org/abs/2509.07933)
 
-The paper showed that LLMs can significantly streamline exploitation workflows when given proper guidance. AgenticART extends this by providing:
-- **Structured curriculum** instead of ad-hoc prompting
-- **Execution verification** to ensure commands actually work
-- **Training data pipeline** to improve models over time
+**What the paper found:**
+- LLMs can automate Android penetration testing and reduce manual effort
+- AI-generated exploitation scripts streamline security workflows
+- But: LLMs need human oversight to ensure accuracy—outputs aren't universally reliable
+
+**How AgenticART addresses this:**
+- **Execution verification** solves the accuracy problem—commands are tested on real devices, not just generated
+- **Structured curriculum** replaces ad-hoc prompting with progressive skill building
+- **Training data pipeline** captures what actually works, creating a feedback loop for improvement
 
 ---
 
