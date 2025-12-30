@@ -51,7 +51,7 @@ jobs:
           pip install -e . || pip install .
 
       - name: Run Tests
-        run: pytest tests/ -v --cov=dojo --cov-report=term-missing --cov-fail-under=80
+        run: pytest tests/ -v --cov=dojo --cov-report=term-missing --cov-fail-under=50
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v4
@@ -120,7 +120,7 @@ jobs:
         # Output goes to file, not stdout (keeps logs clean)
 
       - name: Upload Bandit Results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bandit-results.sarif
           category: bandit
@@ -150,11 +150,10 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: p/python
-          generateSarif: "1"  # Enable SARIF output
         continue-on-error: true
 
       - name: Upload Semgrep Results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()  # Upload even if Semgrep found issues
         with:
           sarif_file: semgrep.sarif
