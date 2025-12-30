@@ -136,7 +136,7 @@ class DeviceProvisioner:
 
     def _seed_contacts(self, dry_run: bool = False) -> dict[str, Any]:
         """Seed contacts into the device."""
-        result = {"step": "seed_contacts", "success": False, "details": []}
+        result: dict[str, Any] = {"step": "seed_contacts", "success": False, "details": []}
 
         contact_config = self.persona["user_data"]["contacts"]
         vip_contacts = contact_config.get("vip_contacts", [])
@@ -198,7 +198,7 @@ class DeviceProvisioner:
 
     def _seed_sms(self, dry_run: bool = False) -> dict[str, Any]:
         """Seed SMS messages into the device."""
-        result = {"step": "seed_sms", "success": False, "details": []}
+        result: dict[str, Any] = {"step": "seed_sms", "success": False, "details": []}
 
         sms_config = self.persona["user_data"]["sms"]
         required = sms_config.get("required_sensitive", [])
@@ -233,7 +233,7 @@ class DeviceProvisioner:
 
     def _seed_files(self, dry_run: bool = False) -> dict[str, Any]:
         """Create files on the device."""
-        result = {"step": "seed_files", "success": False, "details": []}
+        result: dict[str, Any] = {"step": "seed_files", "success": False, "details": []}
 
         files_config = self.persona["user_data"]["files"]
         documents = files_config.get("documents", {})
@@ -267,7 +267,7 @@ class DeviceProvisioner:
 
     def _configure_wifi(self, dry_run: bool = False) -> dict[str, Any]:
         """Configure WiFi networks (metadata only - can't add real networks via ADB)."""
-        result = {"step": "configure_wifi", "success": False, "details": []}
+        result: dict[str, Any] = {"step": "configure_wifi", "success": False, "details": []}
 
         wifi_config = self.persona["user_data"]["wifi"]
         networks = wifi_config.get("networks", [])
@@ -294,7 +294,7 @@ class DeviceProvisioner:
 
     def _configure_device(self, dry_run: bool = False) -> dict[str, Any]:
         """Configure device properties."""
-        result = {"step": "configure_device", "success": False, "details": []}
+        result: dict[str, Any] = {"step": "configure_device", "success": False, "details": []}
 
         device_config = self.persona.get("device", {})
 
