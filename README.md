@@ -31,12 +31,13 @@ AgenticART creates **AI agents that can actually perform security assessments** 
 **Where else do you get this?**
 
 There is no other public source combining:
-- 192 Android security challenges (110 mapped to real CVEs, 82 foundational skills)
-- 118 unique CVEs from NIST NVD and Android Security Bulletins
+- Hundreds of Android security challenges (CVE-based + foundational skills)
+- Real CVEs from NIST NVD and Android Security Bulletins
 - Execution verification against live Android devices
 - Structured prompts optimized for security task performance
 - Training data export pipeline (JSONL/Alpaca/ShareGPT/DPO)
 - Belt-based curriculum with measurable progression
+- Scoring system for tracking improvement and comparing models
 
 ### The Compound Effect
 
@@ -76,6 +77,121 @@ The framework creates a virtuous cycle:
 | **Execution Verification** | Filter to only working commands | Training data quality improvement |
 | **Curriculum Progression** | White → Black belt ordering | Track pass rate improvement per belt |
 | **Fine-tuning** | Train on verified traces | Before/after benchmark comparison |
+
+---
+
+## Building Penetration Testing Agents
+
+AgenticART provides the foundation for Android pentest agents:
+
+| Component | What You Get |
+|-----------|--------------|
+| **Training Data** | Fine-tune a model on verified security tasks |
+| **Prompt Patterns** | ReAct reasoning proven to work for multi-step attacks |
+| **Execution Infrastructure** | ADB/Frida execution with automatic error recovery |
+| **Verification Loop** | Know when exploitation succeeded vs failed |
+
+This is training infrastructure, not a finished agent. You use it to create a model that's better at Android security tasks, then build your agent on top.
+
+---
+
+## Scoring & Model Comparison
+
+### Grading System
+
+Every challenge attempt receives a grade:
+
+| Grade | Meaning | Training Value |
+|-------|---------|----------------|
+| **A** | Perfect execution | Positive example |
+| **B** | Good with minor issues | Positive example |
+| **C** | Functional but needs improvement | Borderline |
+| **D** | Poor, correction needed | Negative example (with correction) |
+| **F** | Failed completely | Negative example (with correction) |
+
+### Point System
+
+Points scale with belt difficulty:
+
+```
+White Belt:  10 pts/challenge    Purple Belt: 70 pts/challenge
+Yellow Belt: 20 pts/challenge    Black Belt:  80 pts/challenge
+...progressive scaling...
+```
+
+Bonus points for:
+- First-try success (no retries)
+- Fast execution (< 30 seconds)
+- Grade A (perfect score)
+
+### Tracking Model Progress
+
+```python
+from dojo.scoring import ModelScorer
+from dojo.sensei import ProgressTracker
+
+# Track across sessions
+tracker = ProgressTracker(storage_path="./progress")
+progress = tracker.get_progress("llama3.1-8b")
+
+print(f"Belt: {progress.current_belt}")
+print(f"Pass Rate: {progress.pass_rate}%")
+print(f"Total Score: {progress.total_score}")
+
+# Compare models
+scorer = ModelScorer()
+report = scorer.generate_report()
+```
+
+### Metrics Collection
+
+Track granular performance data:
+
+```python
+from dojo.challenge_value import MetricsCollector
+
+collector = MetricsCollector()
+# Records per-challenge: attempts, success rate, execution time,
+# error types, token usage, grade distribution
+```
+
+### Comparing Models
+
+Use `compare_challengers.py` to benchmark:
+
+```bash
+# Compare Basic vs ReAct prompting
+python dojo/compare_challengers.py --model llama3.1:8b
+
+# Output:
+#   Basic Challenger:  60% pass rate, avg 3.2 steps
+#   ReAct Challenger:  78% pass rate, avg 2.1 steps
+```
+
+### Prompt Engineering Approaches
+
+| Approach | File | When to Use |
+|----------|------|-------------|
+| **Basic** | `curriculum/challenger.py` | Simple challenges, fast iteration |
+| **ReAct** | `react_challenger.py` | Multi-step reasoning, error recovery |
+| **Hybrid** | `hybrid_challenger.py` | Auto-select based on challenge complexity |
+
+ReAct prompt structure:
+```
+THOUGHT: [Reasoning about the situation]
+HYPOTHESIS: [What I expect to happen]
+ACTION: [Exact command to execute]
+OBSERVATION: [What actually happened]
+... iterate until success or max attempts ...
+```
+
+Error context injection (`context_injector.py`):
+```
+[FAILED_COMMAND] shell pm list packages -3
+[ERROR] Type: permission_denied | Message: requires android.permission.QUERY_ALL_PACKAGES
+[SUGGESTIONS] Try using 'dumpsys package' or limit query scope
+[INSTRUCTIONS] Modify your approach based on this error
+```
 
 ---
 
@@ -344,7 +460,7 @@ The framework tracks:
 ### What AgenticART IS
 
 - ✅ Training framework for Android security assessment agents
-- ✅ Curriculum of 192 challenges (110 CVE-based, 82 foundational skills)
+- ✅ Growing curriculum of CVE-based and foundational security challenges
 - ✅ Execution-verified feedback loop for model improvement
 - ✅ Realistic non-rooted environment matching real targets
 - ✅ Research prototype for studying AI security capabilities
