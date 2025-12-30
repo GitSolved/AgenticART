@@ -327,6 +327,48 @@ class Compatibility(Enum):
         return False
 
 
+class DeviceMode(Enum):
+    """Device root/privilege mode for exploitation."""
+
+    ROOTED = "rooted"  # Device has root access (su available)
+    UNROOTED = "unrooted"  # Stock device without root
+    EITHER = "either"  # Challenge works on both
+
+    @classmethod
+    def from_string(cls, value: str) -> "DeviceMode":
+        """Create DeviceMode from string value."""
+        if not value:
+            return cls.EITHER
+        try:
+            return cls(value.lower())
+        except ValueError:
+            return cls.EITHER
+
+    @property
+    def requires_root(self) -> bool:
+        """Check if this mode requires root access."""
+        return self == DeviceMode.ROOTED
+
+    @property
+    def display(self) -> str:
+        """Display string for the mode."""
+        icons = {
+            "rooted": "🔓 Rooted",
+            "unrooted": "🔒 Unrooted",
+            "either": "🔐 Either",
+        }
+        return icons.get(self.value, self.value)
+
+    def is_compatible_with(self, device_is_rooted: bool) -> bool:
+        """Check if challenge is compatible with device root status."""
+        if self == DeviceMode.EITHER:
+            return True
+        elif self == DeviceMode.ROOTED:
+            return device_is_rooted
+        else:  # UNROOTED
+            return not device_is_rooted
+
+
 @dataclass
 class Challenge:
     """A single dojo challenge for the model to attempt."""
@@ -346,6 +388,7 @@ class Challenge:
     tags: list[str] = field(default_factory=list)
     compatibility: Compatibility = Compatibility.UNIVERSAL  # Android version compatibility
     execution_mode: ExecutionMode = ExecutionMode.FULL_EXECUTION  # How to grade this challenge
+    device_mode: DeviceMode = DeviceMode.EITHER  # Root requirement for this challenge
 
     def to_prompt(self) -> str:
         """Generate the challenge prompt for the model."""

@@ -34,6 +34,7 @@ class Vulnerability:
     validation: dict
     hints: list[str] = field(default_factory=list)
     kata_solution: Optional[str] = None
+    requires_root: bool = False  # Whether this exploit needs root access
 
 
 @dataclass
@@ -109,6 +110,7 @@ class TargetManager:
                     validation=vuln_data.get("validation", {}),
                     hints=vuln_data.get("hints", []),
                     kata_solution=vuln_data.get("kata_solution"),
+                    requires_root=vuln_data.get("requires_root", False),
                 )
                 vulnerabilities.append(vuln)
 
@@ -287,3 +289,93 @@ class TargetManager:
         if vuln and vuln.validation:
             return vuln.validation.get("success_indicators", [])
         return []
+
+    def requires_root(self, app_id: str, vuln_id: str) -> bool:
+        """Check if a vulnerability requires root access."""
+        vuln = self.get_vulnerability(app_id, vuln_id)
+        if vuln:
+            return vuln.requires_root
+        return False
+
+    def list_vulnerabilities_for_mode(
+        self, app_id: str, device_is_rooted: bool
+    ) -> list[str]:
+        """
+        List vulnerabilities for an app filtered by device root status.
+
+        Args:
+            app_id: The app ID.
+            device_is_rooted: Whether the device has root access.
+
+        Returns:
+            List of vulnerability IDs compatible with the device mode.
+        """
+        app = self.get_app(app_id)
+        if not app:
+            return []
+
+        compatible_vulns = []
+        for vuln in app.vulnerabilities:
+            # Include if: doesn't require root, OR device is rooted
+            if not vuln.requires_root or device_is_rooted:
+                compatible_vulns.append(vuln.id)
+
+        return compatible_vulns
+
+    def get_root_only_vulnerabilities(self) -> list[tuple[str, str]]:
+        """
+        Get all vulnerabilities that require root access.
+
+        Returns:
+            List of (app_id, vuln_id) tuples.
+        """
+        root_vulns = []
+        for app_id, app in self._apps.items():
+            for vuln in app.vulnerabilities:
+                if vuln.requires_root:
+                    root_vulns.append((app_id, vuln.id))
+        return root_vulns
+
+    def get_unrooted_vulnerabilities(self) -> list[tuple[str, str]]:
+        """
+        Get all vulnerabilities that work without root.
+
+        Returns:
+            List of (app_id, vuln_id) tuples.
+        """
+        unroot_vulns = []
+        for app_id, app in self._apps.items():
+            for vuln in app.vulnerabilities:
+                if not vuln.requires_root:
+                    unroot_vulns.append((app_id, vuln.id))
+        return unroot_vulns
+
+    def get_vulnerability_stats(self) -> dict:
+        """
+        Get statistics about vulnerable targets.
+
+        Returns:
+            Dictionary with counts and breakdowns.
+        """
+        total_vulns = 0
+        root_required = 0
+        by_type: dict[str, int] = {}
+        by_belt: dict[str, int] = {}
+
+        for app in self._apps.values():
+            for vuln in app.vulnerabilities:
+                total_vulns += 1
+                if vuln.requires_root:
+                    root_required += 1
+
+                by_type[vuln.type] = by_type.get(vuln.type, 0) + 1
+                by_belt[vuln.belt] = by_belt.get(vuln.belt, 0) + 1
+
+        return {
+            "total_apps": len(self._apps),
+            "total_vulnerabilities": total_vulns,
+            "root_required": root_required,
+            "unrooted_accessible": total_vulns - root_required,
+            "by_type": by_type,
+            "by_belt": by_belt,
+        }

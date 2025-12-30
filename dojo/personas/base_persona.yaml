@@ -178,6 +178,50 @@ security:
       - android.permission.ACCESS_FINE_LOCATION
 
 # =============================================================================
+# ROOT CONFIGURATION
+# =============================================================================
+# Determines whether the device has root access and what exploits are possible.
+# =============================================================================
+root:
+  # Is device rooted? (su binary available)
+  enabled: false
+
+  # How root was achieved (for realistic scenarios)
+  # Options: magisk, supersu, custom_rom, emulator_root
+  method: null
+
+  # Root detection bypass for testing apps that block rooted devices
+  hide_root: false
+
+  # Capabilities available when rooted
+  # These affect which challenges can be attempted
+  capabilities:
+    # Can read /data/data/ for any app (not just debuggable)
+    read_app_data: false
+
+    # Can write to system partitions
+    write_system: false
+
+    # Can access /data/misc/wifi/ for WiFi credentials
+    read_wifi_config: false
+
+    # Can modify SELinux policies
+    modify_selinux: false
+
+    # Can inject into other processes
+    process_injection: false
+
+    # Can access kernel memory
+    kernel_access: false
+
+  # For training scenarios: what the model should learn about root
+  training_notes:
+    - "Root access enables reading protected app data directories"
+    - "Root allows bypassing permission checks"
+    - "Many real-world exploits require root to execute payloads"
+    - "Security researchers often use rooted devices for analysis"
+
+# =============================================================================
 # ACCOUNTS
 # =============================================================================
 accounts:

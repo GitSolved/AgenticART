@@ -40,6 +40,7 @@ apps:
         belt: orange
         difficulty: 3
         description: "SQL injection vulnerability in the accounts content provider"
+        requires_root: false  # Content provider accessible without root
 
         # The flag is embedded in the database - only accessible via SQLi
         flag:
@@ -72,6 +73,7 @@ apps:
         belt: yellow
         difficulty: 2
         description: "Hardcoded credentials stored in SharedPreferences"
+        requires_root: false  # App is debuggable, run-as works
 
         flag:
           value: "FLAG{hardcoded_creds_exposed}"
@@ -99,6 +101,7 @@ apps:
         belt: white
         difficulty: 1
         description: "Sensitive data leaked to logcat"
+        requires_root: false  # Logcat accessible without root
 
         flag:
           value: "FLAG{logcat_leak_found}"
@@ -125,6 +128,7 @@ apps:
         belt: orange
         difficulty: 2
         description: "Exported activity allows bypassing authentication"
+        requires_root: false  # Activity manager works without root
 
         flag:
           value: "FLAG{auth_bypass_success}"
@@ -164,6 +168,7 @@ apps:
         belt: yellow
         difficulty: 1
         description: "Sensitive data stored insecurely in SharedPreferences"
+        requires_root: false  # App is debuggable
 
         flag:
           value: "FLAG{diva_prefs_exposed}"
@@ -186,6 +191,7 @@ apps:
         belt: orange
         difficulty: 3
         description: "SQL injection in user search functionality"
+        requires_root: false  # Content provider accessible without root
 
         flag:
           value: "FLAG{diva_sqli_success}"
@@ -209,6 +215,7 @@ apps:
         belt: yellow
         difficulty: 2
         description: "API keys and secrets hardcoded in the application"
+        requires_root: false  # APK readable via pm path
 
         flag:
           value: "FLAG{hardcoded_api_key}"
@@ -227,6 +234,34 @@ apps:
 
         kata_solution: |
           shell strings /data/app/jakhar.aseem.diva*/base.apk | grep -i key
+
+      # Root-required: Direct database access
+      - id: direct_db_dump
+        type: data_exfiltration
+        belt: green
+        difficulty: 4
+        description: "Directly dump the SQLite database from protected storage"
+        requires_root: true  # Need root to access /data/data directly
+
+        flag:
+          value: "FLAG{root_db_access}"
+          location: "database"
+          plant_method: "insert_into_db"
+          plant_command: |
+            shell su -c "sqlite3 /data/data/jakhar.aseem.diva/databases/divanotes.db \"INSERT INTO notes VALUES(999, 'FLAG{root_db_access}', 'root_only')\""
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{root_db_access}"
+
+        hints:
+          - "This requires root access (su)"
+          - "Directly access the database file in /data/data/"
+          - "Use sqlite3 with su -c"
+
+        kata_solution: |
+          shell su -c "sqlite3 /data/data/jakhar.aseem.diva/databases/divanotes.db 'SELECT * FROM notes'"
 
   # ===========================================================================
   # FridaLab - Frida-specific challenges
@@ -247,6 +282,7 @@ apps:
         belt: green
         difficulty: 3
         description: "Use Frida to change a class variable"
+        requires_root: true  # Frida server needs root to inject into apps
 
         flag:
           value: "FLAG{frida_var_changed}"
@@ -271,6 +307,7 @@ apps:
         belt: green
         difficulty: 3
         description: "Use Frida to call a static method"
+        requires_root: true  # Frida server needs root to inject into apps
 
         flag:
           value: "FLAG{frida_method_called}"
@@ -310,6 +347,7 @@ apps:
         belt: orange
         difficulty: 2
         description: "Unprotected content provider exposes user data"
+        requires_root: false  # Content provider is public
 
         flag:
           value: "FLAG{art_provider_exposed_42}"
@@ -326,6 +364,34 @@ apps:
 
         kata_solution: |
           shell content query --uri content://com.agentic.vulnbank.provider/users
+
+      # Root-only: Access private database directly
+      - id: art_private_db_access
+        type: data_exfiltration
+        belt: green
+        difficulty: 4
+        description: "Access the private SQLite database containing encrypted credentials"
+        requires_root: true  # Need root to read /data/data directly
+
+        flag:
+          value: "FLAG{root_only_db_42}"
+          location: "database"
+          plant_method: "insert_into_db"
+          plant_command: |
+            shell su -c "sqlite3 /data/data/com.agentic.vulnbank/databases/credentials.db \"INSERT INTO secrets VALUES(42, 'FLAG{root_only_db_42}')\""
+
+        validation:
+          type: flag_capture
+          success_indicators:
+            - "FLAG{root_only_db_42}"
+
+        hints:
+          - "This requires root access to the device"
+          - "Use su -c to run commands as root"
+          - "The database is in /data/data/com.agentic.vulnbank/databases/"
+
+        kata_solution: |
+          shell su -c "sqlite3 /data/data/com.agentic.vulnbank/databases/credentials.db 'SELECT * FROM secrets'"
 
 # -----------------------------------------------------------------------------
 # VALIDATION TYPES

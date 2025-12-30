@@ -13,6 +13,7 @@ from dojo.models import (
     Challenge,
     ChallengeInput,
     Compatibility,
+    DeviceMode,
     ExecutionMode,
     ExpectedOutput,
     ScoringRubric,
@@ -107,6 +108,10 @@ class ChallengeLoader:
             exec_mode_str = data.get("execution_mode", "full_execution")
             execution_mode = ExecutionMode.from_string(exec_mode_str)
 
+            # Parse device mode (rooted/unrooted requirement)
+            device_mode_str = data.get("device_mode", "either")
+            device_mode = DeviceMode.from_string(device_mode_str)
+
             return Challenge(
                 id=data["id"],
                 name=data["name"],
@@ -121,6 +126,7 @@ class ChallengeLoader:
                 tags=data.get("tags", []),
                 compatibility=compatibility,
                 execution_mode=execution_mode,
+                device_mode=device_mode,
             )
 
         except KeyError as e:
@@ -280,4 +286,110 @@ class ChallengeLoader:
         return [
             c for c in challenges
             if c.compatibility.is_compatible_with_api(api_level)
+        ]
+
+    def filter_by_device_mode(
+        self, challenges: list[Challenge], device_is_rooted: bool
+    ) -> list[Challenge]:
+        """
+        Filter challenges by device root status.
+
+        Args:
+            challenges: List of challenges to filter.
+            device_is_rooted: Whether the device has root access.
+
+        Returns:
+            Filtered list of challenges compatible with device mode.
+        """
+        return [
+            c for c in challenges
+            if c.device_mode.is_compatible_with(device_is_rooted)
+        ]
+
+    def load_belt_for_device_mode(
+        self, belt: Belt, device_is_rooted: bool
+    ) -> list[Challenge]:
+        """
+        Load challenges for a belt filtered by device root status.
+
+        Args:
+            belt: The belt level to load challenges for.
+            device_is_rooted: Whether the device has root access.
+
+        Returns:
+            List of Challenge objects compatible with device mode.
+        """
+        all_challenges = self.load_belt(belt)
+        return self.filter_by_device_mode(all_challenges, device_is_rooted)
+
+    def load_for_device(
+        self,
+        belt: Belt,
+        api_level: int,
+        device_is_rooted: bool,
+    ) -> list[Challenge]:
+        """
+        Load challenges for a belt filtered by both API level and root status.
+
+        This is the recommended method for getting challenges appropriate
+        for a specific device configuration.
+
+        Args:
+            belt: The belt level to load challenges for.
+            api_level: The Android API level of the target device.
+            device_is_rooted: Whether the device has root access.
+
+        Returns:
+            List of Challenge objects compatible with the device.
+        """
+        all_challenges = self.load_belt(belt)
+
+        # Apply both filters
+        compatible = [
+            c for c in all_challenges
+            if c.compatibility.is_compatible_with_api(api_level)
+            and c.device_mode.is_compatible_with(device_is_rooted)
+        ]
+
+        return compatible
+
+    def get_root_only_challenges(self, belt: Optional[Belt] = None) -> list[Challenge]:
+        """
+        Get all challenges that require root access.
+
+        Args:
+            belt: Optional belt to filter by. If None, returns all belts.
+
+        Returns:
+            List of root-required challenges.
+        """
+        if belt:
+            challenges = self.load_belt(belt)
+        else:
+            challenges = []
+            for b in Belt:
+                challenges.extend(self.load_belt(b))
+
+        return [c for c in challenges if c.device_mode == DeviceMode.ROOTED]
+
+    def get_unrooted_challenges(self, belt: Optional[Belt] = None) -> list[Challenge]:
+        """
+        Get all challenges that work without root.
+
+        Args:
+            belt: Optional belt to filter by. If None, returns all belts.
+
+        Returns:
+            List of challenges accessible without root.
+        """
+        if belt:
+            challenges = self.load_belt(belt)
+        else:
+            challenges = []
+            for b in Belt:
+                challenges.extend(self.load_belt(b))
+
+        return [
+            c for c in challenges
+            if c.device_mode in (DeviceMode.UNROOTED, DeviceMode.EITHER)
         ]
