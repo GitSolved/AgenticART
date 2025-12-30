@@ -82,13 +82,10 @@ htmlcov/
 *.log
 *.tmp
 *.bak
-master_dataset/
-dojo_finetune_package/
 *.ab
 *.js
+master_dataset/
 dojo_finetune_package/
 models/
 archived_runs/
-dojo_output/
 data/
-models/*adapters*
