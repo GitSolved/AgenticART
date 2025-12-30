@@ -20,48 +20,61 @@ AgenticART creates **AI agents that can actually perform security assessments** 
 
 ### Who Is This For?
 
-AgenticART serves a specific audience:
-
 | Audience | Why AgenticART? |
 |----------|-----------------|
-| **AI Security Researchers** | Study whether curriculum-based training improves security task performance. Benchmark before/after fine-tuning to validate the belt progression hypothesis. |
-| **Air-Gapped Environments** | Organizations that cannot use cloud APIs (compliance, classification, regulatory). Train a local model once, deploy offline forever. |
-| **Cost-Conscious Teams** | Cloud API costs add up. A fine-tuned 7B model running locally is free after initial training. |
+| **AI Security Researchers** | Study curriculum-based training for security tasks. Benchmark improvements with real execution data. |
+| **Air-Gapped / Compliance Teams** | Train once, deploy offline forever. No cloud API dependencies in production. |
+| **Teams Building Security Agents** | Create a personalized Android security agent fine-tuned on your own verified execution traces. |
 
-### What Problem Does It Solve?
+### Why Does This Exist?
 
-**GPT-4o can already do Android security tasks. Why bother?**
+**Where else do you get this?**
 
-If you can use GPT-4o: Just use it. This framework won't beat frontier models.
+There is no other public source combining:
+- 192 Android security challenges mapped to 118+ real CVEs
+- Execution verification against live Android devices
+- Structured prompts optimized for security task performance
+- Training data export pipeline (JSONL/Alpaca/ShareGPT)
+- Belt-based curriculum with measurable progression
 
-If you *can't* use cloud APIs, you need a local model. But local models (7B-13B) are worse at security tasks. AgenticART provides:
+### The Compound Effect
 
-1. **Execution-verified training data** - Not "GPT-4o said this might work" but "this command actually succeeded on a real device"
-2. **Curriculum structure** - Progressive difficulty that (hypothesis) accelerates skill acquisition
-3. **Benchmarking infrastructure** - Measure if your fine-tuned model actually improved
-
-### The Testable Hypothesis
+The framework creates a virtuous cycle:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Does Belt Progression Work?                   │
+│                    How AgenticART Compounds                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  1. Benchmark base model (e.g., Llama 3.1 8B) on all 192        │
-│     challenges. Record pass rate per belt.                       │
+│  1. PROMPT ENGINEERING                                           │
+│     ReAct patterns, error context injection, structured          │
+│     challenge prompts → Better LLM performance out of the box    │
 │                                                                  │
-│  2. Fine-tune on execution-verified traces from White→Green      │
-│     belt challenges.                                             │
+│  2. EXECUTION VERIFICATION                                       │
+│     Commands run on real devices → Only working solutions        │
+│     become training data                                         │
 │                                                                  │
-│  3. Re-benchmark. Compare pass rates.                            │
+│  3. CURRICULUM STRUCTURE                                         │
+│     Progressive difficulty → Model learns fundamentals before    │
+│     advanced techniques                                          │
 │                                                                  │
-│  If pass rate improves: Belt progression validated.              │
-│  If no improvement: Approach needs revision.                     │
+│  4. FINE-TUNING                                                  │
+│     Verified traces → Personalized local model that actually     │
+│     works for YOUR environment                                   │
+│                                                                  │
+│  Result: Each layer improves the next                            │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-This is research infrastructure, not a finished product.
+### Measurable Progress
+
+| Layer | What It Does | Measurable Outcome |
+|-------|--------------|-------------------|
+| **Prompt Engineering** | Structured prompts, ReAct reasoning, error recovery | Higher pass rate vs naive prompting |
+| **Execution Verification** | Filter to only working commands | Training data quality improvement |
+| **Curriculum Progression** | White → Black belt ordering | Track pass rate improvement per belt |
+| **Fine-tuning** | Train on verified traces | Before/after benchmark comparison |
 
 ---
 
