@@ -375,12 +375,11 @@ class OllamaLLMClient:
 # ============================================================================
 
 
-class MockExecutor:
+class MockExecutor(Executor):
     """Mocks Executor for testing without device."""
 
     def __init__(self, device_id: str = "mock-device", adb_path: str = "mock-adb"):
-        self.device_id = device_id
-        self.adb_path = adb_path
+        super().__init__(device_id=device_id, adb_path=adb_path)
 
     def check_device_connected(self) -> bool:
         return True
@@ -508,6 +507,7 @@ def run_end_to_end(
     elif mode == "mock":
         use_mock_executor = True
 
+    executor: Executor
     if use_mock_executor:
         print("Executor: Mock (Simulated Device)")
         executor = MockExecutor(device_id=device_id)
@@ -538,6 +538,7 @@ def run_end_to_end(
         print(f"  Attempt {attempt.attempt_number}: {status}")
 
     # Initialize selected challenger
+    challenger: Any
     if challenger_type == "react":
         print("Challenger Type: REACT (Reason + Act)")
         traj_dir = Path("./dojo_output/trajectories")
