@@ -29,15 +29,20 @@ jobs:
         run: mypy . --ignore-missing-imports
 
   test:
-    name: Run Tests
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+      fail-fast: false  # Run all versions even if one fails
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       - name: Install Dependencies
@@ -46,7 +51,7 @@ jobs:
           pip install -e . || pip install .
 
       - name: Run Tests
-        run: pytest tests/ -v --cov=dojo --cov-report=term-missing
+        run: pytest tests/ -v --cov=dojo --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v4
