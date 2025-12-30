@@ -211,9 +211,7 @@ class ErrorExtractor:
         result: ExecutionResult,
     ) -> list[str]:
         """Get fix suggestions based on error type and privilege context."""
-        suggestions = self.SUGGESTIONS.get(
-            error_type, self.SUGGESTIONS["unknown"]
-        ).copy()
+        suggestions = self.SUGGESTIONS.get(error_type, self.SUGGESTIONS["unknown"]).copy()
 
         # Add context-specific suggestions
         combined = f"{result.stderr}\n{result.stdout}".lower()
@@ -235,10 +233,7 @@ class ErrorExtractor:
             if self.executor:
                 try:
                     id_res = self.executor.execute_adb("shell id")
-                    is_root = (
-                        "uid=0" in id_res.stdout.lower()
-                        or "root" in id_res.stdout.lower()
-                    )
+                    is_root = "uid=0" in id_res.stdout.lower() or "root" in id_res.stdout.lower()
                 except Exception:
                     pass
 
@@ -266,9 +261,7 @@ class ErrorExtractor:
             suggestions.insert(0, "This operation may require root privileges")
 
         if "busy" in combined:
-            suggestions.insert(
-                0, "Resource is busy - wait and retry, or close other processes"
-            )
+            suggestions.insert(0, "Resource is busy - wait and retry, or close other processes")
 
         return suggestions[:5]  # Limit to 5 suggestions
 
@@ -320,7 +313,7 @@ class ErrorExtractor:
     def should_escalate_to_react(self, error_context: ErrorContext) -> bool:
         """
         Determine if the current failure warrants a transition to ReAct reasoning.
-        
+
         Logic:
         1. High severity (Permission, Segfault) -> YES, needs reasoning to bypass or analyze.
         2. Targeting errors (Command not found, No such path) -> YES, needs discovery steps.
@@ -329,22 +322,22 @@ class ErrorExtractor:
         # 1. High severity always warrants reasoning
         if self.classify_severity(error_context) == "high":
             return True
-            
+
         # 2. Targeting errors imply the model guessed a name/path incorrectly
         targeting_types = ["command_not_found"]
         if error_context.error_type in targeting_types:
             return True
-            
+
         # 3. Check patterns in error message for discovery needs
         discovery_patterns = [
             r"no such file",
             r"not found",
             r"inaccessible",
             r"denied",
-            r"not permitted"
+            r"not permitted",
         ]
         combined = f"{error_context.error_message} {error_context.raw_stderr}".lower()
         if any(re.search(p, combined) for p in discovery_patterns):
             return True
-            
+
         return False

@@ -119,9 +119,7 @@ class TrainingExtractor:
         # 5. Exploration examples (from Probing Mode)
         # We ALWAYS extract these to the Discovery log
         if session.challenge.belt == Belt.BLACK:
-            exploration_examples = self._extract_exploration_examples(
-                session, assessment
-            )
+            exploration_examples = self._extract_exploration_examples(session, assessment)
             for ee in exploration_examples:
                 ee.model_id = model_id
             examples.extend(exploration_examples)
@@ -209,9 +207,7 @@ class TrainingExtractor:
                     "challenge_id": session.challenge.id,
                     "status": "grader_error",
                     "reason": "corrected_output contains infrastructure error",
-                    "raw_output": assessment.corrected_output[
-                        :200
-                    ],  # Truncate for logging
+                    "raw_output": assessment.corrected_output[:200],  # Truncate for logging
                 }
             )
             return None
@@ -220,10 +216,7 @@ class TrainingExtractor:
         failed_output = assessment.model_output
 
         # Format as incorrect/correct pair
-        output_text = (
-            f"INCORRECT:\n{failed_output}\n\n"
-            f"CORRECT:\n{assessment.corrected_output}"
-        )
+        output_text = f"INCORRECT:\n{failed_output}\n\nCORRECT:\n{assessment.corrected_output}"
 
         # Add explanation if available
         if assessment.correction_explanation:
@@ -415,9 +408,7 @@ class TrainingExtractor:
 
         lines.append("")
         lines.append("## Instructions")
-        lines.append(
-            f"Correct the command to resolve the {error_context.error_type} error."
-        )
+        lines.append(f"Correct the command to resolve the {error_context.error_type} error.")
 
         return "\n".join(lines)
 

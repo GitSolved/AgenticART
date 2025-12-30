@@ -7,7 +7,9 @@ import os
 def main():
     # Configuration
     model_path = "models/whiterabbit-7b-dojo-4bit"
-    data_source = "dojo_output/training_data/llama3.1-70b-20251228_071557_20251228_071557_alpaca.json"
+    data_source = (
+        "dojo_output/training_data/llama3.1-70b-20251228_071557_20251228_071557_alpaca.json"
+    )
     dataset_dir = "models/adapter-data"
     adapter_output = "models/whiterabbit-7b-adapters"
 
@@ -39,15 +41,17 @@ def main():
         with open(path, "w") as f:
             for item in items:
                 # Construct prompt with input if present
-                instruction = item.get('instruction', '')
-                inp = item.get('input', '')
+                instruction = item.get("instruction", "")
+                inp = item.get("input", "")
 
                 if inp:
-                    prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{inp}\n\n### Response:"
+                    prompt = (
+                        f"### Instruction:\n{instruction}\n\n### Input:\n{inp}\n\n### Response:"
+                    )
                 else:
                     prompt = f"### Instruction:\n{instruction}\n\n### Response:"
 
-                entry = {"prompt": prompt, "completion": item['output']}
+                entry = {"prompt": prompt, "completion": item["output"]}
                 f.write(json.dumps(entry) + "\n")
         print(f"  Wrote {len(items)} items to {path}")
 
@@ -78,6 +82,7 @@ def main():
 
     print("\n✅ Fine-tuning complete.")
     print(f"  Adapters saved to: {adapter_output}")
+
 
 if __name__ == "__main__":
     main()

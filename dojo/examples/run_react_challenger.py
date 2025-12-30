@@ -99,6 +99,7 @@ def run_example(mode: str = "mock", model: str = ""):
     else:
         # Would use real LLM here
         from dojo.test_end_to_end import OllamaLLMClient
+
         llm = OllamaLLMClient(model=model)
         print(f"Using: {model}")
 
@@ -166,17 +167,17 @@ def run_example(mode: str = "mock", model: str = ""):
         print(f"Objective: {sample['objective'][:100]}...")
         print(f"Outcome: {sample['final_outcome']}")
 
-        if sample.get('initial_thought'):
+        if sample.get("initial_thought"):
             print("\nInitial Thought:")
             print(f"  {sample['initial_thought']['content'][:200]}...")
 
-        for step in sample.get('steps', [])[:2]:
+        for step in sample.get("steps", [])[:2]:
             print(f"\nStep {step['step_number']}:")
             print(f"  Thought: {step['thought']['content'][:100]}...")
             print(f"  Action: {step['action']['command']}")
-            if step.get('observation'):
+            if step.get("observation"):
                 print(f"  Outcome: {step['observation']['outcome']}")
-            if step.get('reflection'):
+            if step.get("reflection"):
                 print(f"  Reflection: {step['reflection']['what_happened'][:100]}...")
 
 

@@ -355,12 +355,7 @@ class SenseiAssessment:
     @property
     def all_issues(self) -> list[str]:
         """Get all issues combined."""
-        return (
-            self.syntax_issues
-            + self.api_errors
-            + self.logic_flaws
-            + self.security_issues
-        )
+        return self.syntax_issues + self.api_errors + self.logic_flaws + self.security_issues
 
     @property
     def issue_count(self) -> int:

@@ -231,7 +231,9 @@ class EventLogger:
         self.output_dir = output_dir or Path("./dojo_output/event_logs")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.run_id = run_id or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        self.run_id = (
+            run_id or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        )
         self.model_id = model_id
         self.config = config or {}
         self.config_hash = generate_config_hash(self.config)
@@ -563,8 +565,7 @@ class EventLogger:
             import pandas as pd
         except ImportError as e:
             raise ImportError(
-                "pandas is required for Parquet export. "
-                "Install with: pip install pandas pyarrow"
+                "pandas is required for Parquet export. Install with: pip install pandas pyarrow"
             ) from e
 
         export_dir = self.output_dir / "exports"
@@ -625,9 +626,7 @@ class EventLogger:
 
         # Export Parquet (if pandas available)
         try:
-            parquet_path = self.export_parquet(
-                output_dir / f"{self.run_id}_export.parquet"
-            )
+            parquet_path = self.export_parquet(output_dir / f"{self.run_id}_export.parquet")
             exported_files["parquet"] = parquet_path
         except ImportError:
             pass  # Skip Parquet if pandas not available

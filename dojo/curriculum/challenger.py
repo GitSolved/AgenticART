@@ -45,9 +45,7 @@ class AttemptRecord:
             "prompt_used": self.prompt_used,
             "model_output": self.model_output,
             "execution_result": self.execution_result.to_dict(),
-            "error_context": (
-                self.error_context.to_dict() if self.error_context else None
-            ),
+            "error_context": (self.error_context.to_dict() if self.error_context else None),
             "diagnostics": self.diagnostics,
             "timestamp": self.timestamp.isoformat(),
         }
@@ -212,9 +210,7 @@ class Challenger:
         session.completed_at = datetime.now()
         return session
 
-    def run_exploration(
-        self, target: str, goal: str = "Probe", depth: int = 5
-    ) -> ChallengeSession:
+    def run_exploration(self, target: str, goal: str = "Probe", depth: int = 5) -> ChallengeSession:
         """Probing mode."""
         exploration_challenge = Challenge(
             id=f"explor_{datetime.now().strftime('%H%M%S')}",
@@ -222,9 +218,7 @@ class Challenger:
             description=f"Target: {target}\nGoal: {goal}",
             belt=Belt.BLACK,
             difficulty=5,
-            inputs=ChallengeInput(
-                device_context={"target_package": target, "mode": "exploration"}
-            ),
+            inputs=ChallengeInput(device_context={"target_package": target, "mode": "exploration"}),
             expected_output=ExpectedOutput(script_type=ScriptType.FRIDA),
         )
         session = ChallengeSession(challenge=exploration_challenge)
@@ -241,9 +235,7 @@ class Challenger:
                     "adb": self.executor.execute_adb,
                     "frida": self.executor.execute_frida,
                 }
-                code_res = self.code_interpreter.execute(
-                    model_output, external_tools=tools
-                )
+                code_res = self.code_interpreter.execute(model_output, external_tools=tools)
                 exec_result = ExecutionResult(
                     success=code_res.success,
                     exit_code=0 if code_res.success else 1,

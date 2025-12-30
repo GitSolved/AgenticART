@@ -92,9 +92,7 @@ class ProgressTracker:
         """
         progress = self.get_progress(model_id)
 
-        if progress.check_promotion_eligibility(
-            required_pass_rate, required_challenges
-        ):
+        if progress.check_promotion_eligibility(required_pass_rate, required_challenges):
             next_belt = progress.current_belt.next_belt()
             return True, next_belt
 
@@ -147,9 +145,7 @@ class ProgressTracker:
             "total_score": progress.total_score,
             "training_examples_generated": progress.training_examples_generated,
             "last_training_date": (
-                progress.last_training_date.isoformat()
-                if progress.last_training_date
-                else None
+                progress.last_training_date.isoformat() if progress.last_training_date else None
             ),
             # Store assessment summaries, not full objects
             "assessment_count": len(progress.assessments),
@@ -188,9 +184,7 @@ class ProgressTracker:
             )
 
             if data.get("last_training_date"):
-                progress.last_training_date = datetime.fromisoformat(
-                    data["last_training_date"]
-                )
+                progress.last_training_date = datetime.fromisoformat(data["last_training_date"])
 
             return progress
 

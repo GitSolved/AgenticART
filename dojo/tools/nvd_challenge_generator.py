@@ -52,9 +52,7 @@ class NVDChallengeGenerator:
         else:
             logger.warning("No NVD API key - rate limits will be strict")
 
-    def fetch_recent_android_cves(
-        self, android_version: str, limit: int = 10
-    ) -> List[LiveCVE]:
+    def fetch_recent_android_cves(self, android_version: str, limit: int = 10) -> List[LiveCVE]:
         """Fetch recent CVEs for a specific Android version."""
         query = f"Android {android_version}"
         params = {"keywordSearch": query, "resultsPerPage": str(limit)}
@@ -131,8 +129,7 @@ class NVDChallengeGenerator:
 
         # 1. Critical Kernel/Driver Path (Black/Brown)
         if any(
-            kw in desc
-            for kw in ["kernel", "use-after-free", "race condition", "uaf", "binder"]
+            kw in desc for kw in ["kernel", "use-after-free", "race condition", "uaf", "binder"]
         ):
             return Belt.BLACK if cve.attack_vector == "NETWORK" else Belt.BROWN
 
@@ -162,10 +159,7 @@ class NVDChallengeGenerator:
             return Belt.ORANGE
 
         # 4. Information / Recon Path (Yellow)
-        if any(
-            kw in desc
-            for kw in ["information disclosure", "leak", "logcat", "sensitive"]
-        ):
+        if any(kw in desc for kw in ["information disclosure", "leak", "logcat", "sensitive"]):
             return Belt.YELLOW
 
         # Fallback to CVSS score
@@ -186,9 +180,7 @@ class NVDChallengeGenerator:
         script_type = "adb"
         if "kernel" in cve.description.lower():
             script_type = "c_exploit"
-        elif any(
-            kw in cve.description.lower() for kw in ["hook", "intercept", "instrument"]
-        ):
+        elif any(kw in cve.description.lower() for kw in ["hook", "intercept", "instrument"]):
             script_type = "frida"
 
         template = {
@@ -213,8 +205,7 @@ class NVDChallengeGenerator:
                 "executes_successfully": 30,
                 "achieves_objective": 20,
             },
-            "tags": ["nvd-generated", cve.cve_id.lower()]
-            + [c.lower() for c in cve.cwe_ids],
+            "tags": ["nvd-generated", cve.cve_id.lower()] + [c.lower() for c in cve.cwe_ids],
         }
 
         return template

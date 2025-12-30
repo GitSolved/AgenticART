@@ -160,9 +160,7 @@ def get_model_progress():
 
 def get_adb_status():
     try:
-        result = subprocess.run(
-            ["adb", "devices"], capture_output=True, text=True, timeout=2
-        )
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=2)
         if "127.0.0.1:6562" in result.stdout:
             return "CONNECTED", "health-connected"
         return "DISCONNECTED", "health-disconnected"
@@ -215,9 +213,7 @@ with st.sidebar:
     start_ts_str = engine_state.get("start_time")
     active_sec = engine_state.get("accumulated_seconds", 0)
     if current_status == "running" and start_ts_str:
-        active_sec += (
-            datetime.now() - datetime.fromisoformat(start_ts_str)
-        ).total_seconds()
+        active_sec += (datetime.now() - datetime.fromisoformat(start_ts_str)).total_seconds()
 
     latest_model = "UNKNOWN"
     latest_session = "IDLE"
@@ -413,9 +409,7 @@ with st.sidebar:
 
                     else:  # Full Bundle
                         exported = logger.export_run_bundle()
-                        st.success(
-                            f"✅ Exported {len(exported)} files to exports/"
-                        )
+                        st.success(f"✅ Exported {len(exported)} files to exports/")
                         for fmt, path in exported.items():
                             st.caption(f"  • {fmt}: {path.name}")
                 else:
@@ -552,16 +546,11 @@ if selected_stage == "EXECUTION":
         # Get unique values for filters
         all_labels = sorted(set(e["_eval_label"] for e in raw_entries))
         all_challenge_ids = sorted(
-            set(
-                e.get("metadata", {}).get("source_challenge_id", "unknown")
-                for e in raw_entries
-            )
+            set(e.get("metadata", {}).get("source_challenge_id", "unknown") for e in raw_entries)
         )
 
         # Extract belt prefixes from challenge IDs
-        belt_prefixes = sorted(
-            set(cid.split("_")[0] for cid in all_challenge_ids if "_" in cid)
-        )
+        belt_prefixes = sorted(set(cid.split("_")[0] for cid in all_challenge_ids if "_" in cid))
 
         # Filter controls
         st.markdown("**🔍 Filters**")
@@ -592,9 +581,7 @@ if selected_stage == "EXECUTION":
         filtered_entries = raw_entries
 
         if selected_label != "ALL":
-            filtered_entries = [
-                e for e in filtered_entries if e["_eval_label"] == selected_label
-            ]
+            filtered_entries = [e for e in filtered_entries if e["_eval_label"] == selected_label]
 
         if selected_prefix and selected_prefix != "ALL":
             filtered_entries = [
@@ -696,11 +683,7 @@ if selected_stage == "EXECUTION":
                     meta_cols[0].metric("Belt", meta.get("belt", "?"))
                     meta_cols[1].metric(
                         "Timestamp",
-                        (
-                            meta.get("timestamp", "?")[11:19]
-                            if meta.get("timestamp")
-                            else "?"
-                        ),
+                        (meta.get("timestamp", "?")[11:19] if meta.get("timestamp") else "?"),
                     )
                     meta_cols[2].metric(
                         "Model", safe_split(meta.get("model_id", "?"), "/", -1, "?")
@@ -721,9 +704,7 @@ elif selected_stage == "CURATION":
                 "Time": d["metadata"]["timestamp"][11:19],
                 "Task": d["metadata"]["source_challenge_id"],
                 "Grade": d["metadata"]["grade"],
-                "Outcome": (
-                    "PROMOTED" if d["metadata"]["grade"] in ("A", "B") else "REJECTED"
-                ),
+                "Outcome": ("PROMOTED" if d["metadata"]["grade"] in ("A", "B") else "REJECTED"),
                 "Logic": d["output"],
             }
             for d in discovery_data
@@ -739,9 +720,7 @@ elif selected_stage == "CURATION":
 elif selected_stage == "PLAYBOOK":
     st.subheader("🏛️ Playbook")
     for i, ex in enumerate(reversed(alpaca_data)):
-        first_line = safe_split(
-            ex.get("instruction"), "\n", 0, default="[No Instruction]"
-        )
+        first_line = safe_split(ex.get("instruction"), "\n", 0, default="[No Instruction]")
         with st.expander(f"📜 {first_line}"):
             st.write(ex["instruction"])
             st.code(ex["output"], language="bash")
@@ -749,12 +728,8 @@ elif selected_stage == "PLAYBOOK":
 elif selected_stage == "REINFORCEMENT":
     st.subheader("🧠 Reinforcement Analytics")
     for p in reversed(dpo_data[-10:]):
-        with st.expander(
-            f"Boundary: {p.get('metadata', {}).get('challenge_id', 'Exploration')}"
-        ):
-            st.write(
-                f"Source: {p.get('signal_source', 'N/A')} | Margin: {p.get('margin', 0.0)}"
-            )
+        with st.expander(f"Boundary: {p.get('metadata', {}).get('challenge_id', 'Exploration')}"):
+            st.write(f"Source: {p.get('signal_source', 'N/A')} | Margin: {p.get('margin', 0.0)}")
             c1, c2 = st.columns(2)
             c1.success("✅ CHOSEN")
             c1.code(p["chosen"])
@@ -776,9 +751,7 @@ elif selected_stage == "METRICS":
         st.markdown("#### Cumulative Playbook Yield (Last 6 Hours)")
         l6 = df_a[df_a["dt"] > (now - timedelta(hours=6))].copy()
         if not l6.empty:
-            l6["is_success"] = l6["metadata"].apply(
-                lambda x: 1 if x["grade"] in ("A", "B") else 0
-            )
+            l6["is_success"] = l6["metadata"].apply(lambda x: 1 if x["grade"] in ("A", "B") else 0)
             l6 = l6.sort_values("dt")
             l6["cum"] = l6["is_success"].cumsum()
             st.line_chart(l6.set_index("dt")["cum"])
@@ -815,14 +788,9 @@ elif selected_stage == "METRICS":
                 cat = "Frida Hooks"
             elif any(x in c_low for x in ["adb", "pm ", "am ", "dumpsys", "input"]):
                 cat = "ADB Commands"
-            elif any(
-                x in c_low for x in ["cat ", "ls ", "cd ", "find ", "grep ", "chmod"]
-            ):
+            elif any(x in c_low for x in ["cat ", "ls ", "cd ", "find ", "grep ", "chmod"]):
                 cat = "File Access"
-            elif any(
-                x in c_low
-                for x in ["curl", "wget", "ping", "netstat", "ip ", "nc ", "nmap"]
-            ):
+            elif any(x in c_low for x in ["curl", "wget", "ping", "netstat", "ip ", "nc ", "nmap"]):
                 cat = "Network"
 
             cmd_data.append({"Category": cat, "Command": cmd, "Success": is_success})
@@ -850,9 +818,7 @@ elif selected_stage == "METRICS":
                 # Calculate success rates
                 stats = (
                     df_cmd.groupby("Category")
-                    .agg(
-                        Attempts=("Success", "count"), Success_Rate=("Success", "mean")
-                    )
+                    .agg(Attempts=("Success", "count"), Success_Rate=("Success", "mean"))
                     .reset_index()
                 )
 
@@ -894,14 +860,9 @@ elif selected_stage == "BENCHMARKING":
                 cat = "Frida Hooks"
             elif any(x in c_low for x in ["adb", "pm ", "am ", "dumpsys", "input"]):
                 cat = "ADB Commands"
-            elif any(
-                x in c_low for x in ["cat ", "ls ", "cd ", "find ", "grep ", "chmod"]
-            ):
+            elif any(x in c_low for x in ["cat ", "ls ", "cd ", "find ", "grep ", "chmod"]):
                 cat = "File Access"
-            elif any(
-                x in c_low
-                for x in ["curl", "wget", "ping", "netstat", "ip ", "nc ", "nmap"]
-            ):
+            elif any(x in c_low for x in ["curl", "wget", "ping", "netstat", "ip ", "nc ", "nmap"]):
                 cat = "Network"
 
             comp_rows.append(
@@ -941,9 +902,7 @@ elif selected_stage == "BENCHMARKING":
                 belt = meta.get("belt", "white").upper()
                 grade = meta.get("grade", "F")
                 is_success = grade in ("A", "B", "C")
-                heatmap_rows.append(
-                    {"Model": model, "Belt": belt, "Success": is_success}
-                )
+                heatmap_rows.append({"Model": model, "Belt": belt, "Success": is_success})
 
             if heatmap_rows:
                 df_heat = pd.DataFrame(heatmap_rows)
@@ -959,9 +918,7 @@ elif selected_stage == "BENCHMARKING":
                     "BLACK",
                 ]
 
-                heat_stats = (
-                    df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
-                )
+                heat_stats = df_heat.groupby(["Model", "Belt"])["Success"].mean().reset_index()
                 heat_stats["Success_Rate"] = (heat_stats["Success"] * 100).fillna(0)
 
                 base = (
@@ -1041,9 +998,7 @@ elif selected_stage == "BENCHMARKING":
             st.markdown("### 🎯 Task-Specification Optimization")
             st.caption("Identify which models excel at specific categories")
 
-            cat_stats = (
-                df_sel.groupby(["Model", "Category"])["Success"].mean().reset_index()
-            )
+            cat_stats = df_sel.groupby(["Model", "Category"])["Success"].mean().reset_index()
             cat_stats["Success"] *= 100
 
             chart = (
@@ -1147,9 +1102,7 @@ elif selected_stage == "BENCHMARKING":
 
             with c3:
                 st.markdown("**Grade Distribution**")
-                grade_dist = (
-                    df_sel.groupby(["Model", "Grade"]).size().reset_index(name="Count")
-                )
+                grade_dist = df_sel.groupby(["Model", "Grade"]).size().reset_index(name="Count")
                 chart = (
                     alt.Chart(grade_dist)
                     .mark_bar()
@@ -1183,9 +1136,7 @@ elif selected_stage == "BENCHMARKING":
                     lambda x: "PROMOTED" if x else "REJECTED"
                 )
                 prom_dist = (
-                    prom_stats.groupby(["Model", "Outcome"])
-                    .size()
-                    .reset_index(name="Count")
+                    prom_stats.groupby(["Model", "Outcome"]).size().reset_index(name="Count")
                 )
                 chart = (
                     alt.Chart(prom_dist)
@@ -1264,7 +1215,9 @@ elif selected_stage == "TRAJECTORIES":
             # Try benchmarks first (actual format), then results (legacy)
             baseline_7b = benchmarks.get("baseline_7b", results.get("baseline_7b", {}))
             teacher_70b = benchmarks.get("teacher_70b", results.get("teacher_70b", {}))
-            student_post = benchmarks.get("finetuned_7b", results.get("student_7b_post_distillation", {}))
+            student_post = benchmarks.get(
+                "finetuned_7b", results.get("student_7b_post_distillation", {})
+            )
 
             # Parse pass rates from research data
             baseline_rate = parse_pass_rate(baseline_7b.get("pass_rate", 20))
@@ -1306,7 +1259,9 @@ elif selected_stage == "TRAJECTORIES":
                     .mark_bar()
                     .encode(
                         x=alt.X("Model:N", sort=model_order, title=None),
-                        y=alt.Y("Pass Rate:Q", title="Pass Rate (%)", scale=alt.Scale(domain=[0, 105])),
+                        y=alt.Y(
+                            "Pass Rate:Q", title="Pass Rate (%)", scale=alt.Scale(domain=[0, 105])
+                        ),
                         color=alt.Color(
                             "Category:N",
                             scale=alt.Scale(
@@ -1340,7 +1295,9 @@ elif selected_stage == "TRAJECTORIES":
                 st.metric(
                     "Improvement",
                     f"+{improvement:.0f}pp",
-                    delta=f"{improvement/baseline_rate*100:.0f}% relative gain" if baseline_rate > 0 else "N/A",
+                    delta=f"{improvement / baseline_rate * 100:.0f}% relative gain"
+                    if baseline_rate > 0
+                    else "N/A",
                 )
                 st.metric(
                     "Compression Ratio",
@@ -1398,11 +1355,13 @@ elif selected_stage == "TRAJECTORIES":
             # Sigmoid-like improvement
             progress = iter_num / 500
             pass_rate = 20 + 80 * (1 / (1 + 2.718 ** (-10 * (progress - 0.3))))
-            learning_data.append({
-                "Iteration": iter_num,
-                "Pass Rate": min(pass_rate, 100),
-                "Loss": 2.5 * (1 - progress) ** 2 + 0.1,
-            })
+            learning_data.append(
+                {
+                    "Iteration": iter_num,
+                    "Pass Rate": min(pass_rate, 100),
+                    "Loss": 2.5 * (1 - progress) ** 2 + 0.1,
+                }
+            )
 
         df_learn = pd.DataFrame(learning_data)
 
@@ -1422,9 +1381,11 @@ elif selected_stage == "TRAJECTORIES":
             )
 
             # Add threshold line at 95%
-            threshold = alt.Chart(pd.DataFrame({"y": [95]})).mark_rule(
-                strokeDash=[5, 5], color="#238636"
-            ).encode(y="y:Q")
+            threshold = (
+                alt.Chart(pd.DataFrame({"y": [95]}))
+                .mark_rule(strokeDash=[5, 5], color="#238636")
+                .encode(y="y:Q")
+            )
 
             st.altair_chart(chart + threshold, use_container_width=True)
             st.caption("Green dashed line: 95% target threshold")
@@ -1493,10 +1454,12 @@ elif selected_stage == "TRAJECTORIES":
 
             with col1:
                 st.markdown("**Quality Distribution**")
-                quality_df = pd.DataFrame([
-                    {"Category": "High Quality", "Count": high_quality_count},
-                    {"Category": "Filtered", "Count": low_quality_count},
-                ])
+                quality_df = pd.DataFrame(
+                    [
+                        {"Category": "High Quality", "Count": high_quality_count},
+                        {"Category": "Filtered", "Count": low_quality_count},
+                    ]
+                )
                 chart = (
                     alt.Chart(quality_df)
                     .mark_arc(innerRadius=50)
@@ -1517,11 +1480,13 @@ elif selected_stage == "TRAJECTORIES":
 
             with col2:
                 st.markdown("**Filter Reasons Breakdown**")
-                reasons_df = pd.DataFrame([
-                    {"Reason": "Too Short (<2 steps)", "Count": reason_too_short},
-                    {"Reason": "Low Diversity (<70%)", "Count": reason_low_diversity},
-                    {"Reason": "Retry Loops", "Count": reason_retry_loops},
-                ])
+                reasons_df = pd.DataFrame(
+                    [
+                        {"Reason": "Too Short (<2 steps)", "Count": reason_too_short},
+                        {"Reason": "Low Diversity (<70%)", "Count": reason_low_diversity},
+                        {"Reason": "Retry Loops", "Count": reason_retry_loops},
+                    ]
+                )
                 chart = (
                     alt.Chart(reasons_df)
                     .mark_bar()
@@ -1552,11 +1517,13 @@ elif selected_stage == "TRAJECTORIES":
                     outcome = obs.get("outcome", "unknown")
 
                     if error_type:
-                        error_data.append({
-                            "Error Type": error_type,
-                            "Outcome": outcome,
-                            "Recovered": outcome == "success",
-                        })
+                        error_data.append(
+                            {
+                                "Error Type": error_type,
+                                "Outcome": outcome,
+                                "Recovered": outcome == "success",
+                            }
+                        )
 
         if error_data:
             df_errors = pd.DataFrame(error_data)
@@ -1587,9 +1554,7 @@ elif selected_stage == "TRAJECTORIES":
             with col2:
                 st.markdown("**Recovery Success by Error Type**")
                 recovery_stats = (
-                    df_errors.groupby("Error Type")["Recovered"]
-                    .agg(["sum", "count"])
-                    .reset_index()
+                    df_errors.groupby("Error Type")["Recovered"].agg(["sum", "count"]).reset_index()
                 )
                 recovery_stats.columns = ["Error Type", "Recovered", "Total"]
                 recovery_stats["Recovery Rate"] = (
@@ -1600,19 +1565,29 @@ elif selected_stage == "TRAJECTORIES":
                     alt.Chart(recovery_stats)
                     .mark_bar()
                     .encode(
-                        x=alt.X("Recovery Rate:Q", title="Recovery Rate (%)", scale=alt.Scale(domain=[0, 100])),
+                        x=alt.X(
+                            "Recovery Rate:Q",
+                            title="Recovery Rate (%)",
+                            scale=alt.Scale(domain=[0, 100]),
+                        ),
                         y=alt.Y("Error Type:N", sort="-x"),
                         color=alt.Color(
                             "Recovery Rate:Q",
                             scale=alt.Scale(scheme="redyellowgreen", domain=[0, 100]),
                         ),
-                        tooltip=["Error Type", alt.Tooltip("Recovery Rate:Q", format=".1f"), "Total"],
+                        tooltip=[
+                            "Error Type",
+                            alt.Tooltip("Recovery Rate:Q", format=".1f"),
+                            "Total",
+                        ],
                     )
                     .properties(height=250)
                 )
                 st.altair_chart(chart, use_container_width=True)
         else:
-            st.info("No error data available yet. Run more trajectories to collect error statistics.")
+            st.info(
+                "No error data available yet. Run more trajectories to collect error statistics."
+            )
 
         # ===========================================
         # SECTION 5: REASONING TYPE ANALYSIS
@@ -1629,11 +1604,13 @@ elif selected_stage == "TRAJECTORIES":
                     reasoning_type = thought.get("reasoning_type", "unknown")
                     confidence = thought.get("confidence", 0.5)
 
-                    reasoning_data.append({
-                        "Reasoning Type": reasoning_type.replace("_", " ").title(),
-                        "Confidence": confidence,
-                        "Outcome": traj.get("final_outcome", "unknown"),
-                    })
+                    reasoning_data.append(
+                        {
+                            "Reasoning Type": reasoning_type.replace("_", " ").title(),
+                            "Confidence": confidence,
+                            "Outcome": traj.get("final_outcome", "unknown"),
+                        }
+                    )
 
         if reasoning_data:
             df_reasoning = pd.DataFrame(reasoning_data)
@@ -1704,12 +1681,14 @@ elif selected_stage == "TRAJECTORIES":
                         pivot_count += 1
 
                 if len(steps) > 0:
-                    pivot_data.append({
-                        "Has Pivot": "With Pivots" if has_pivot else "No Pivots",
-                        "Pivot Count": pivot_count,
-                        "Success": traj.get("final_outcome") == "success",
-                        "Steps": len(steps),
-                    })
+                    pivot_data.append(
+                        {
+                            "Has Pivot": "With Pivots" if has_pivot else "No Pivots",
+                            "Pivot Count": pivot_count,
+                            "Success": traj.get("final_outcome") == "success",
+                            "Steps": len(steps),
+                        }
+                    )
 
         if pivot_data:
             df_pivot = pd.DataFrame(pivot_data)
@@ -1719,19 +1698,23 @@ elif selected_stage == "TRAJECTORIES":
             with col1:
                 st.markdown("**Success Rate: Pivot vs No Pivot**")
                 pivot_success = (
-                    df_pivot.groupby("Has Pivot")["Success"]
-                    .agg(["sum", "count"])
-                    .reset_index()
+                    df_pivot.groupby("Has Pivot")["Success"].agg(["sum", "count"]).reset_index()
                 )
                 pivot_success.columns = ["Strategy", "Successes", "Total"]
-                pivot_success["Success Rate"] = pivot_success["Successes"] / pivot_success["Total"] * 100
+                pivot_success["Success Rate"] = (
+                    pivot_success["Successes"] / pivot_success["Total"] * 100
+                )
 
                 chart = (
                     alt.Chart(pivot_success)
                     .mark_bar()
                     .encode(
                         x=alt.X("Strategy:N"),
-                        y=alt.Y("Success Rate:Q", title="Success Rate (%)", scale=alt.Scale(domain=[0, 100])),
+                        y=alt.Y(
+                            "Success Rate:Q",
+                            title="Success Rate (%)",
+                            scale=alt.Scale(domain=[0, 100]),
+                        ),
                         color=alt.Color(
                             "Strategy:N",
                             scale=alt.Scale(
@@ -1788,42 +1771,48 @@ elif selected_stage == "TRAJECTORIES":
                 t_rate = parse_pass_rate(t_70b.get("pass_rate", 100))
                 f_rate = parse_pass_rate(f_7b.get("pass_rate", 100))
 
-                summary_rows.extend([
-                    {
-                        "Model": "7B Baseline",
-                        "Pass Rate (%)": f"{b_rate:.1f}",
-                        "Challenges": f"{b_7b.get('challenges_passed', 1)}/{b_7b.get('challenges_attempted', 5)}",
-                        "95% CI": "±15.5",
-                        "Effect Size": "-",
-                    },
-                    {
-                        "Model": "70B Teacher",
-                        "Pass Rate (%)": f"{t_rate:.1f}",
-                        "Challenges": f"{t_70b.get('challenges_passed', 5)}/{t_70b.get('challenges_attempted', 5)}",
-                        "95% CI": "±0.0",
-                        "Effect Size": "d=4.2***",
-                    },
-                    {
-                        "Model": "7B Fine-tuned",
-                        "Pass Rate (%)": f"{f_rate:.1f}",
-                        "Challenges": f"{f_7b.get('challenges_passed', 5)}/{f_7b.get('challenges_attempted', 5)}",
-                        "95% CI": "±0.0",
-                        "Effect Size": "d=4.2***",
-                    },
-                ])
+                summary_rows.extend(
+                    [
+                        {
+                            "Model": "7B Baseline",
+                            "Pass Rate (%)": f"{b_rate:.1f}",
+                            "Challenges": f"{b_7b.get('challenges_passed', 1)}/{b_7b.get('challenges_attempted', 5)}",
+                            "95% CI": "±15.5",
+                            "Effect Size": "-",
+                        },
+                        {
+                            "Model": "70B Teacher",
+                            "Pass Rate (%)": f"{t_rate:.1f}",
+                            "Challenges": f"{t_70b.get('challenges_passed', 5)}/{t_70b.get('challenges_attempted', 5)}",
+                            "95% CI": "±0.0",
+                            "Effect Size": "d=4.2***",
+                        },
+                        {
+                            "Model": "7B Fine-tuned",
+                            "Pass Rate (%)": f"{f_rate:.1f}",
+                            "Challenges": f"{f_7b.get('challenges_passed', 5)}/{f_7b.get('challenges_attempted', 5)}",
+                            "95% CI": "±0.0",
+                            "Effect Size": "d=4.2***",
+                        },
+                    ]
+                )
 
             if trajectories:
                 success_count = sum(1 for t in trajectories if t.get("final_outcome") == "success")
                 total = len(trajectories)
                 pass_rate = success_count / total * 100 if total > 0 else 0
 
-                summary_rows.append({
-                    "Model": "Current Session",
-                    "Pass Rate (%)": f"{pass_rate:.1f}",
-                    "Challenges": f"{success_count}/{total}",
-                    "95% CI": f"±{1.96 * (pass_rate * (100-pass_rate) / total) ** 0.5:.1f}" if total > 0 else "N/A",
-                    "Effect Size": "-",
-                })
+                summary_rows.append(
+                    {
+                        "Model": "Current Session",
+                        "Pass Rate (%)": f"{pass_rate:.1f}",
+                        "Challenges": f"{success_count}/{total}",
+                        "95% CI": f"±{1.96 * (pass_rate * (100 - pass_rate) / total) ** 0.5:.1f}"
+                        if total > 0
+                        else "N/A",
+                        "Effect Size": "-",
+                    }
+                )
 
             df_summary = pd.DataFrame(summary_rows)
             st.dataframe(
@@ -1890,6 +1879,4 @@ elif selected_stage == "TRAJECTORIES":
                 )
 
 st.divider()
-st.caption(
-    f"AgenticART Mission Control v0.5.0 | Target: {datetime.now().strftime('%Y-%m-%d')}"
-)
+st.caption(f"AgenticART Mission Control v0.5.0 | Target: {datetime.now().strftime('%Y-%m-%d')}")

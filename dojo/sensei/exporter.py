@@ -31,9 +31,7 @@ class DPOPair:
     chosen: str
     rejected: str
     margin: float = 1.0  # Quality gap between chosen and rejected (0.0 to 1.0)
-    signal_source: str = (
-        "curation"  # e.g., "regression_prevention", "syntax_correction"
-    )
+    signal_source: str = "curation"  # e.g., "regression_prevention", "syntax_correction"
     metadata: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -115,9 +113,7 @@ class TrainingDataExporter:
         )
 
         # If it's an on-device command and missing 'shell ', add it
-        if any(cmd.startswith(c) for c in on_device_commands) and not cmd.startswith(
-            "shell "
-        ):
+        if any(cmd.startswith(c) for c in on_device_commands) and not cmd.startswith("shell "):
             cmd = f"shell {cmd}"
 
         return cmd
@@ -256,9 +252,7 @@ class TrainingDataExporter:
             path: Output file path.
         """
         # Filter to only positive and kata examples for Alpaca
-        alpaca_examples = [
-            e for e in examples if e.example_type in ("positive", "kata")
-        ]
+        alpaca_examples = [e for e in examples if e.example_type in ("positive", "kata")]
 
         data = [example.to_alpaca() for example in alpaca_examples]
 
@@ -279,9 +273,7 @@ class TrainingDataExporter:
         """
         # Filter to positive and kata examples
         sharegpt_examples = [
-            e
-            for e in examples
-            if e.example_type in ("positive", "kata", "error_recovery")
+            e for e in examples if e.example_type in ("positive", "kata", "error_recovery")
         ]
 
         with open(path, "w", encoding="utf-8") as f:
@@ -336,9 +328,7 @@ class TrainingDataExporter:
 
             # 2. Identify failures
             negative = [e for e in challenge_examples if e.example_type == "negative"]
-            error_recovery = [
-                e for e in challenge_examples if e.example_type == "error_recovery"
-            ]
+            error_recovery = [e for e in challenge_examples if e.example_type == "error_recovery"]
 
             # Choose the BEST available correct answer
             best_chosen = kata[0] if kata else (positive[0] if positive else None)

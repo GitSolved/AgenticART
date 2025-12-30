@@ -346,9 +346,7 @@ class Executor:
             # We use -fsyntax-only to just check code correctness
             cmd = ["clang", "-fsyntax-only", str(temp_c)]
 
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=timeout
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
 
             duration = time.time() - start_time
             success = result.returncode == 0

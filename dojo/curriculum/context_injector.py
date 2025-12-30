@@ -234,12 +234,9 @@ DON'T:
         # Device context block
         if challenge.inputs.device_context:
             context_lines = [
-                f"{key}: {value}"
-                for key, value in challenge.inputs.device_context.items()
+                f"{key}: {value}" for key, value in challenge.inputs.device_context.items()
             ]
-            blocks.append(
-                self.build_block(BlockType.DEVICE_CONTEXT, "\n".join(context_lines))
-            )
+            blocks.append(self.build_block(BlockType.DEVICE_CONTEXT, "\n".join(context_lines)))
 
         # Hints block
         if challenge.hints:
@@ -254,10 +251,7 @@ DON'T:
         blocks.append(self.build_block(BlockType.OUTPUT_FORMAT, format_template))
 
         # Instructions block with Do/Don't
-        instructions = (
-            "Generate the requested command/script.\n\n"
-            f"{self.DO_DONT_BLOCK}"
-        )
+        instructions = f"Generate the requested command/script.\n\n{self.DO_DONT_BLOCK}"
         blocks.append(self.build_block(BlockType.INSTRUCTIONS, instructions))
 
         return self.render_blocks(blocks)
@@ -287,9 +281,7 @@ DON'T:
         blocks.append(self.build_block(BlockType.TASK, challenge.description))
 
         # Failed command block
-        blocks.append(
-            self.build_block(BlockType.FAILED_COMMAND, previous_output.strip())
-        )
+        blocks.append(self.build_block(BlockType.FAILED_COMMAND, previous_output.strip()))
 
         # Error block with structured metadata
         error_content = self._format_error_content(error_context)
@@ -297,16 +289,12 @@ DON'T:
             "type": error_context.error_type,
             "message": error_context.error_message[:100],  # Truncate for readability
         }
-        blocks.append(
-            self.build_block(BlockType.ERROR, error_content, metadata=error_metadata)
-        )
+        blocks.append(self.build_block(BlockType.ERROR, error_content, metadata=error_metadata))
 
         # Suggestions block
         if error_context.suggestions:
             suggestion_lines = [f"- {s}" for s in error_context.suggestions]
-            blocks.append(
-                self.build_block(BlockType.SUGGESTIONS, "\n".join(suggestion_lines))
-            )
+            blocks.append(self.build_block(BlockType.SUGGESTIONS, "\n".join(suggestion_lines)))
         else:
             blocks.append(
                 self.build_block(
@@ -338,9 +326,7 @@ DON'T:
         Returns:
             Instructions string appropriate for this error type.
         """
-        base_instruction = self.ERROR_INSTRUCTIONS.get(
-            error_type, self.DEFAULT_INSTRUCTION
-        )
+        base_instruction = self.ERROR_INSTRUCTIONS.get(error_type, self.DEFAULT_INSTRUCTION)
 
         # Add common suffix
         return f"{base_instruction}\nOutput only the command/script, no explanations."
@@ -370,9 +356,7 @@ DON'T:
         blocks.append(self.build_block(BlockType.TASK, challenge.description))
 
         # Failed command block
-        blocks.append(
-            self.build_block(BlockType.FAILED_COMMAND, previous_output.strip())
-        )
+        blocks.append(self.build_block(BlockType.FAILED_COMMAND, previous_output.strip()))
 
         # Raw stderr block (truncated if too long)
         max_stderr_len = 500
@@ -434,10 +418,7 @@ DON'T:
         blocks.append(self.build_block(BlockType.OUTPUT_FORMAT, output_rules))
 
         # Attempt info with belt/difficulty
-        attempt_info = (
-            f"Belt Level: {challenge.belt.display}\n"
-            f"Difficulty: {challenge.difficulty}/5"
-        )
+        attempt_info = f"Belt Level: {challenge.belt.display}\nDifficulty: {challenge.difficulty}/5"
         blocks.append(self.build_block(BlockType.ATTEMPT_INFO, attempt_info))
 
         # Combine role with blocks

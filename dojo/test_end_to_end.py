@@ -19,7 +19,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any, Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -40,10 +40,10 @@ from dojo import (
     # Phase 3
     Sensei,
 )
+from dojo.curriculum.executor import ExecutionResult
+from dojo.hybrid_challenger import HybridChallenger
 from dojo.react_challenger import ReActChallenger
 from dojo.trajectory_logger import TrajectoryLogger
-from dojo.hybrid_challenger import HybridChallenger
-from dojo.curriculum.executor import ExecutionResult
 
 
 # --- ENGINE STATE UTILS ---
@@ -73,9 +73,7 @@ def set_engine_state(status: str):
                 start_dt = datetime.fromisoformat(str(start_time_str))
                 raw_acc = current.get("accumulated_seconds", 0.0)
                 # Ensure it's a float
-                accumulated = (
-                    float(raw_acc) if isinstance(raw_acc, (int, float, str)) else 0.0
-                )
+                accumulated = float(raw_acc) if isinstance(raw_acc, (int, float, str)) else 0.0
                 accumulated += (now - start_dt).total_seconds()
             except Exception:
                 pass
@@ -92,9 +90,11 @@ def set_engine_state(status: str):
             f,
         )
 
+
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)
 # ============================================================================
+
 
 def find_adb_path() -> str:
     """Find the ADB executable path."""
@@ -109,9 +109,7 @@ def find_adb_path() -> str:
     if sys.platform == "win32":
         common_paths = [
             os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
-            os.path.expandvars(
-                r"%USERPROFILE%\AppData\Local\Android\Sdk\platform-tools\adb.exe"
-            ),
+            os.path.expandvars(r"%USERPROFILE%\AppData\Local\Android\Sdk\platform-tools\adb.exe"),
         ]
         for path in common_paths:
             if os.path.exists(path):
@@ -119,9 +117,11 @@ def find_adb_path() -> str:
 
     return "adb"
 
+
 # ============================================================================
 # LLM Clients (from test_phase2.py)
 # ============================================================================
+
 
 class MockLLMClient:
     """Mock LLM that returns expected answers for testing."""
@@ -272,11 +272,9 @@ class MLXLLMClient:
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            
+
             formatted_prompt = self.tokenizer.apply_chat_template(
-                messages, 
-                tokenize=False, 
-                add_generation_prompt=True
+                messages, tokenize=False, add_generation_prompt=True
             )
         else:
             # Fallback for models without chat template in tokenizer config
@@ -288,32 +286,36 @@ class MLXLLMClient:
         # Manual streaming to support stop tokens
         stop_sequences = ["<|endoftext|>", "<|im_end|>", "###", "Human:", "Assistant:"]
         response_text = ""
-        
+
         print(f"    [MLX] Generating... (Prompt len: {len(formatted_prompt)})")
 
-        for response in stream_generate(self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=1024):
+        for response in stream_generate(
+            self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=1024
+        ):
             response_text += response.text
             # Check for stop sequences
             for stop in stop_sequences:
                 if stop in response_text:
-                    response_text = response_text[:response_text.find(stop)]
+                    response_text = response_text[: response_text.find(stop)]
                     return self._clean_response(response_text)
 
         return self._clean_response(response_text)
 
     def _clean_response(self, text: str) -> str:
         """Post-processing to clean up model response."""
-        lines = text.strip().split('\n')
+        lines = text.strip().split("\n")
 
         # Priority 1: Find lines with explicit fields (ReAct)
         for line in lines:
-            if any(k in line.upper() for k in ["ACTION:", "THOUGHT:", "HYPOTHESIS:", "TOOL_CHOICE:"]):
+            if any(
+                k in line.upper() for k in ["ACTION:", "THOUGHT:", "HYPOTHESIS:", "TOOL_CHOICE:"]
+            ):
                 return text.strip()
 
         # Priority 2: Find the line that actually contains a shell command
         for line in lines:
             clean_line = line.strip()
-            if clean_line.startswith('shell '):
+            if clean_line.startswith("shell "):
                 return clean_line
 
         # Priority 3: Return the first non-empty line
@@ -344,9 +346,7 @@ class OllamaLLMClient:
             if response.status_code != 200:
                 raise RuntimeError("Ollama server not responding")
         except Exception:
-            raise RuntimeError(
-                "Ollama server not running. Start it with 'ollama serve'"
-            )
+            raise RuntimeError("Ollama server not running. Start it with 'ollama serve'")
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         import requests
@@ -369,9 +369,11 @@ class OllamaLLMClient:
         except Exception as e:
             return f"[ERROR: {e}]"
 
+
 # ============================================================================
 # Mock Executor
 # ============================================================================
+
 
 class MockExecutor:
     """Mocks Executor for testing without device."""
@@ -389,13 +391,13 @@ class MockExecutor:
             "api_level": "30",
             "model": "MockDevice",
             "manufacturer": "Google",
-            "device_id": self.device_id
+            "device_id": self.device_id,
         }
 
     def execute_adb(self, command: str, timeout: Optional[int] = None) -> ExecutionResult:
         cmd = command.lower()
         output = "mock output"
-        
+
         # White Belt Mock Responses
         if "getprop ro.build.version.release" in cmd:
             output = "11"
@@ -407,19 +409,26 @@ class MockExecutor:
             output = "USER           PID  PPID     VSZ    RSS WCHAN            ADDR S NAME\nroot             1     0   10624   3220 0                   0 S init\nsystem        1542     1 2345424 234232 0                   0 S system_server"
         elif "cat /data/system/packages.xml" in cmd:
             output = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?>\n<packages>\n<package name=\"com.android.settings\" codePath=\"/system/priv-app/Settings\" />\n</packages>"
-        
+
         print(f"      [MockExecutor] CMD: '{command}' -> OUTPUT: '{output[:20]}...'")
         return ExecutionResult(True, 0, output, "", 0.1, command)
 
-    def execute_frida(self, script_content: str, target_process: str = "com.genymotion.settings", timeout: int = 20) -> ExecutionResult:
+    def execute_frida(
+        self,
+        script_content: str,
+        target_process: str = "com.genymotion.settings",
+        timeout: int = 20,
+    ) -> ExecutionResult:
         return ExecutionResult(True, 0, "[SUCCESS] Hooked", "", 0.1, "frida")
 
     def validate_output(self, challenge: Any, execution_result: ExecutionResult) -> bool:
         return True
 
+
 # ============================================================================
 # End-to-End Runner
 # ============================================================================
+
 
 def run_end_to_end(
     mode: str = "mock",
@@ -467,10 +476,7 @@ def run_end_to_end(
             return 1
     elif mode == "live":
         try:
-            model_name = (
-                model
-                or "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"
-            )
+            model_name = model or "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"
             llm = OllamaLLMClient(model=model_name)
             print(f"LLM: Ollama ({model_name})")
         except RuntimeError as e:
@@ -501,7 +507,7 @@ def run_end_to_end(
         use_mock_executor = False
     elif mode == "mock":
         use_mock_executor = True
-    
+
     if use_mock_executor:
         print("Executor: Mock (Simulated Device)")
         executor = MockExecutor(device_id=device_id)
@@ -520,9 +526,11 @@ def run_end_to_end(
     print()
 
     loader = ChallengeLoader()
-    error_extractor = ErrorExtractor(executor) # This might fail if MockExecutor is passed, let's see.
+    error_extractor = ErrorExtractor(
+        executor
+    )  # This might fail if MockExecutor is passed, let's see.
     # ErrorExtractor expects an executor to call execute_adb, which MockExecutor has.
-    
+
     context_injector = ContextInjector(max_attempts=3)
 
     def on_attempt(attempt):
@@ -534,7 +542,7 @@ def run_end_to_end(
         print("Challenger Type: REACT (Reason + Act)")
         traj_dir = Path("./dojo_output/trajectories")
         traj_logger = TrajectoryLogger(output_dir=str(traj_dir))
-        
+
         def on_step(step_num, parsed, result):
             status = "OK" if result.get("exit_code") == 0 else "FAIL"
             print(f"    Step {step_num}: [{status}] Action: {parsed.action[:50]}...")
@@ -544,7 +552,7 @@ def run_end_to_end(
             executor=executor,
             trajectory_logger=traj_logger,
             max_steps=5,
-            on_step=on_step
+            on_step=on_step,
         )
     elif challenger_type == "hybrid":
         print("Challenger Type: HYBRID (Basic -> ReAct on failure)")
@@ -557,20 +565,17 @@ def run_end_to_end(
             max_retries=3,
             on_attempt=on_attempt,
         )
-        
+
         traj_dir = Path("./dojo_output/trajectories")
         traj_logger = TrajectoryLogger(output_dir=str(traj_dir))
         react_challenger = ReActChallenger(
-            llm_client=llm,
-            executor=executor,
-            trajectory_logger=traj_logger,
-            max_steps=5
+            llm_client=llm, executor=executor, trajectory_logger=traj_logger, max_steps=5
         )
-        
+
         challenger = HybridChallenger(
             basic_challenger=basic_challenger,
             react_challenger=react_challenger,
-            on_transition=lambda msg: print(f"  [HYBRID] {msg}")
+            on_transition=lambda msg: print(f"  [HYBRID] {msg}"),
         )
     else:
         print("Challenger Type: BASIC")
@@ -590,7 +595,7 @@ def run_end_to_end(
     sessions: list[ChallengeSession] = []
     for challenge in challenges:
         print(f"Challenge: {challenge.id} - {challenge.name}")
-        
+
         # ReAct and Hybrid require model_id
         if challenger_type in ("react", "hybrid"):
             # Sanitize model name for ID
@@ -602,7 +607,7 @@ def run_end_to_end(
             session = challenger.run_challenge(challenge, model_id=run_model_id)
         else:
             session = challenger.run_challenge(challenge)
-            
+
         sessions.append(session)
 
         status = "PASS" if session.final_success else "FAIL"
@@ -655,9 +660,7 @@ def run_end_to_end(
     print("-" * 40)
     for i, assessment in enumerate(result.assessments):
         challenge = sessions[i].challenge
-        print(
-            f"  {challenge.id}: Grade {assessment.grade.value} (Score: {assessment.score})"
-        )
+        print(f"  {challenge.id}: Grade {assessment.grade.value} (Score: {assessment.score})")
         if assessment.all_issues:
             for issue in assessment.all_issues[:2]:
                 print(f"    - {issue}")
@@ -724,9 +727,11 @@ def run_end_to_end(
     set_engine_state("idle")
     return 0
 
+
 # ============================================================================
 # Entry Point
 # ============================================================================
+
 
 def main():
     parser = argparse.ArgumentParser(description="End-to-End Test")
@@ -790,6 +795,7 @@ def main():
         executor_type=args.executor,
     )
     sys.exit(exit_code)
+
 
 if __name__ == "__main__":
     main()

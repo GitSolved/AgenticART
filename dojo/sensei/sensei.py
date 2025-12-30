@@ -84,9 +84,7 @@ class Sensei:
         self.progress_tracker = progress_tracker or ProgressTracker(
             storage_path=self.output_dir / "progress"
         )
-        self.master_refinery = MasterRefinery(
-            master_dir=self.output_dir.parent / "master_dataset"
-        )
+        self.master_refinery = MasterRefinery(master_dir=self.output_dir.parent / "master_dataset")
 
     def evaluate_session(
         self,
@@ -302,9 +300,7 @@ class Sensei:
         elif next_belt:
             remaining = 5 - progress.challenges_attempted
             if remaining > 0:
-                lines.append(
-                    f"Complete {remaining} more challenges for promotion eligibility"
-                )
+                lines.append(f"Complete {remaining} more challenges for promotion eligibility")
             else:
                 needed_rate = 80.0 - progress.pass_rate
                 lines.append(f"Need {needed_rate:.1f}% higher pass rate for promotion")

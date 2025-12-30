@@ -177,9 +177,7 @@ class Grader:
         if script_type in (ScriptType.ADB, ScriptType.SHELL):
             for error_name, pattern in self.SYNTAX_PATTERNS.items():
                 if re.search(pattern, output, re.MULTILINE):
-                    issues.append(
-                        f"Potential syntax error: {error_name.replace('_', ' ')}"
-                    )
+                    issues.append(f"Potential syntax error: {error_name.replace('_', ' ')}")
         else:
             # For FRIDA and C_EXPLOIT, we rely on the Executor (Runtime Check)
             # rather than primitive regex which fails on multi-line blocks.
@@ -381,9 +379,7 @@ class Grader:
 
         # Use kata solution if available
         if challenge.kata_solution:
-            explanation = self._build_correction_explanation(
-                issues, challenge.kata_solution
-            )
+            explanation = self._build_correction_explanation(issues, challenge.kata_solution)
             return challenge.kata_solution, explanation
 
         # No correction available

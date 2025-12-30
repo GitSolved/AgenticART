@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 
 class ActionType(Enum):
     """Types of actions the agent can take."""
+
     ADB_SHELL = "adb_shell"
     ADB_COMMAND = "adb_command"  # Non-shell ADB (push, pull, install)
     FRIDA_SCRIPT = "frida_script"
@@ -37,6 +38,7 @@ class ActionType(Enum):
 
 class StepOutcome(Enum):
     """Outcome of a step's action."""
+
     SUCCESS = "success"
     FAILURE = "failure"
     PARTIAL = "partial"  # Partial success (e.g., got output but not expected)
@@ -46,6 +48,7 @@ class StepOutcome(Enum):
 
 class ReasoningType(Enum):
     """Types of reasoning captured in thoughts."""
+
     GOAL_DECOMPOSITION = "goal_decomposition"  # Breaking down the objective
     TOOL_SELECTION = "tool_selection"  # Choosing which tool to use
     PARAMETER_PLANNING = "parameter_planning"  # Figuring out arguments
@@ -62,6 +65,7 @@ class Thought:
 
     This is the key missing piece in current training data.
     """
+
     content: str  # The actual reasoning text
     reasoning_type: ReasoningType
     hypothesis: Optional[str] = None  # Explicit hypothesis being tested
@@ -85,6 +89,7 @@ class Action:
     """
     Represents a concrete action taken by the agent.
     """
+
     action_type: ActionType
     tool_name: str  # e.g., "adb", "frida", "gcc"
     command: str  # The actual command/script
@@ -110,6 +115,7 @@ class Observation:
     """
     Represents the result of executing an action.
     """
+
     stdout: str
     stderr: str
     exit_code: int
@@ -139,6 +145,7 @@ class Reflection:
     """
     Post-action reasoning about what happened and what to do next.
     """
+
     what_happened: str  # Summary of the observation
     goal_progress: str  # How this moves toward the goal
     next_step_reasoning: str  # Why the next action makes sense
@@ -165,6 +172,7 @@ class Step:
     Each step follows the ReAct pattern:
     Thought → Action → Observation → Reflection
     """
+
     step_number: int
     thought: Thought
     action: Action
@@ -191,6 +199,7 @@ class Trajectory:
     This is the rich training data format that captures reasoning,
     not just instruction → output.
     """
+
     trajectory_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     challenge_id: str = ""
     challenge_name: str = ""
@@ -226,11 +235,7 @@ class Trajectory:
         self.steps.append(step)
         self.total_attempts = len(self.steps)
 
-    def complete(
-        self,
-        outcome: StepOutcome,
-        final_reflection: Optional[Reflection] = None
-    ) -> None:
+    def complete(self, outcome: StepOutcome, final_reflection: Optional[Reflection] = None) -> None:
         """Mark the trajectory as complete."""
         self.final_outcome = outcome
         self.final_reflection = final_reflection

@@ -52,12 +52,12 @@ Provide only the adb command/script. No explanations or markdown.
         if any(stop in response_text for stop in stop_sequences):
             for stop in stop_sequences:
                 if stop in response_text:
-                    response_text = response_text[:response_text.find(stop)]
+                    response_text = response_text[: response_text.find(stop)]
             break
     print("\n==========")
 
     print(f"Final Response: '{response_text.strip()}'")
 
+
 if __name__ == "__main__":
     main()
-

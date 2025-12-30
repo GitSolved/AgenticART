@@ -375,10 +375,7 @@ class TrajectoryLogger:
         if not self._trajectories:
             return {"count": 0}
 
-        success_count = sum(
-            1 for t in self._trajectories
-            if t.final_outcome == StepOutcome.SUCCESS
-        )
+        success_count = sum(1 for t in self._trajectories if t.final_outcome == StepOutcome.SUCCESS)
 
         total_steps = sum(len(t.steps) for t in self._trajectories)
 
@@ -449,10 +446,7 @@ class TrajectoryLogger:
         )
 
         # Check for proper give-up (exhausted options, not just quit early)
-        has_give_up = any(
-            s.action.action_type == ActionType.GIVE_UP
-            for s in trajectory.steps
-        )
+        has_give_up = any(s.action.action_type == ActionType.GIVE_UP for s in trajectory.steps)
 
         # Include if shows strategy diversity or proper termination
         return has_pivot or has_give_up or diversity_ratio >= 0.8
@@ -464,7 +458,8 @@ class TrajectoryLogger:
     ) -> List[Trajectory]:
         """Get only high-quality trajectories suitable for training."""
         return [
-            t for t in self._trajectories
+            t
+            for t in self._trajectories
             if self.is_high_quality(t, min_action_diversity, max_consecutive_failures)
         ]
 

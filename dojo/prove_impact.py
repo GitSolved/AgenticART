@@ -7,14 +7,9 @@ def run_inference(model, tokenizer, task_name, instruction, input_context):
     prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{input_context}\n\n### Response: "
 
     print(f"\n--- Running Task: {task_name} ---")
-    response = generate(
-        model,
-        tokenizer,
-        prompt=prompt,
-        max_tokens=50,
-        verbose=False
-    )
+    response = generate(model, tokenizer, prompt=prompt, max_tokens=50, verbose=False)
     return response.strip()
+
 
 def main():
     model_path = "models/whiterabbit-7b-dojo-4bit"
@@ -31,7 +26,9 @@ def main():
     # 1. Baseline Run (No Adapters)
     print("\n[PHASE 1] Loading Baseline Model (No Adapters)...")
     model_base, tokenizer_base = load(model_path)
-    result_base = run_inference(model_base, tokenizer_base, "Package Listing", instruction, input_context)
+    result_base = run_inference(
+        model_base, tokenizer_base, "Package Listing", instruction, input_context
+    )
     print(f"BASELINE OUTPUT: '{result_base}'")
 
     # Check if it looks like a valid command
@@ -41,7 +38,7 @@ def main():
         print("RESULT: FAILURE (Baseline failed to produce the correct ADB command)")
 
     # 2. Post-Distillation Run (With Adapters)
-    print("\n" + "-"*50)
+    print("\n" + "-" * 50)
     print("[PHASE 2] Loading Fine-tuned Model (With Adapters)...")
     model_ft, tokenizer_ft = load(model_path, adapter_path=adapter_path)
     result_ft = run_inference(model_ft, tokenizer_ft, "Package Listing", instruction, input_context)
@@ -57,6 +54,7 @@ def main():
     print(f"Baseline:   {result_base}")
     print(f"Fine-tuned: {result_ft}")
     print("==================================================")
+
 
 if __name__ == "__main__":
     main()

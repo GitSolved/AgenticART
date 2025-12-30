@@ -94,6 +94,7 @@ THOUGHT:"""
 @dataclass
 class ReActResponse:
     """Parsed response from ReAct-style LLM output."""
+
     thought: str
     action: str
     action_type: str  # "command", "done", "give_up", "continue"
@@ -104,8 +105,8 @@ class ReActResponse:
 
 class LLMClient(Protocol):
     """Protocol for LLM clients."""
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        ...
+
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str: ...
 
 
 class ReActChallenger:
@@ -154,7 +155,6 @@ class ReActChallenger:
             hints=challenge.hints,
             model_id=model_id,
         ) as traj:
-
             # Initial prompt
             initial_prompt = REACT_INITIAL_PROMPT.format(
                 objective=challenge.description,
@@ -168,10 +168,12 @@ class ReActChallenger:
                 initial_prompt,
                 system_prompt=REACT_SYSTEM_PROMPT,
             )
-            
+
             # Since we forced "HYPOTHESIS:" in the prompt, some models won't repeat it.
-            if not response.strip().upper().startswith("HYPOTHESIS:") and not response.strip().upper().startswith("THOUGHT:"):
-                 response = "HYPOTHESIS: " + response
+            if not response.strip().upper().startswith(
+                "HYPOTHESIS:"
+            ) and not response.strip().upper().startswith("THOUGHT:"):
+                response = "HYPOTHESIS: " + response
 
             print(f"[DEBUG] Raw response: {response[:100]}...")
             parsed = self._parse_react_response(response)
@@ -259,23 +261,28 @@ class ReActChallenger:
                     # Record reflection
                     progress_summary = self._assess_progress(result, challenge)
                     is_goal_met = "Goal achieved" in progress_summary
-                    
+
                     step.reflect(
                         what_happened=self._summarize_observation(result),
                         goal_progress=progress_summary,
-                        next_step_reasoning=next_parsed.thought[:200] if next_parsed.thought else "",
-                        should_continue=not is_goal_met and next_parsed.action_type not in ("done", "give_up"),
+                        next_step_reasoning=next_parsed.thought[:200]
+                        if next_parsed.thought
+                        else "",
+                        should_continue=not is_goal_met
+                        and next_parsed.action_type not in ("done", "give_up"),
                     )
 
                     # Store attempt
-                    attempts.append({
-                        "step": step_num + 1,
-                        "command": parsed.action,
-                        "success": result.get("exit_code", -1) == 0,
-                        "thought": parsed.thought,
-                        "hypothesis": parsed.hypothesis,
-                        "tool_choice": parsed.tool_choice,
-                    })
+                    attempts.append(
+                        {
+                            "step": step_num + 1,
+                            "command": parsed.action,
+                            "success": result.get("exit_code", -1) == 0,
+                            "thought": parsed.thought,
+                            "hypothesis": parsed.hypothesis,
+                            "tool_choice": parsed.tool_choice,
+                        }
+                    )
 
                     # Callback
                     if self.on_step:
@@ -322,12 +329,12 @@ class ReActChallenger:
         )
         if thought_match:
             thought = thought_match.group(1).strip()
-        elif not hypothesis: 
+        elif not hypothesis:
             # Fallback if neither HYPOTHESIS nor THOUGHT found cleanly, maybe it started with thought
             # Check if entire string is thought until ACTION
             pre_action = re.split(r"ACTION:", response, flags=re.IGNORECASE)[0]
             if "HYPOTHESIS:" not in pre_action.upper():
-                 thought = pre_action.strip()
+                thought = pre_action.strip()
 
         # Extract TOOL_CHOICE
         tool_match = re.search(
@@ -417,13 +424,15 @@ class ReActChallenger:
         # Medium confidence
         return 0.7
 
-    def _execute_action(self, action: str, action_type: str, challenge: Challenge) -> Dict[str, Any]:
+    def _execute_action(
+        self, action: str, action_type: str, challenge: Challenge
+    ) -> Dict[str, Any]:
         """Execute an action and return the result."""
         try:
             # Clean action: remove "adb shell " or "adb " prefix if the model added it redundantly
             # The executor.execute_adb method expects the command without the 'adb ' part.
             clean_action = action.strip()
-            
+
             # Recursive stripping of redundant prefixes
             while True:
                 lower_action = clean_action.lower()
@@ -442,14 +451,14 @@ class ReActChallenger:
                     "stderr": result.stderr,
                     "exit_code": result.exit_code,
                     "duration_ms": result.duration * 1000,
-                    "error_type": result.error_type if hasattr(result, 'error_type') else None,
+                    "error_type": result.error_type if hasattr(result, "error_type") else None,
                 }
             elif action_type == "frida_script":
                 # For frida, we might need a target process
-                target = challenge.inputs.device_context.get("target_package") 
+                target = challenge.inputs.device_context.get("target_package")
                 if not target and hasattr(challenge.inputs, "target_class"):
                     target = challenge.inputs.target_class
-                
+
                 target = target or "com.android.settings"
                 result = self.executor.execute_frida(clean_action, target_process=target)
                 return {
@@ -487,7 +496,7 @@ class ReActChallenger:
     def _assess_progress(self, result: Dict[str, Any], challenge: Challenge) -> str:
         """Assess progress toward the goal."""
         from dojo.curriculum.executor import ExecutionResult
-        
+
         # Create a temporary ExecutionResult to use validate_output
         exec_res = ExecutionResult(
             success=result.get("exit_code") == 0,
@@ -496,15 +505,15 @@ class ReActChallenger:
             stderr=result.get("stderr", ""),
             duration=result.get("duration_ms", 0) / 1000.0,
             command="",
-            error_type=result.get("error_type")
+            error_type=result.get("error_type"),
         )
-        
+
         if self.executor.validate_output(challenge, exec_res):
             return "Goal achieved - output passes validation"
-        
+
         if result.get("exit_code", -1) == 0:
             return "Partial progress - command succeeded but objective not yet met"
-            
+
         return "No progress - command failed"
 
     def _format_device_context(
