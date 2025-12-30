@@ -92,8 +92,8 @@ class TrainingDataValidator:
                     )
                     continue
 
-                # Check for duplicates
-                entry_hash = hashlib.md5(line.encode()).hexdigest()
+                # Check for duplicates (MD5 used for dedup, not security)
+                entry_hash = hashlib.md5(line.encode(), usedforsecurity=False).hexdigest()
                 if entry_hash in hashes:
                     self.errors.append(
                         ValidationError(

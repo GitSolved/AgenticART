@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 
 
 def main():
@@ -64,21 +65,21 @@ def main():
 
     # Adjust learning rate or rank if needed, but defaults are usually fine for a start.
     # We point to our prepared data directory.
-    cmd = (
-        f"python3 -m mlx_lm.lora "
-        f"--model {model_path} "
-        f"--train "
-        f"--data {dataset_dir} "
-        f"--iters 500 "
-        f"--batch-size 1 "
-        f"--adapter-path {adapter_output} "
-        f"--learning-rate 1e-5 "
-        f"--steps-per-eval 50 "
-        f"--save-every 100"
-    )
+    cmd = [
+        "python3", "-m", "mlx_lm.lora",
+        "--model", model_path,
+        "--train",
+        "--data", dataset_dir,
+        "--iters", "500",
+        "--batch-size", "1",
+        "--adapter-path", adapter_output,
+        "--learning-rate", "1e-5",
+        "--steps-per-eval", "50",
+        "--save-every", "100",
+    ]
 
-    print(f"  Command: {cmd}")
-    os.system(cmd)
+    print(f"  Command: {' '.join(cmd)}")
+    subprocess.run(cmd, check=False)
 
     print("\n✅ Fine-tuning complete.")
     print(f"  Adapters saved to: {adapter_output}")

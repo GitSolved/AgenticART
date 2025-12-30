@@ -4,6 +4,7 @@ AgenticART Toolkit Deployer
 Automatically bootstraps an Android device with research-grade binaries.
 """
 
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -31,8 +32,11 @@ def is_elf(path):
 
 
 def run_cmd(cmd):
+    """Run a command safely without shell=True."""
     try:
-        return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode().strip()
+        # Split command string into list for safe execution
+        cmd_list = shlex.split(cmd)
+        return subprocess.check_output(cmd_list, stderr=subprocess.STDOUT).decode().strip()
     except subprocess.CalledProcessError:
         return None
 
@@ -47,7 +51,10 @@ def main():
         if not info["local"].exists() or not is_elf(info["local"]):
             if info["url"]:
                 print(f"📥 Downloading {name}...")
-                subprocess.run(f"curl -L -f {info['url']} -o {info['local']}", shell=True)
+                subprocess.run(
+                    ["curl", "-L", "-f", info["url"], "-o", str(info["local"])],
+                    check=False,
+                )
             elif name == "frida-server":
                 print(f"❌ Error: {name} not found locally. Skipping.")
                 continue
@@ -58,24 +65,55 @@ def main():
         else:
             print(f"❌ {name} is corrupted or not a binary.")
 
-    device_id = run_cmd("adb devices | grep -v 'List' | head -n 1 | awk '{print $1}'")
+    # Get device ID without shell piping
+    try:
+        result = subprocess.run(
+            ["adb", "devices"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        lines = result.stdout.strip().split("\n")[1:]  # Skip header
+        device_id = None
+        for line in lines:
+            if "\tdevice" in line:
+                device_id = line.split("\t")[0]
+                break
+    except Exception:
+        device_id = None
     if not device_id:
         print("❌ No device detected via ADB.")
         return
 
     print(f"📱 Target Device: {device_id}")
-    run_cmd(f"adb -s {device_id} shell 'mkdir -p {DEVICE_BASE}'")
+    subprocess.run(
+        ["adb", "-s", device_id, "shell", f"mkdir -p {DEVICE_BASE}"],
+        check=False,
+    )
 
     for name, info in TOOLS.items():
         if info["local"].exists() and is_elf(info["local"]):
             print(f"📤 Pushing {name} to {DEVICE_BASE}...")
             subprocess.run(
-                f"adb -s {device_id} push {info['local']} {DEVICE_BASE}/{name}", shell=True
+                ["adb", "-s", device_id, "push", str(info["local"]), f"{DEVICE_BASE}/{name}"],
+                check=False,
             )
-            run_cmd(f"adb -s {device_id} shell 'chmod 755 {DEVICE_BASE}/{name}'")
+            subprocess.run(
+                ["adb", "-s", device_id, "shell", f"chmod 755 {DEVICE_BASE}/{name}"],
+                check=False,
+            )
 
     print("\n🔍 Verification:")
-    bb_check = run_cmd(f"adb -s {device_id} shell '{DEVICE_BASE}/busybox --help | head -n 1'")
+    try:
+        result = subprocess.run(
+            ["adb", "-s", device_id, "shell", f"{DEVICE_BASE}/busybox --help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        bb_check = result.stdout.strip().split("\n")[0] if result.stdout else None
+    except Exception:
+        bb_check = None
     if bb_check:
         print(f"  [OK] {bb_check}")
     else:
