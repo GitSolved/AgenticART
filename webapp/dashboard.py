@@ -1452,11 +1452,11 @@ elif selected_stage == "TRAJECTORIES":
 
         if trajectories:
             # Analyze trajectory quality
-            quality_data = {
-                "high_quality": 0,
-                "low_quality": 0,
-                "reasons": {"too_short": 0, "low_diversity": 0, "retry_loops": 0},
-            }
+            high_quality_count = 0
+            low_quality_count = 0
+            reason_too_short = 0
+            reason_low_diversity = 0
+            reason_retry_loops = 0
 
             for traj in trajectories:
                 steps = traj.get("steps", [])
@@ -1464,29 +1464,29 @@ elif selected_stage == "TRAJECTORIES":
 
                 # Quality assessment logic (matches trajectory_logger.py)
                 if outcome == "success":
-                    quality_data["high_quality"] += 1
+                    high_quality_count += 1
                 elif len(steps) < 2:
-                    quality_data["low_quality"] += 1
-                    quality_data["reasons"]["too_short"] += 1
+                    low_quality_count += 1
+                    reason_too_short += 1
                 else:
                     commands = [s.get("action", {}).get("command", "") for s in steps]
                     unique = len(set(commands))
                     diversity = unique / len(commands) if commands else 0
 
                     if diversity < 0.7:
-                        quality_data["low_quality"] += 1
-                        quality_data["reasons"]["low_diversity"] += 1
+                        low_quality_count += 1
+                        reason_low_diversity += 1
                     else:
-                        quality_data["high_quality"] += 1
+                        high_quality_count += 1
 
             col1, col2, col3 = st.columns(3)
 
-            total = quality_data["high_quality"] + quality_data["low_quality"]
-            quality_rate = quality_data["high_quality"] / total if total > 0 else 0
+            total = high_quality_count + low_quality_count
+            quality_rate = high_quality_count / total if total > 0 else 0
 
             col1.metric("Total Trajectories", total)
-            col2.metric("High Quality", quality_data["high_quality"], f"{quality_rate:.1%}")
-            col3.metric("Filtered Out", quality_data["low_quality"])
+            col2.metric("High Quality", high_quality_count, f"{quality_rate:.1%}")
+            col3.metric("Filtered Out", low_quality_count)
 
             # Quality breakdown pie chart
             col1, col2 = st.columns(2)
@@ -1494,8 +1494,8 @@ elif selected_stage == "TRAJECTORIES":
             with col1:
                 st.markdown("**Quality Distribution**")
                 quality_df = pd.DataFrame([
-                    {"Category": "High Quality", "Count": quality_data["high_quality"]},
-                    {"Category": "Filtered", "Count": quality_data["low_quality"]},
+                    {"Category": "High Quality", "Count": high_quality_count},
+                    {"Category": "Filtered", "Count": low_quality_count},
                 ])
                 chart = (
                     alt.Chart(quality_df)
@@ -1518,9 +1518,9 @@ elif selected_stage == "TRAJECTORIES":
             with col2:
                 st.markdown("**Filter Reasons Breakdown**")
                 reasons_df = pd.DataFrame([
-                    {"Reason": "Too Short (<2 steps)", "Count": quality_data["reasons"]["too_short"]},
-                    {"Reason": "Low Diversity (<70%)", "Count": quality_data["reasons"]["low_diversity"]},
-                    {"Reason": "Retry Loops", "Count": quality_data["reasons"]["retry_loops"]},
+                    {"Reason": "Too Short (<2 steps)", "Count": reason_too_short},
+                    {"Reason": "Low Diversity (<70%)", "Count": reason_low_diversity},
+                    {"Reason": "Retry Loops", "Count": reason_retry_loops},
                 ])
                 chart = (
                     alt.Chart(reasons_df)
@@ -1820,8 +1820,8 @@ elif selected_stage == "TRAJECTORIES":
                 summary_rows.append({
                     "Model": "Current Session",
                     "Pass Rate (%)": f"{pass_rate:.1f}",
+                    "Challenges": f"{success_count}/{total}",
                     "95% CI": f"±{1.96 * (pass_rate * (100-pass_rate) / total) ** 0.5:.1f}" if total > 0 else "N/A",
-                    "n": total,
                     "Effect Size": "-",
                 })
 
