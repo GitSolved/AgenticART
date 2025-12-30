@@ -31,10 +31,11 @@ AgenticART creates **AI agents that can actually perform security assessments** 
 **Where else do you get this?**
 
 There is no other public source combining:
-- 192 Android security challenges mapped to 118+ real CVEs
+- 192 Android security challenges (110 mapped to real CVEs, 82 foundational skills)
+- 118 unique CVEs from NIST NVD and Android Security Bulletins
 - Execution verification against live Android devices
 - Structured prompts optimized for security task performance
-- Training data export pipeline (JSONL/Alpaca/ShareGPT)
+- Training data export pipeline (JSONL/Alpaca/ShareGPT/DPO)
 - Belt-based curriculum with measurable progression
 
 ### The Compound Effect
@@ -343,7 +344,7 @@ The framework tracks:
 ### What AgenticART IS
 
 - ✅ Training framework for Android security assessment agents
-- ✅ Curriculum of 192 real-world CVE-based challenges
+- ✅ Curriculum of 192 challenges (110 CVE-based, 82 foundational skills)
 - ✅ Execution-verified feedback loop for model improvement
 - ✅ Realistic non-rooted environment matching real targets
 - ✅ Research prototype for studying AI security capabilities
