@@ -509,7 +509,7 @@ AgenticART explores testable hypotheses:
 
 | Hypothesis | How to Test | Status |
 |------------|-------------|--------|
-| **Capability Transfer** | Fine-tune 7B model on 70B teacher traces, compare performance | Untested |
+| **Capability Transfer** | Fine-tune 7B model on 70B teacher traces, compare performance | Preliminary: 80pp gain (20%→100%) on 5 white belt challenges |
 | **Execution Verification** | Compare models trained on verified vs unverified data | Untested |
 | **Curriculum Learning** | Benchmark before/after belt-progressive training | Untested |
 | **Failure Patterns** | Analyze error types across belt levels | Infrastructure exists |
