@@ -334,13 +334,78 @@ class ChallengeAttemptResult:
         }
 
 
+@dataclass
+class TeacherBenchmark:
+    """Benchmark results from teacher model for comparison."""
+
+    model_id: str
+    total_points: float
+    max_possible: float
+    percentage: float
+    challenges_completed: int
+    challenges_attempted: int
+    perfect_scores: int
+    by_belt: dict[str, dict]  # Belt -> stats
+
+    @property
+    def pass_rate(self) -> float:
+        if self.challenges_attempted == 0:
+            return 0.0
+        return (self.challenges_completed / self.challenges_attempted) * 100
+
+    def to_dict(self) -> dict:
+        return {
+            "model_id": self.model_id,
+            "total_points": round(self.total_points, 1),
+            "max_possible": round(self.max_possible, 1),
+            "percentage": round(self.percentage, 1),
+            "challenges_completed": self.challenges_completed,
+            "challenges_attempted": self.challenges_attempted,
+            "perfect_scores": self.perfect_scores,
+            "pass_rate": round(self.pass_rate, 1),
+            "by_belt": self.by_belt,
+        }
+
+    @classmethod
+    def from_scorer(cls, scorer: "ModelScorer") -> "TeacherBenchmark":
+        """Create benchmark from a ModelScorer's results."""
+        report = scorer.generate_report()
+        summary = report["summary"]
+
+        return cls(
+            model_id=scorer.model_id,
+            total_points=summary["total_points"],
+            max_possible=summary["max_possible"],
+            percentage=summary["percentage"],
+            challenges_completed=summary["challenges_completed"],
+            challenges_attempted=summary["challenges_attempted"],
+            perfect_scores=summary["perfect_scores"],
+            by_belt=report["by_belt"],
+        )
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "TeacherBenchmark":
+        """Load benchmark from dictionary."""
+        return cls(
+            model_id=data["model_id"],
+            total_points=data["total_points"],
+            max_possible=data["max_possible"],
+            percentage=data["percentage"],
+            challenges_completed=data["challenges_completed"],
+            challenges_attempted=data["challenges_attempted"],
+            perfect_scores=data["perfect_scores"],
+            by_belt=data.get("by_belt", {}),
+        )
+
+
 class ModelScorer:
     """
     Tracks and scores model performance across the Dojo curriculum.
     """
 
-    def __init__(self, model_id: str = "unknown"):
+    def __init__(self, model_id: str = "unknown", teacher_benchmark: Optional[TeacherBenchmark] = None):
         self.model_id = model_id
+        self.teacher_benchmark = teacher_benchmark
         self.results: list[ChallengeAttemptResult] = []
         self.achievements_earned: list[Achievement] = []
         self.start_time: datetime = datetime.now()
@@ -546,6 +611,95 @@ class ModelScorer:
 
         return strengths, weaknesses
 
+    def get_teacher_comparison(self) -> Optional[dict]:
+        """Compare student performance against teacher benchmark."""
+        if not self.teacher_benchmark:
+            return None
+
+        tb = self.teacher_benchmark
+
+        # Overall comparison
+        point_diff = self.total_points - tb.total_points
+        pct_diff = self.percentage - tb.percentage
+        completion_diff = sum(
+            1 for r in self.results
+            if r.success_level in (SuccessLevel.PERFECT, SuccessLevel.COMPLETE)
+        ) - tb.challenges_completed
+
+        # Determine transfer efficiency
+        if tb.percentage > 0:
+            transfer_efficiency = (self.percentage / tb.percentage) * 100
+        else:
+            transfer_efficiency = 0.0
+
+        # Per-belt comparison
+        belt_comparison = {}
+        student_stats = self.get_belt_stats()
+
+        for belt in ["white", "yellow", "orange", "green", "blue", "brown", "purple", "black"]:
+            student = student_stats.get(belt, {})
+            teacher = tb.by_belt.get(belt, {})
+
+            if student or teacher:
+                s_pct = student.get("percentage", 0)
+                t_pct = teacher.get("percentage", 0)
+                belt_comparison[belt] = {
+                    "student_percentage": s_pct,
+                    "teacher_percentage": t_pct,
+                    "difference": round(s_pct - t_pct, 1),
+                    "transfer_rate": round((s_pct / t_pct) * 100, 1) if t_pct > 0 else 0,
+                }
+
+        return {
+            "teacher_model": tb.model_id,
+            "student_model": self.model_id,
+            "overall": {
+                "student_points": round(self.total_points, 1),
+                "teacher_points": round(tb.total_points, 1),
+                "point_difference": round(point_diff, 1),
+                "student_percentage": round(self.percentage, 1),
+                "teacher_percentage": round(tb.percentage, 1),
+                "percentage_difference": round(pct_diff, 1),
+                "transfer_efficiency": round(transfer_efficiency, 1),
+                "completion_difference": completion_diff,
+            },
+            "by_belt": belt_comparison,
+            "verdict": self._get_comparison_verdict(transfer_efficiency),
+        }
+
+    def _get_comparison_verdict(self, transfer_efficiency: float) -> dict:
+        """Get verdict on student vs teacher performance."""
+        if transfer_efficiency >= 95:
+            return {
+                "status": "excellent",
+                "icon": "🏆",
+                "message": "Student matches or exceeds teacher performance!",
+            }
+        elif transfer_efficiency >= 85:
+            return {
+                "status": "good",
+                "icon": "✓",
+                "message": "Strong knowledge transfer - student approaching teacher level",
+            }
+        elif transfer_efficiency >= 70:
+            return {
+                "status": "moderate",
+                "icon": "→",
+                "message": "Moderate transfer - student learning but room for improvement",
+            }
+        elif transfer_efficiency >= 50:
+            return {
+                "status": "developing",
+                "icon": "↗",
+                "message": "Student developing - more training recommended",
+            }
+        else:
+            return {
+                "status": "needs_work",
+                "icon": "⚠",
+                "message": "Significant gap - consider additional fine-tuning",
+            }
+
     def generate_report(self) -> dict:
         """Generate comprehensive performance report."""
         belt_stats = self.get_belt_stats()
@@ -554,7 +708,7 @@ class ModelScorer:
         # Calculate session duration
         duration = (datetime.now() - self.start_time).total_seconds()
 
-        return {
+        report = {
             "model_id": self.model_id,
             "summary": {
                 "total_points": round(self.total_points, 1),
@@ -580,6 +734,13 @@ class ModelScorer:
             "generated_at": datetime.now().isoformat(),
         }
 
+        # Add teacher comparison if benchmark exists
+        comparison = self.get_teacher_comparison()
+        if comparison:
+            report["teacher_comparison"] = comparison
+
+        return report
+
 
 # =============================================================================
 # REPORT FORMATTING
@@ -590,11 +751,15 @@ def format_report_text(report: dict) -> str:
     lines = []
     summary = report["summary"]
     grade = summary["overall_grade"]
+    comparison = report.get("teacher_comparison")
 
     # Header
     lines.append("")
     lines.append("╔" + "═" * 68 + "╗")
-    lines.append("║" + " " * 20 + "MODEL PERFORMANCE REPORT" + " " * 24 + "║")
+    title = "MODEL PERFORMANCE REPORT"
+    if comparison:
+        title = "DISTILLATION PERFORMANCE REPORT"
+    lines.append("║" + " " * ((68 - len(title)) // 2) + title + " " * ((69 - len(title)) // 2) + "║")
     lines.append("╠" + "═" * 68 + "╣")
 
     # Model info
@@ -674,6 +839,73 @@ def format_report_text(report: dict) -> str:
             lines.append(f"║    {a['icon']} {a['name']:<20} {rarity} {a['description']:<32} ║")
     else:
         lines.append("║    No achievements earned yet" + " " * 38 + "║")
+
+    # Teacher Comparison (if available)
+    if comparison:
+        lines.append("╠" + "═" * 68 + "╣")
+        lines.append("║  TEACHER vs STUDENT COMPARISON" + " " * 37 + "║")
+        lines.append("╟" + "─" * 68 + "╢")
+
+        overall = comparison["overall"]
+        verdict = comparison["verdict"]
+
+        lines.append(f"║    Teacher: {comparison['teacher_model']:<55} ║")
+        lines.append(f"║    Student: {comparison['student_model']:<55} ║")
+        lines.append("╟" + "─" * 68 + "╢")
+
+        # Score comparison with visual bar
+        t_pct = overall["teacher_percentage"]
+        s_pct = overall["student_percentage"]
+        transfer = overall["transfer_efficiency"]
+
+        lines.append(f"║                        Teacher        Student        Δ            ║")
+        lines.append(f"║    Points:            {overall['teacher_points']:>7.0f}        {overall['student_points']:>7.0f}       {overall['point_difference']:>+6.0f}       ║")
+        lines.append(f"║    Percentage:        {t_pct:>7.1f}%       {s_pct:>7.1f}%      {overall['percentage_difference']:>+6.1f}%      ║")
+        lines.append(f"║    Completed:         {comparison['overall']['teacher_points']/10:>7.0f}        {overall['student_points']/10:>7.0f}       {overall['completion_difference']:>+6.0f}       ║")
+
+        lines.append("╟" + "─" * 68 + "╢")
+
+        # Transfer efficiency bar
+        eff = min(100, transfer)
+        filled = int(eff / 2.5)
+        bar = "█" * filled + "░" * (40 - filled)
+        lines.append(f"║    Transfer Efficiency: [{bar}] {transfer:>5.1f}%   ║")
+
+        lines.append("╟" + "─" * 68 + "╢")
+
+        # Verdict
+        lines.append(f"║    {verdict['icon']} {verdict['message']:<62} ║")
+
+        lines.append("╟" + "─" * 68 + "╢")
+
+        # Per-belt comparison
+        lines.append("║    Belt         Teacher    Student    Transfer Rate              ║")
+        lines.append("╟" + "─" * 68 + "╢")
+
+        belt_icons = {
+            "white": "⬜", "yellow": "🟨", "orange": "🟧", "green": "🟩",
+            "blue": "🟦", "brown": "🟫", "purple": "🟪", "black": "⬛",
+        }
+
+        for belt in ["white", "yellow", "orange", "green", "blue", "brown", "purple", "black"]:
+            if belt in comparison["by_belt"]:
+                b = comparison["by_belt"][belt]
+                icon = belt_icons.get(belt, " ")
+                t_val = b["teacher_percentage"]
+                s_val = b["student_percentage"]
+                rate = b["transfer_rate"]
+
+                # Visual indicator
+                if rate >= 90:
+                    indicator = "✓✓"
+                elif rate >= 70:
+                    indicator = "✓ "
+                elif rate >= 50:
+                    indicator = "→ "
+                else:
+                    indicator = "⚠ "
+
+                lines.append(f"║    {icon} {belt.capitalize():<8}   {t_val:>6.1f}%    {s_val:>6.1f}%     {rate:>5.1f}% {indicator}              ║")
 
     lines.append("╚" + "═" * 68 + "╝")
     lines.append("")
