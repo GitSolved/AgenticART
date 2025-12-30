@@ -43,6 +43,12 @@ from dojo import (
 from dojo.curriculum.executor import ExecutionResult
 from dojo.hybrid_challenger import HybridChallenger
 from dojo.react_challenger import ReActChallenger
+from dojo.scoring import (
+    ModelScorer,
+    TeacherBenchmark,
+    format_report_text,
+    save_report,
+)
 from dojo.trajectory_logger import TrajectoryLogger
 
 
@@ -437,6 +443,7 @@ def run_end_to_end(
     adapter: Optional[str] = None,
     challenger_type: str = "basic",
     executor_type: Optional[str] = None,
+    teacher_benchmark_path: Optional[str] = None,
 ) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
     set_engine_state("running")
@@ -524,6 +531,37 @@ def run_end_to_end(
     device_info = executor.get_device_info()
     print(f"Connected: {device_id} (Android {device_info.get('android_version', '?')})")
     print()
+
+    # ========================================================================
+    # Initialize Scoring System
+    # ========================================================================
+
+    # Sanitize model name for scorer ID
+    if model:
+        safe_model_name = model.split("/")[-1].replace(":", "-")
+    else:
+        safe_model_name = f"{mode}_model"
+    scorer_model_id = f"{safe_model_name}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    # Load teacher benchmark if provided
+    teacher_benchmark: Optional[TeacherBenchmark] = None
+    if teacher_benchmark_path:
+        benchmark_path = Path(teacher_benchmark_path)
+        if benchmark_path.exists():
+            print(f"Loading teacher benchmark: {benchmark_path}")
+            try:
+                with open(benchmark_path) as f:
+                    benchmark_data = json.load(f)
+                teacher_benchmark = TeacherBenchmark.from_dict(benchmark_data)
+                print(f"  Teacher: {teacher_benchmark.model_id} ({teacher_benchmark.percentage:.1f}%)")
+            except Exception as e:
+                print(f"  WARNING: Could not load benchmark: {e}")
+        else:
+            print(f"WARNING: Teacher benchmark not found: {benchmark_path}")
+    print()
+
+    # Create scorer
+    scorer = ModelScorer(model_id=scorer_model_id, teacher_benchmark=teacher_benchmark)
 
     loader = ChallengeLoader()
     error_extractor = ErrorExtractor(
@@ -656,15 +694,31 @@ def run_end_to_end(
         auto_promote=True,
     )
 
-    # Print grading results
+    # Print grading results and record scores
     print("Grading Results:")
     print("-" * 40)
     for i, assessment in enumerate(result.assessments):
-        challenge = sessions[i].challenge
+        session = sessions[i]
+        challenge = session.challenge
         print(f"  {challenge.id}: Grade {assessment.grade.value} (Score: {assessment.score})")
         if assessment.all_issues:
             for issue in assessment.all_issues[:2]:
                 print(f"    - {issue}")
+
+        # Record attempt in scorer
+        # Calculate execution time from session attempts
+        exec_time = sum(
+            a.execution_result.execution_time
+            for a in session.attempts
+            if a.execution_result
+        )
+        scorer.record_attempt(
+            challenge_id=challenge.id,
+            belt=challenge.belt,
+            assessment=assessment,
+            attempts=len(session.attempts),
+            execution_time=exec_time,
+        )
 
     print()
 
@@ -725,6 +779,30 @@ def run_end_to_end(
         print(f"Input: {alpaca['input'][:100] if alpaca['input'] else '(none)'}...")
         print(f"Output: {alpaca['output'][:100]}...")
 
+    # ========================================================================
+    # Generate Scoring Report
+    # ========================================================================
+
+    print("\n")
+    scoring_report = scorer.generate_report()
+
+    # Display formatted report
+    print(format_report_text(scoring_report))
+
+    # Save scoring report
+    report_path = output_dir / f"scoring_report_{scorer_model_id}.json"
+    save_report(scoring_report, report_path)
+    print(f"Scoring report saved: {report_path}")
+
+    # Save as teacher benchmark if this is a teacher run
+    if not teacher_benchmark:
+        benchmark_path = output_dir / f"teacher_benchmark_{scorer_model_id}.json"
+        teacher_data = TeacherBenchmark.from_scorer(scorer).to_dict()
+        with open(benchmark_path, "w") as f:
+            json.dump(teacher_data, f, indent=2)
+        print(f"Teacher benchmark saved: {benchmark_path}")
+        print("  (Use --teacher-benchmark to compare future student runs)")
+
     set_engine_state("idle")
     return 0
 
@@ -784,6 +862,11 @@ def main():
         default=None,
         help="Executor type: live (ADB) or mock (Simulated). Defaults to mock if mode=mock, else live.",
     )
+    parser.add_argument(
+        "--teacher-benchmark",
+        default=None,
+        help="Path to teacher benchmark JSON for distillation comparison",
+    )
 
     args = parser.parse_args()
     exit_code = run_end_to_end(
@@ -794,6 +877,7 @@ def main():
         adapter=args.adapter,
         challenger_type=args.challenger,
         executor_type=args.executor,
+        teacher_benchmark_path=args.teacher_benchmark,
     )
     sys.exit(exit_code)
 
