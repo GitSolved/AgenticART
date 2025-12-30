@@ -89,3 +89,6 @@ dojo_finetune_package/
 dojo_finetune_package/
 models/
 archived_runs/
+dojo_output/
+data/
+models/*adapters*

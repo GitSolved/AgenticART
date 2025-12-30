@@ -414,9 +414,32 @@ class MockExecutor(Executor):
             output = "USER           PID  PPID     VSZ    RSS WCHAN            ADDR S NAME\nroot             1     0   10624   3220 0                   0 S init\nsystem        1542     1 2345424 234232 0                   0 S system_server"
         elif "cat /data/system/packages.xml" in cmd:
             output = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?>\n<packages>\n<package name=\"com.android.settings\" codePath=\"/system/priv-app/Settings\" />\n</packages>"
+        # Green Belt Mock Responses
+        elif "logcat" in cmd and "activitymanager" in cmd:
+            output = "12-30 01:00:00.000  1542  1542 E ActivityManager: Unexpected error in service start"
+        elif "frida" in cmd or "hook" in cmd:
+            output = "[SUCCESS] Frida attached and script loaded.\n[INFO] Found class: com.android.settings.Settings\n[INFO] Intercepted call to open()"
+        # Blue Belt Mock Responses
+        elif "id" == cmd.strip() or "id" in cmd:
+            output = "uid=0(root) gid=0(root) groups=0(root)"
+        elif "uname -a" in cmd:
+            output = "Linux version 3.10.0 (android-build@google.com)"
+        # Brown Belt Mock Responses
+        elif "msm_camera" in cmd or "video" in cmd:
+            output = "crw-rw---- 1 system camera 81, 0 2025-12-30 01:00 /dev/msm_camera"
+        # Black Belt Mock Responses
+        elif "service list" in cmd:
+            output = "Found 150 services:\n0\tgpu: [android.ui.IGpuService]\n1\tbinder_fuzzer: [vendor.special.IFuzzer]"
+        elif "fuzz" in cmd or "crash" in cmd:
+            output = "--- FATAL EXCEPTION ---\nProcess: com.android.systemui\nException: java.lang.NullPointerException\nSegmentation fault"
 
         print(f"      [MockExecutor] CMD: '{command}' -> OUTPUT: '{output[:20]}...'")
         return ExecutionResult(True, 0, output, "", 0.1, command)
+
+    def execute_c_exploit(self, script_content: str, timeout: int = 15) -> ExecutionResult:
+        """Mock C exploit execution (always passes syntax check in mock mode)."""
+        print("      [MockExecutor] Validating C Exploit syntax...")
+        return ExecutionResult(True, 0, "Syntax Check Passed", "", 0.1, "clang -fsyntax-only")
 
     def execute_frida(
         self,
