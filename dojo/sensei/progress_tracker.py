@@ -254,15 +254,15 @@ class ProgressTracker:
             role = "[TEACHER]"
         elif "student" in progress.tags:
             role = "[STUDENT]"
-        
+
         # Determine Belt
         belt_icon = progress.current_belt.display.split(" ")[0] # Get emoji
         belt_name = progress.current_belt.value.upper()
-        
+
         # Clean ID (remove timestamp if it makes it too long, optional)
         # For now, keep full ID but prefix status
         short_id = progress.model_id.split("-202")[0] # Truncate date for readability if desired, or keep full
-        
+
         if role:
             return f"{role} {belt_icon} {belt_name} | {short_id}"
         return f"{belt_icon} {belt_name} | {progress.model_id}"
