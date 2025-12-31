@@ -1,0 +1,345 @@
+# Yellow Belt Challenges
+# Purpose: Intermediate ADB skills - app interaction, file operations, log analysis
+# Focus: Building on white belt fundamentals with more complex operations
+
+challenges:
+  # Challenge 1: Extract App Permissions
+  - id: yellow_001
+    name: "App Permission Extraction"
+    description: |
+      Write an ADB command that extracts and displays all permissions
+      requested by the Settings app (com.android.settings).
+
+      The output should show the permissions declared in the app's manifest.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "extract app permissions"
+        target_package: "com.android.settings"
+
+    validation:
+      type: output_contains
+      expected: "permission"
+
+    hints:
+      - "Use the 'dumpsys' command to get package information"
+      - "The package manager can show detailed app info"
+      - "Try 'pm dump' or 'dumpsys package' commands"
+
+    kata_solution: "shell dumpsys package com.android.settings | grep permission"
+
+    tags:
+      - permissions
+      - app-analysis
+      - dumpsys
+
+  # Challenge 2: Start Activity with Intent
+  - id: yellow_002
+    name: "Launch Activity via Intent"
+    description: |
+      Write an ADB command that launches the Android Settings app's
+      main activity using an explicit intent.
+
+      The command should start the Settings application.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "start activity with intent"
+        target_package: "com.android.settings"
+
+    validation:
+      type: output_contains
+      expected: "Starting"
+
+    hints:
+      - "Use 'am start' to start activities"
+      - "You can specify the component with -n flag"
+      - "The main Settings activity is com.android.settings/.Settings"
+
+    kata_solution: "shell am start -n com.android.settings/.Settings"
+
+    tags:
+      - intents
+      - activity-manager
+      - app-launch
+
+  # Challenge 3: Network Interface Information
+  - id: yellow_003
+    name: "Network Configuration"
+    description: |
+      Write an ADB command that displays the network interface
+      configuration, including IP addresses assigned to the device.
+
+      Show all network interfaces and their addresses.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "get network configuration"
+
+    validation:
+      type: regex_match
+      pattern: "\\d+\\.\\d+\\.\\d+\\.\\d+"
+
+    hints:
+      - "Standard Linux network commands work on Android"
+      - "Try 'ifconfig' or 'ip addr' commands"
+      - "Network info is also available via 'netcfg' on older Android"
+
+    kata_solution: "shell ip addr"
+
+    tags:
+      - networking
+      - device-info
+      - reconnaissance
+
+  # Challenge 4: Filtered Logcat Output
+  - id: yellow_004
+    name: "Log Analysis with Filters"
+    description: |
+      Write an ADB command that captures logcat output filtered to show
+      only ERROR level messages from the ActivityManager.
+
+      The command should exit after capturing (not run indefinitely).
+    belt: yellow
+    difficulty: 3
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "filter logcat output"
+        filter_tag: "ActivityManager"
+        filter_level: "E"
+
+    validation:
+      type: not_empty
+
+    hints:
+      - "Logcat supports tag:priority filters"
+      - "Use -d flag to dump and exit instead of streaming"
+      - "Priority levels: V, D, I, W, E, F, S"
+      - "Silence other tags with *:S"
+
+    kata_solution: "shell logcat -d ActivityManager:E *:S"
+
+    tags:
+      - logcat
+      - debugging
+      - log-analysis
+
+  # Challenge 5: List Running Services
+  - id: yellow_005
+    name: "Running Services Enumeration"
+    description: |
+      Write an ADB command that lists all currently running services
+      on the Android device.
+
+      The output should show active Android services.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "enumerate running services"
+
+    validation:
+      type: output_contains
+      expected: "ServiceRecord"
+
+    hints:
+      - "Use 'dumpsys' to query system services"
+      - "The activity manager tracks running services"
+      - "Try 'dumpsys activity services'"
+
+    kata_solution: "shell dumpsys activity services"
+
+    tags:
+      - services
+      - enumeration
+      - dumpsys
+
+  # Challenge 6: Extract APK Path
+  - id: yellow_006
+    name: "APK Path Discovery"
+    description: |
+      Write an ADB command that finds the APK file path for the
+      Calculator app (com.android.calculator2).
+
+      The output should show the full path to the APK on the device.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "find APK path"
+        target_package: "com.android.calculator2"
+
+    validation:
+      type: output_contains
+      expected: ".apk"
+
+    hints:
+      - "Package manager can show the path to installed APKs"
+      - "Use 'pm path' command with the package name"
+
+    kata_solution: "shell pm path com.android.calculator2"
+
+    tags:
+      - apk-extraction
+      - package-manager
+      - app-analysis
+
+  # Challenge 7: Broadcast Intent
+  - id: yellow_007
+    name: "Send Broadcast Intent"
+    description: |
+      Write an ADB command that sends a broadcast intent to trigger
+      a connectivity change notification on the device.
+
+      Use the CONNECTIVITY_CHANGE action.
+    belt: yellow
+    difficulty: 3
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "send broadcast intent"
+        action: "android.net.conn.CONNECTIVITY_CHANGE"
+
+    validation:
+      type: output_contains
+      expected: "Broadcast completed"
+
+    hints:
+      - "Use 'am broadcast' to send broadcast intents"
+      - "Specify the action with -a flag"
+      - "Some broadcasts may require specific permissions"
+
+    kata_solution: "shell am broadcast -a android.net.conn.CONNECTIVITY_CHANGE"
+
+    tags:
+      - intents
+      - broadcast
+      - activity-manager
+
+  # Challenge 8: Screen Capture
+  - id: yellow_008
+    name: "Device Screenshot"
+    description: |
+      Write an ADB command that captures a screenshot of the device
+      screen and saves it to /sdcard/screenshot.png on the device.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "capture screenshot"
+        output_path: "/sdcard/screenshot.png"
+
+    validation:
+      type: not_empty
+
+    hints:
+      - "Use the 'screencap' command"
+      - "Specify the output path with -p flag for PNG format"
+      - "The file will be saved on the device, not host"
+
+    kata_solution: "shell screencap -p /sdcard/screenshot.png"
+
+    tags:
+      - screenshot
+      - device-interaction
+      - media
+
+  # Challenge 9: Input Text
+  - id: yellow_009
+    name: "Simulate Text Input"
+    description: |
+      Write an ADB command that simulates typing the text "hello"
+      into the currently focused text field on the device.
+    belt: yellow
+    difficulty: 2
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "simulate text input"
+        text: "hello"
+
+    validation:
+      type: not_empty
+
+    hints:
+      - "Use the 'input' command for simulating user input"
+      - "The 'text' subcommand sends keystrokes"
+      - "Special characters may need escaping"
+
+    kata_solution: "shell input text hello"
+
+    tags:
+      - input-simulation
+      - automation
+      - device-interaction
+
+  # Challenge 10: CPU Information
+  - id: yellow_010
+    name: "CPU Architecture Info"
+    description: |
+      Write an ADB command that retrieves the CPU architecture
+      and processor information from the device.
+
+      The output should show what CPU/processor the device uses.
+    belt: yellow
+    difficulty: 1
+    script_type: adb
+
+    inputs:
+      device_id: "emulator-5554"
+      device_context:
+        connection: "adb"
+        task: "get CPU information"
+
+    validation:
+      type: output_contains
+      expected: "processor"
+
+    hints:
+      - "CPU info is available in the proc filesystem"
+      - "Try reading /proc/cpuinfo"
+      - "Use cat to read the file contents"
+
+    kata_solution: "shell cat /proc/cpuinfo"
+
+    tags:
+      - device-info
+      - hardware
+      - reconnaissance

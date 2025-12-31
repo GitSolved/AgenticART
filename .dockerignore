@@ -1,0 +1,61 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Docker Ignore
+# Files and directories to exclude from Docker build context
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+.eggs/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# Output (these are mounted as volumes)
+output/
+scripts/generated/
+.chromadb/
+
+# Secrets
+config/.env
+*.local.yaml
+
+# Large files
+*.img
+*.ab
+*.apk
+
+# Documentation (not needed in container)
+docs/
+*.md
+!README.md
+
+# Tests (use separate image for testing)
+tests/
+
+# OS
+.DS_Store
+Thumbs.db

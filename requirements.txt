@@ -1,0 +1,59 @@
+# AgenticART Requirements
+# Install with: pip install -r requirements.txt
+# Tool verification: ./scripts/check-tools.sh
+# Full reference: TOOLS.md
+
+# ─── LLM Providers ───────────────────────────────────────────────────────────
+openai>=1.0.0
+anthropic>=0.18.0
+
+# ─── Web Application ─────────────────────────────────────────────────────────
+streamlit>=1.30.0
+
+# ─── Configuration ───────────────────────────────────────────────────────────
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# ─── HTTP & Networking ───────────────────────────────────────────────────────
+requests>=2.31.0
+
+# ─── Vector Store (Memory) ───────────────────────────────────────────────────
+chromadb>=0.4.0
+
+# ─── Dynamic Analysis ────────────────────────────────────────────────────────
+frida-tools>=12.0.0      # Runtime instrumentation, hooking
+objection>=1.11.0        # Frida-powered mobile exploration
+
+# ─── Static Analysis ─────────────────────────────────────────────────────────
+androguard>=3.4.0        # APK analysis, manifest parsing
+
+# ─── Network/Proxy ───────────────────────────────────────────────────────────
+mitmproxy>=10.0.0        # HTTPS interception proxy
+
+# ─── Android Security Framework ──────────────────────────────────────────────
+drozer>=2.4.4            # IPC testing, content provider exploitation
+
+# ─── Exploit Development ─────────────────────────────────────────────────────
+pwntools>=4.11.0         # CTF/exploit framework
+ropper>=1.13.0           # ROP gadget finder
+
+# ─── Cryptography ────────────────────────────────────────────────────────────
+cryptography>=41.0.0     # Crypto operations
+pyopenssl>=23.0.0        # SSL/TLS utilities
+
+# ─── Development (optional, uncomment to install) ────────────────────────────
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# black>=23.0.0
+# ruff>=0.1.0
+# mypy>=1.5.0
+
+# ─── Non-Python Tools (install separately) ───────────────────────────────────
+# See TOOLS.md for installation instructions:
+#   - adb/fastboot: brew install android-platform-tools
+#   - apktool: brew install apktool
+#   - jadx: brew install jadx
+#   - nmap: brew install nmap
+#   - MobSF: docker pull opensecurity/mobile-security-framework-mobsf
+#   - Burp Suite: https://portswigger.net/burp
+#   - OWASP ZAP: brew install --cask owasp-zap

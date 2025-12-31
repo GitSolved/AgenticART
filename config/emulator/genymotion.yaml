@@ -1,0 +1,66 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Genymotion Emulator Profiles
+# Based on paper: "Breaking Android with AI" methodology
+# ═══════════════════════════════════════════════════════════════════════════════
+
+profiles:
+  # ─── Unrooted Target (Initial State) ───────────────────────────────────────
+  s23_unrooted:
+    name: "Samsung Galaxy S23 - Android 14"
+    android_version: 14
+    api_level: 34
+    architecture: "x86_64"
+    rooted: false
+    network:
+      mode: "bridge"
+      ip: "127.0.0.1"
+      port: 6562
+    resources:
+      cpu_cores: 4
+      ram_mb: 4096
+      storage_gb: 32
+
+  # ─── Rooted Target (For Comparison Testing) ────────────────────────────────
+  s23_rooted:
+    name: "Samsung Galaxy S23 Rooted - Android 14"
+    android_version: 14
+    api_level: 34
+    architecture: "x86_64"
+    rooted: true
+    root_method: "magisk"
+    network:
+      mode: "bridge"
+      ip: "127.0.0.1"
+      port: 6555
+
+  # ─── Vulnerable Target (Older Android) ─────────────────────────────────────
+  pixel4_vuln:
+    name: "Google Pixel 4 - Android 10"
+    android_version: 10
+    api_level: 29
+    architecture: "x86_64"
+    rooted: false
+    known_vulns:
+      - "CVE-2020-0041"
+      - "CVE-2020-0069"
+    network:
+      mode: "bridge"
+      ip: "192.168.56.103"
+
+# ─── ADB Configuration ───────────────────────────────────────────────────────
+adb:
+  path: "/usr/local/bin/adb"
+  timeout: 30
+  retry_count: 3
+  commands:
+    connect: "adb connect {ip}:{port}"
+    root: "adb root"
+    shell: "adb -s {device} shell"
+    push: "adb -s {device} push {local} {remote}"
+    pull: "adb -s {device} pull {remote} {local}"
+
+# ─── Genymotion Player Settings ──────────────────────────────────────────────
+player:
+  path: "/Applications/Genymotion.app/Contents/MacOS/player"
+  headless: false
+  gpu_mode: "auto"  # auto | host | software
