@@ -162,7 +162,7 @@ class OllamaClient(BaseLLMClient):
         context_length: int = 8192,
     ) -> None:
         self.endpoint = endpoint or os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1:70b-instruct-q4_K_M")
+        self.model = model or os.getenv("OLLAMA_MODEL", "qwen2.5:72b")
         self.temperature = float(os.getenv("OLLAMA_TEMPERATURE", str(temperature)))
         self.context_length = int(os.getenv("OLLAMA_CONTEXT_LENGTH", str(context_length)))
 
@@ -336,7 +336,7 @@ class LLMClient:
             )
         elif provider in ("ollama", "local"):
             return OllamaClient(
-                model=os.getenv("OLLAMA_MODEL", os.getenv("LOCAL_LLM_MODEL", "llama3.1:70b-instruct-q4_K_M"))
+                model=os.getenv("OLLAMA_MODEL", os.getenv("LOCAL_LLM_MODEL", "qwen2.5:72b"))
             )
         elif provider == "mock":
             return MockClient()

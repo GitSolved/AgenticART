@@ -313,7 +313,7 @@ The script should:
     except Exception as e:
         print(f"  [!] Error during generation: {e}")
         print("  [*] This typically means Ollama is not running or model not available")
-        print("  [*] Run: ollama pull llama3.1:70b-instruct-q4_K_M")
+        print("  [*] Run: ollama pull qwen2.5:72b")
         return None
 
 
