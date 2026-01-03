@@ -17,13 +17,22 @@ import os
 import re
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import IntEnum
 from typing import Optional
 
 from dojo.exceptions import ExecutionError
 from dojo.models import Challenge, ScriptType
 
 logger = logging.getLogger(__name__)
+
+
+class ExecutionTier(IntEnum):
+    """Execution tier levels for training metadata."""
+
+    ADB = 1          # Pure ADB commands
+    ON_DEVICE = 2    # Tools running on the device (frida-server, sqlite3, etc.)
+    EXTERNAL = 3     # External tools (Kali container, nmap, etc.)
 
 
 @dataclass
@@ -38,6 +47,8 @@ class ExecutionResult:
     command: str
     error_type: Optional[str] = None
     blocked: bool = False
+    tier_used: int = 1  # ExecutionTier value (1=ADB, 2=ON_DEVICE, 3=EXTERNAL)
+    tools_used: list[str] = field(default_factory=lambda: ["adb"])
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -50,6 +61,8 @@ class ExecutionResult:
             "command": self.command,
             "error_type": self.error_type,
             "blocked": self.blocked,
+            "tier_used": self.tier_used,
+            "tools_used": self.tools_used,
         }
 
 
