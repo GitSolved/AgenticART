@@ -180,6 +180,7 @@ class Executor:
             allow_real_device = os.getenv("ALLOW_REAL_DEVICE", "").lower() == "true"
 
         if not allow_real_device:
+            assert self.device_id is not None  # guaranteed by default value
             if not self._is_emulator_device(self.device_id):
                 raise ValueError(
                     f"Device '{self.device_id}' does not appear to be an emulator. "
