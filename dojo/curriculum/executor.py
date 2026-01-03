@@ -21,8 +21,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from dojo.exceptions import ExecutionError
-from dojo.models import ScriptType
-
+from dojo.models import Challenge, ScriptType
 
 logger = logging.getLogger(__name__)
 
