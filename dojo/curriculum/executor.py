@@ -1,7 +1,18 @@
-"""Executor - runs code against Android device via ADB."""
+"""Executor - runs code against Android device via ADB.
+
+Security Note:
+    This executor includes a training blocklist that prevents dangerous
+    commands from executing, even in automated training runs. Blocked
+    commands return a failure result, which becomes useful training data
+    (the model learns these commands are rejected).
+
+    To allow execution against real devices (not recommended), set:
+        ALLOW_REAL_DEVICE=true
+"""
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import subprocess
@@ -10,7 +21,10 @@ from dataclasses import dataclass
 from typing import Optional
 
 from dojo.exceptions import ExecutionError
-from dojo.models import Challenge, ScriptType
+from dojo.models import ScriptType
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -23,7 +37,8 @@ class ExecutionResult:
     stderr: str
     duration: float
     command: str
-    error_type: Optional[str] = None  # classified error type
+    error_type: Optional[str] = None
+    blocked: bool = False
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -35,11 +50,68 @@ class ExecutionResult:
             "duration": self.duration,
             "command": self.command,
             "error_type": self.error_type,
+            "blocked": self.blocked,
         }
 
 
 class Executor:
-    """Execute ADB commands against Android device."""
+    """Execute ADB commands against Android device.
+
+    Includes safety blocklist for training mode to prevent destructive
+    commands while still collecting useful error training data.
+    """
+
+    # Dangerous command patterns - blocked in training mode
+    DANGEROUS_COMMAND_PATTERNS = {
+        "destructive_delete": [
+            r"rm\s+-rf",
+            r"rm\s+-r.*\s+/",
+            r"rm\s+.*\s+/sdcard\s*$",
+            r"rm\s+.*\s+/data\s*$",
+            r"rm\s+.*\s+/system\s*$",
+        ],
+        "destructive_format": [
+            r"mkfs\.",
+            r"dd\s+if=.*/dev/zero",
+            r"dd\s+of=/dev/",
+            r"format",
+        ],
+        "bootloader_flash": [
+            r"fastboot\s+flash",
+            r"fastboot\s+erase",
+            r"fastboot\s+oem\s+unlock",
+            r"fastboot\s+flashing",
+        ],
+        "system_control": [
+            r"reboot\s+bootloader",
+            r"reboot\s+recovery",
+            r"reboot\s+fastboot",
+            r"shutdown",
+            r"poweroff",
+        ],
+        "adb_dangerous": [
+            r"sideload",
+            r"disable-verity",
+            r"remount.*rw",
+            r"restore",
+        ],
+        "privilege_escalation": [
+            r"su\s+-c\s+['\"']?rm",
+            r"su\s+-c\s+['\"']?dd",
+            r"su\s+-c\s+['\"']?format",
+            r"su\s+-c\s+['\"']?mkfs",
+            r"su\s+-c\s+['\"']?reboot",
+        ],
+        "settings_dangerous": [
+            r"settings\s+put.*adb_enabled\s+0",
+            r"settings\s+put.*install_non_market_apps\s+0",
+        ],
+        "network_dangerous": [
+            r"iptables\s+-F",
+            r"iptables\s+-X",
+            r"ip\s+link\s+set.*down",
+        ],
+    }
 
     # Error classification patterns
     ERROR_PATTERNS = {
@@ -83,21 +155,67 @@ class Executor:
         device_id: Optional[str] = None,
         adb_path: Optional[str] = None,
         timeout: int = 30,
+        allow_real_device: Optional[bool] = None,
+        disable_blocklist: bool = False,
     ):
-        """
-        Initialize the executor.
+        """Initialize the executor.
 
         Args:
             device_id: Android device ID (e.g., "emulator-5554").
             adb_path: Path to adb executable. If None, uses PATH.
             timeout: Default command timeout in seconds.
+            allow_real_device: Allow non-emulator devices. Defaults to
+                env var ALLOW_REAL_DEVICE or False.
+            disable_blocklist: Disable safety blocklist (use with caution).
+
+        Raises:
+            ValueError: If device_id looks like a real device and
+                allow_real_device is False.
         """
         self.device_id = device_id or os.getenv("EMULATOR_DEVICE", "emulator-5554")
-        self.adb_path = adb_path or os.getenv(
-            "ADB_PATH",
-            "adb"  # Assume it's in PATH
-        )
+        self.adb_path = adb_path or os.getenv("ADB_PATH", "adb")
         self.timeout = timeout
+        self.disable_blocklist = disable_blocklist
+
+        if allow_real_device is None:
+            allow_real_device = os.getenv("ALLOW_REAL_DEVICE", "").lower() == "true"
+
+        if not allow_real_device:
+            if not self._is_emulator_device(self.device_id):
+                raise ValueError(
+                    f"Device '{self.device_id}' does not appear to be an emulator. "
+                    f"Training should run against emulators only for safety. "
+                    f"If you really want to use a real device, set "
+                    f"ALLOW_REAL_DEVICE=true or pass allow_real_device=True."
+                )
+
+        logger.info(
+            f"Executor initialized: device={self.device_id}, "
+            f"blocklist={'disabled' if disable_blocklist else 'enabled'}"
+        )
+
+    def _is_emulator_device(self, device_id: str) -> bool:
+        """Check if device ID looks like an emulator."""
+        emulator_patterns = [
+            r"^emulator-\d+$",
+            r"^localhost:\d+$",
+            r"^127\.0\.0\.1:\d+$",
+            r"^10\.0\.2\.\d+:\d+$",
+            r"^192\.168\.\d+\.\d+:\d+$",
+        ]
+        return any(re.match(p, device_id) for p in emulator_patterns)
+
+    def _check_dangerous_command(self, command: str) -> Optional[tuple[str, str]]:
+        """Check if command matches any dangerous patterns."""
+        if self.disable_blocklist:
+            return None
+
+        for category, patterns in self.DANGEROUS_COMMAND_PATTERNS.items():
+            for pattern in patterns:
+                if re.search(pattern, command, re.IGNORECASE):
+                    return (category, pattern)
+
+        return None
 
     def _classify_error(self, stderr: str, stdout: str) -> Optional[str]:
         """
@@ -196,6 +314,7 @@ class Executor:
                 duration=duration,
                 command=cmd_string,
                 error_type=error_type,
+                blocked=False,
             )
 
         except subprocess.TimeoutExpired:
@@ -208,6 +327,7 @@ class Executor:
                 duration=duration,
                 command=cmd_string,
                 error_type="timeout",
+                blocked=False,
             )
 
         except FileNotFoundError:
@@ -220,6 +340,7 @@ class Executor:
                 duration=duration,
                 command=cmd_string,
                 error_type="command_not_found",
+                blocked=False,
             )
 
         except Exception as e:
@@ -232,6 +353,7 @@ class Executor:
                 duration=duration,
                 command=cmd_string,
                 error_type="unknown",
+                blocked=False,
             )
 
     def execute(
