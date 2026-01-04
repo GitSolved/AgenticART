@@ -47,6 +47,13 @@ class BaseLLMClient(ABC):
         """Stream a completion for the given prompt."""
         pass
 
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Convenience method returning just the content string.
+
+        This provides compatibility with the dojo's LLMClient Protocol.
+        """
+        return self.complete(prompt, system_prompt).content
+
 
 class OpenAIClient(BaseLLMClient):
     """OpenAI API client."""

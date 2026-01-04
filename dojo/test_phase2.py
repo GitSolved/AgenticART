@@ -23,6 +23,7 @@ from typing import Any, Optional
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from agent.llm_client import OllamaClient  # noqa: E402
 from dojo import (  # noqa: E402
     Belt,
     ChallengeLoader,
@@ -159,56 +160,6 @@ class MockLLMClient:
 
         # Default response
         return "shell echo 'unknown challenge'"
-
-
-# ============================================================================
-# Live LLM Client (Ollama)
-# ============================================================================
-
-class OllamaLLMClient:
-    """Real LLM client using Ollama."""
-
-    def __init__(self, model: str = "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"):
-        self.model = model
-        self._check_ollama()
-
-    def _check_ollama(self):
-        """Check if Ollama is available."""
-        import subprocess
-        try:
-            result = subprocess.run(
-                ["ollama", "list"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            if result.returncode != 0:
-                raise RuntimeError("Ollama not running")
-        except FileNotFoundError:
-            raise RuntimeError("Ollama not installed")
-
-    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        """Generate using Ollama."""
-        import subprocess
-
-        full_prompt = prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\n{prompt}"
-
-        try:
-            result = subprocess.run(
-                ["ollama", "run", self.model, full_prompt],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                encoding="utf-8",
-                errors="replace",
-            )
-            return result.stdout.strip()
-        except subprocess.TimeoutExpired:
-            return "[ERROR: LLM timeout]"
-        except Exception as e:
-            return f"[ERROR: {e}]"
 
 
 # ============================================================================
@@ -468,13 +419,13 @@ def run_tests(mode: str = "mock", device_id: str = "emulator-5554") -> int:
         llm = MockLLMClient()
         print("Using MOCK LLM (returns expected answers)")
     elif mode == "live":
-        try:
-            llm = OllamaLLMClient()
-            print("Using LIVE LLM (Ollama)")
-        except RuntimeError as e:
-            print(f"ERROR: {e}")
+        llm = OllamaClient()
+        if not llm.is_available():
+            print("ERROR: Ollama not running")
             print("Falling back to mock mode")
             llm = MockLLMClient()
+        else:
+            print("Using LIVE LLM (Ollama)")
     elif mode == "manual":
         llm = ManualLLMClient()
         print("Using MANUAL mode (you provide commands)")
