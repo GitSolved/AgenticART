@@ -6,41 +6,15 @@ Run with: pytest tests/test_reconnaissance.py -v
 
 import os
 import sys
-from typing import Optional
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from conftest import MockADB
+
 from core.reconnaissance.device_enum import DeviceEnumerator
 from core.reconnaissance.service_discovery import RiskLevel, ServiceDiscovery
-
-
-class MockADB:
-    """Mock ADB connection for testing."""
-
-    def __init__(self, responses: Optional[dict] = None) -> None:
-        self.responses = responses or {}
-        self.commands_executed: list[str] = []
-        self.device_id = "192.168.56.101:5555"
-
-    def shell(self, command: str) -> str:
-        self.commands_executed.append(command)
-        for pattern, response in self.responses.items():
-            if pattern in command:
-                return str(response)
-        return ""
-
-    def get_prop(self, prop: str) -> str:
-        return str(self.responses.get(f"prop:{prop}", ""))
-
-    def execute(self, command: str, timeout: int = 30) -> tuple[str, str, int]:
-        self.commands_executed.append(command)
-        stdout = self.responses.get(f"exec:{command}", "")
-        return stdout, "", 0
-
-    def is_connected(self) -> bool:
-        return True
 
 
 class TestADBConnection:

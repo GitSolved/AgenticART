@@ -6,35 +6,17 @@ Run with: pytest tests/test_scanning.py -v
 
 import os
 import sys
-from typing import Optional
 from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from conftest import MockADB
+
 from core.scanning.cve_matcher import CVEMatcher, ExploitAvailability
 from core.scanning.permission_analyzer import PermissionAnalyzer
 from core.scanning.vuln_scanner import VulnerabilityScanner, VulnSeverity
-
-
-class MockADB:
-    """Mock ADB connection for testing."""
-
-    def __init__(self, responses: Optional[dict] = None) -> None:
-        self.responses = responses or {}
-        self.commands_executed: list[str] = []
-
-    def shell(self, command: str) -> str:
-        self.commands_executed.append(command)
-        return str(self.responses.get(command, ""))
-
-    def get_prop(self, prop: str) -> str:
-        return str(self.responses.get(f"getprop {prop}", ""))
-
-    def execute(self, command: str, timeout: int = 30) -> tuple[str, str, int]:
-        self.commands_executed.append(command)
-        return "", "", 0
 
 
 class TestCVEMatcher:
