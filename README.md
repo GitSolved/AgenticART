@@ -32,31 +32,38 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
 
 ```
 ```
-
-    ┌─────────────┐        ┌─────────────┐        ┌─────────────┐        ┌─────────────┐
-    │  CHALLENGE  │───────>│  GENERATE   │───────>│   EXECUTE   │───────>│    GRADE    │
-    └─────────────┘        └──────┬──────┘        └─────────────┘        └──────┬──────┘
-                                  │                                              │
-                                  │                                              │
-                                  │ + error context             Pass?            │
-                                  │                               │              │
-                                  │                               │              │
-                           ┌──────┴──────┐                        │              │
-                           │    RETRY    │<───────── No ──────────┘              │
-                           └─────────────┘                                       │
-                                                                                  │
-                                                                                  │
-                                                             Yes                  │
-                                                              │                   │
-                                                              ▼                   │
-                                                    ┌──────────────────┐          │
-                                                    │  TRAINING DATA   │<─────────┘
-                                                    │                  │
-                                                    │ • Working scripts│
-                                                    │ • Error-Fix pairs│
-                                                    └──────────────────┘
-
 ```
+
+    ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+    │  CHALLENGE   │─────>│   GENERATE   │─────>│   EXECUTE    │─────>│   SUCCESS?   │
+    └──────────────┘      └──────┬───────┘      └──────────────┘      └──────┬───────┘
+                                 │                                             │
+                                 │                                             │
+                                 │                      ┌──────────────────────┤
+                                 │                      │                      │
+                                 │                      │ No                   │ Yes
+                                 │                      │                      │
+                                 │             ┌────────▼────────┐             │
+                                 │             │ EXTRACT ERROR & │             │
+                                 │             │ INJECT CONTEXT  │             │
+                                 │             └────────┬────────┘             │
+                                 │                      │                      │
+                          ┌──────▼──────┐              │                      │
+                          │    RETRY    │<─────────────┘                      │
+                          └─────────────┘                                     │
+                                                                               │
+                                                                               │
+                                                                               │
+                                                                      ┌────────▼────────┐
+                                                                      │ TRAINING DATA   │
+                                                                      │                 │
+                                                                      │ ✓ Working       │
+                                                                      │   scripts       │
+                                                                      │ ✓ Error-Fix     │
+                                                                      │   pairs         │
+                                                                      └─────────────────┘
+
+``````
 ```
 
 **Failures become training data.** The model learns what works and how to recover from what doesn't.
