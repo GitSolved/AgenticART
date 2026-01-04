@@ -98,7 +98,7 @@ Models advance through structured difficulty levels:
 | ⬜ White | ADB fundamentals | 🟦 Blue | CVE exploitation |
 | 🟨 Yellow | Reconnaissance | 🟪 Purple | Evasion |
 | 🟧 Orange | Vulnerability mapping | 🟫 Brown | Attack chaining |
-| 🟩 Green | Scripting (Frida, Python) | ⬛ Black | Novel exploits |
+| 🟩 Green | Scripting (Frida, Python) | ⬛ Black | Advanced Proficiency Test |
 
 ---
 
