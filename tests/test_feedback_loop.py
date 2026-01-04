@@ -17,8 +17,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.chains.android_root_chain import AndroidRootChain, ChainState
-from agent.planner import PentestPhase, PlanStep
+from agent.llm_client import MockClient
+from agent.planner import PentestPhase, Planner, PlanStep
 from agent.script_generator import ScriptGenerator, ScriptType
+from agent.summarizer import Summarizer
 from core.scanning.cve_matcher import CVEMatcher
 
 # Configure logging
@@ -88,7 +90,9 @@ def test_script_regeneration():
     print("TEST 2: Script Regeneration with Feedback")
     print("="*60)
 
-    generator = ScriptGenerator()
+    # Use MockClient to avoid requiring Ollama
+    mock_llm = MockClient()
+    generator = ScriptGenerator(llm_client=mock_llm)
 
     # Create a test step for CVE-2021-25383 (clipboard exploit)
     step = PlanStep(
@@ -204,7 +208,12 @@ def test_full_chain_dry_run():
     print("TEST 5: Full Chain Dry Run")
     print("="*60)
 
+    # Use MockClient to avoid requiring Ollama
+    mock_llm = MockClient()
     chain = AndroidRootChain(
+        planner=Planner(llm_client=mock_llm),
+        summarizer=Summarizer(llm_client=mock_llm),
+        script_generator=ScriptGenerator(llm_client=mock_llm),
         max_iterations=3,  # Limit for testing
         max_retries_per_step=2,
         require_confirmation=False,  # Auto-approve for test
