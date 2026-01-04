@@ -53,6 +53,11 @@ class OpenAIClient(BaseLLMClient):
 
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview") -> None:
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "OpenAI API key not provided. Set OPENAI_API_KEY environment variable "
+                "or pass api_key parameter."
+            )
         self.model = model
         self._client: Any = None
 
@@ -107,6 +112,11 @@ class AnthropicClient(BaseLLMClient):
 
     def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-20250514") -> None:
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "Anthropic API key not provided. Set ANTHROPIC_API_KEY environment variable "
+                "or pass api_key parameter."
+            )
         self.model = model
         self._client: Any = None
 
@@ -277,7 +287,10 @@ class OllamaClient(BaseLLMClient):
 
         for line in response.iter_lines():
             if line:
-                data = json.loads(line)
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # Skip malformed lines
                 if "message" in data and "content" in data["message"]:
                     yield data["message"]["content"]
 
