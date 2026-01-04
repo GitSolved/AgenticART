@@ -18,7 +18,7 @@ Methodology (from arxiv 2509.07933):
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dataclasses import dataclass
 from datetime import datetime

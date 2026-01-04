@@ -11,7 +11,7 @@ This demo showcases the framework's capabilities:
 5. Human-in-the-loop governance
 6. Quality/hallucination detection
 
-Run: python demo.py
+Run: python -m demo.framework
 """
 
 import os
@@ -19,7 +19,7 @@ import sys
 import time
 
 # Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # Framework imports
