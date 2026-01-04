@@ -6,12 +6,13 @@ Complete guide for setting up the LLM-powered Android penetration testing enviro
 
 1. [Prerequisites](#prerequisites)
 2. [Quick Start](#quick-start)
-3. [Genymotion Setup](#genymotion-setup)
-4. [Docker Setup](#docker-setup)
-5. [Local Development Setup](#local-development-setup)
-6. [Configuration](#configuration)
-7. [Verification](#verification)
-8. [Troubleshooting](#troubleshooting)
+3. [Ollama Setup](#ollama-setup)
+4. [Genymotion Setup](#genymotion-setup)
+5. [Docker Setup](#docker-setup)
+6. [Local Development Setup](#local-development-setup)
+7. [Configuration](#configuration)
+8. [Verification](#verification)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -26,11 +27,19 @@ Complete guide for setting up the LLM-powered Android penetration testing enviro
 | Docker Compose | 2.0+ | Multi-container orchestration |
 | Genymotion | Latest | Android emulator |
 | ADB | Latest | Android Debug Bridge |
+| **Ollama** | Latest | Local LLM inference (default provider) |
 
-### LLM API Keys (at least one required)
+### LLM Provider Options
 
-- **OpenAI**: Get from https://platform.openai.com/api-keys
-- **Anthropic**: Get from https://console.anthropic.com/
+AgenticART supports multiple LLM providers. **Ollama is the default** (free, local, private):
+
+| Provider | Cost | Setup | Best For |
+|----------|------|-------|----------|
+| **Ollama** (default) | Free | Local install | Privacy, no API limits |
+| OpenAI | Paid | API key | GPT-4 quality |
+| Anthropic | Paid | API key | Claude models |
+
+> **Note:** You only need ONE provider. Ollama requires no API key.
 
 ---
 
@@ -38,21 +47,77 @@ Complete guide for setting up the LLM-powered Android penetration testing enviro
 
 ```bash
 # Clone repository
-git clone https://github.com/your-username/llm-android-pentest.git
+git clone https://github.com/GitSolved/AgenticART.git
 cd AgenticART
 
-# Run setup script
+# Option 1: Quick start with Ollama (recommended)
+# Install Ollama first: https://ollama.ai/download
+ollama pull qwen2.5-coder:32b
+pip install -r requirements.txt
+streamlit run webapp/app.py
+
+# Option 2: Run setup script
 ./scripts/setup.sh
 
-# Or manually:
+# Option 3: Use Docker
 cp config/.env.example config/.env
-# Edit config/.env to add your API key
-
-# Start with Docker
 docker-compose up webapp
 
 # Open http://localhost:8501
 ```
+
+---
+
+## Ollama Setup
+
+Ollama is the recommended LLM provider - free, private, and runs locally.
+
+### Step 1: Install Ollama
+
+**macOS:**
+```bash
+brew install ollama
+```
+
+**Linux:**
+```bash
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+**Windows:**
+Download from https://ollama.ai/download
+
+### Step 2: Start Ollama Service
+
+```bash
+ollama serve
+# Runs on http://localhost:11434
+```
+
+### Step 3: Pull a Model
+
+```bash
+# Recommended for exploit generation (requires 20GB+ RAM):
+ollama pull qwen2.5-coder:32b
+
+# Smaller alternative (8GB RAM):
+ollama pull qwen2.5-coder:14b
+
+# Uncensored option (won't refuse security prompts):
+ollama pull dolphin-mistral:7b
+```
+
+### Step 4: Verify
+
+```bash
+ollama list
+# Should show your pulled model(s)
+
+curl http://localhost:11434/api/tags
+# Should return JSON with models
+```
+
+> **Model Notes:** Standard Llama models have safety filters that may refuse exploit generation. Use Qwen-coder or Dolphin variants for security research.
 
 ---
 
@@ -160,10 +225,11 @@ docker-compose --profile full up -d
 # The ADB bridge container will automatically connect to Genymotion
 ```
 
-### Running Tests
+### Option 4: With Containerized Ollama
 
 ```bash
-docker-compose --profile test run --rm test
+# If you prefer Ollama in Docker instead of host install
+docker-compose --profile ollama up -d
 ```
 
 ---
@@ -183,17 +249,21 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 ### Step 2: Install Dependencies
 
 ```bash
+# Core dependencies
 pip install -r requirements.txt
 
+# For dojo training system
+pip install -r dojo/requirements.txt
+
 # For development (tests, linting)
-pip install pytest pytest-cov black ruff mypy
+pip install pytest ruff mypy
 ```
 
 ### Step 3: Configure Environment
 
 ```bash
 cp config/.env.example config/.env
-# Edit config/.env with your API keys
+# Edit config/.env if needed (defaults work with Ollama)
 ```
 
 ### Step 4: Run Application
@@ -204,6 +274,9 @@ streamlit run webapp/app.py
 
 # Or run CLI tools
 python scripts/run-scan.py --ip 192.168.56.101
+
+# Or run dojo training
+python -m dojo.test_end_to_end
 ```
 
 ---
@@ -215,20 +288,26 @@ python scripts/run-scan.py --ip 192.168.56.101
 Edit `config/.env`:
 
 ```bash
-# LLM Provider (required)
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-your-key-here
+# LLM Provider (default: ollama)
+LLM_PROVIDER=ollama
 
-# Alternative: Anthropic
+# Ollama Configuration (default provider - no API key needed)
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen2.5-coder:32b
+OLLAMA_TEMPERATURE=0.7
+OLLAMA_CONTEXT_LENGTH=32768
+
+# Alternative: OpenAI (requires API key)
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-your-key-here
+
+# Alternative: Anthropic (requires API key)
 # LLM_PROVIDER=anthropic
 # ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # Android Emulator
 EMULATOR_IP=192.168.56.101
 EMULATOR_PORT=5555
-
-# Safety settings
-AUTO_EXECUTE_SCRIPTS=false  # Require confirmation before running scripts
 ```
 
 ### Application Settings
@@ -247,6 +326,13 @@ Edit `config/emulator/genymotion.yaml` to define target profiles.
 
 ## Verification
 
+### Test Ollama Connection
+
+```bash
+curl http://localhost:11434/api/tags
+# Should return JSON with your models
+```
+
 ### Test ADB Connection
 
 ```bash
@@ -255,11 +341,11 @@ Edit `config/emulator/genymotion.yaml` to define target profiles.
 
 Expected output:
 ```
-[✓] Connected to 192.168.56.101:5555
-[✓] Shell access confirmed
+[OK] Connected to 192.168.56.101:5555
+[OK] Shell access confirmed
 
 DEVICE INFORMATION
-━━━━━━━━━━━━━━━━━━
+------------------
   Model:          SM-S911B (Galaxy S23)
   Android:        14 (API 34)
   Security Patch: 2023-11-01
@@ -274,15 +360,38 @@ python scripts/run-scan.py --ip 192.168.56.101 --quick
 
 ### Test Web Interface
 
-1. Start the application: `docker-compose up webapp`
+1. Start the application: `docker-compose up webapp` or `streamlit run webapp/app.py`
 2. Open http://localhost:8501
 3. Navigate to **Chat** tab
 4. Ask: "What vulnerabilities should I look for on Android 14?"
 5. Verify LLM responds with Android-specific guidance
 
+### Run Tests
+
+```bash
+# Run unit tests
+python -m pytest tests/ -v
+```
+
 ---
 
 ## Troubleshooting
+
+### Ollama not responding
+
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+
+# Start Ollama service
+ollama serve
+
+# Check if model is pulled
+ollama list
+
+# Pull model if missing
+ollama pull qwen2.5-coder:32b
+```
 
 ### Cannot connect to emulator
 
@@ -311,25 +420,23 @@ GENYMOTION_HOST=host.docker.internal docker-compose up webapp
 docker exec llm-pentest-webapp ping host.docker.internal
 ```
 
-### LLM API errors
+### Docker cannot reach Ollama
 
 ```bash
-# Check API key is set
-echo $OPENAI_API_KEY
+# Ollama must be running on host
+ollama serve
 
-# Test API directly
-curl https://api.openai.com/v1/models \
-  -H "Authorization: Bearer $OPENAI_API_KEY"
+# Docker uses host.docker.internal to reach host services
+# This is configured automatically in docker-compose.yml
 ```
 
-### ADB inside Docker fails
+### LLM refuses to generate exploits
 
 ```bash
-# Start the ADB bridge service
-docker-compose --profile full up -d adb-bridge
-
-# Check ADB bridge logs
-docker-compose logs adb-bridge
+# Standard Llama models have safety filters
+# Use uncensored/code-focused models instead:
+ollama pull qwen2.5-coder:32b    # Code-focused, fewer refusals
+ollama pull dolphin-mistral:7b   # Explicitly uncensored
 ```
 
 ### Port 8501 already in use
@@ -340,7 +447,7 @@ lsof -i :8501
 kill -9 <PID>
 
 # Or use different port
-docker-compose run -p 8502:8501 webapp
+streamlit run webapp/app.py --server.port 8502
 ```
 
 ---
@@ -348,26 +455,27 @@ docker-compose run -p 8502:8501 webapp
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     HOST MACHINE                            │
-│                                                             │
-│  ┌─────────────────┐       ┌─────────────────────────────┐ │
-│  │   Genymotion    │       │     Docker Environment      │ │
-│  │                 │       │                             │ │
-│  │  ┌───────────┐  │ ADB   │  ┌───────────────────────┐ │ │
-│  │  │  Android  │◄─┼───────┼──│  llm-pentest-webapp   │ │ │
-│  │  │  Emulator │  │       │  │  (Streamlit + Python) │ │ │
-│  │  └───────────┘  │       │  └───────────────────────┘ │ │
-│  │                 │       │            │               │ │
-│  │  192.168.56.101 │       │            ▼               │ │
-│  └─────────────────┘       │  ┌───────────────────────┐ │ │
-│                            │  │   OpenAI / Anthropic  │ │ │
-│                            │  │      API Calls        │ │ │
-│                            │  └───────────────────────┘ │ │
-│                            └─────────────────────────────┘ │
-│                                                             │
-│  Browser ──────────────────► http://localhost:8501          │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------+
+|                     HOST MACHINE                                  |
+|                                                                   |
+|  +-----------------+       +-------------------------------+      |
+|  |   Genymotion    |       |     Docker Environment        |      |
+|  |                 |       |                               |      |
+|  |  +-----------+  |  ADB  |  +-------------------------+  |      |
+|  |  |  Android  |<-+-------+--|  llm-pentest-webapp     |  |      |
+|  |  |  Emulator |  |       |  |  (Streamlit + Python)   |  |      |
+|  |  +-----------+  |       |  +------------+------------+  |      |
+|  |                 |       |               |               |      |
+|  |  192.168.56.101 |       |               v               |      |
+|  +-----------------+       |  +-------------------------+  |      |
+|                            |  | Ollama (host or Docker) |  |      |
+|  +-----------------+       |  | http://localhost:11434  |  |      |
+|  |     Ollama      |<------+--|                         |  |      |
+|  |  (recommended)  |       |  +-------------------------+  |      |
+|  +-----------------+       +-------------------------------+      |
+|                                                                   |
+|  Browser ------------------------> http://localhost:8501          |
++-------------------------------------------------------------------+
 ```
 
 ---
@@ -378,5 +486,5 @@ After setup is complete:
 
 1. **Explore the Web UI**: Chat with the LLM about Android exploitation
 2. **Run a Scan**: Use the Script Generator to create reconnaissance scripts
-3. **Try the Chain Runner**: Execute an automated pentest chain
-4. **Review Reports**: Check `output/reports/` for generated reports
+3. **Try the Dojo**: Run `python -m dojo.test_end_to_end` to generate training data
+4. **Check Logs**: See `output/logs/` for execution logs
