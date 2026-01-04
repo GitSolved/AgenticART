@@ -31,25 +31,21 @@ LLMs generate exploit code that **looks correct** but doesn't run:
 AgenticART creates a **feedback loop** between the model and a real Android device:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           FEEDBACK LOOP                                 │
-│                                                                         │
-│   ┌───────────┐     ┌───────────┐     ┌───────────┐     ┌──────────┐    │
-│   │ CHALLENGE │────▶│  GENERATE │────▶│  EXECUTE  │────▶│ SUCCESS? │  │
-│   └───────────┘     └─────▲─────┘     └───────────┘     └────┬─────┘    │
-│                           │                                   │         │
-│                           │         ┌────────────────────┐    │         │
-│                           └─────────│ EXTRACT ERROR      │◀───┘         │
-│                             RETRY   │ + INJECT CONTEXT   │   NO         │
-│                                     └────────────────────┘              │
-│                                              │                          │
-│                                              ▼ YES                      │
-│                                     ┌────────────────────┐              │
-│                                     │   TRAINING DATA    │              │
-│                                     │  ✓ Working scripts │              │
-│                                     │  ✓ Error→Fix pairs │              │
-│                                     └────────────────────┘              │
-└─────────────────────────────────────────────────────────────────────────┘
+     ┌───────────┐     ┌──────────┐     ┌─────────┐     ┌─────────┐
+     │ CHALLENGE │────▶│ GENERATE │────▶│ EXECUTE │────▶│  GRADE  │
+     └───────────┘     └────▲─────┘     └─────────┘     └────┬────┘
+                            │                                │
+                            │ + error context          Pass? │
+                      ┌─────┴─────┐                          │
+                      │   RETRY   │◀─────── No ──────────────┤
+                      └───────────┘                          │
+                                                             │ Yes
+                                                             ▼
+                                              ┌─────────────────────┐
+                                              │    TRAINING DATA    │
+                                              │  • Working scripts  │
+                                              │  • Error→Fix pairs  │
+                                              └─────────────────────┘
 ```
 
 **Failures become training data.** The model learns what works and how to recover from what doesn't.
