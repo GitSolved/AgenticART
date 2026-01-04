@@ -482,3 +482,141 @@ class Executor:
 
         # Unknown validation type, assume pass if execution succeeded
         return True
+
+
+class OnDeviceToolExecutor:
+    """Tier 2: Execute tools that run on the Android device.
+
+    This executor handles tools that run directly on the Android device,
+    either natively available or pushed via ADB. It wraps the base Executor
+    for ADB transport.
+    """
+
+    NATIVE_TOOLS = {
+        "sqlite3", "toybox", "toolbox", "sh", "netstat", "ps", "top",
+        "df", "mount", "cat", "ls", "grep", "find", "id", "whoami",
+        "getprop", "setprop", "logcat", "dmesg", "service", "cmd",
+    }
+
+    PUSHABLE_TOOLS = {
+        "frida-server": {
+            "binary_path": "binaries/android/frida-server",
+            "device_path": "/data/local/tmp/frida-server",
+            "executable": True,
+        },
+        "busybox": {
+            "binary_path": "binaries/android/busybox",
+            "device_path": "/data/local/tmp/busybox",
+            "executable": True,
+        },
+        "tcpdump": {
+            "binary_path": "binaries/android/tcpdump",
+            "device_path": "/data/local/tmp/tcpdump",
+            "executable": True,
+        },
+    }
+
+    def __init__(
+        self,
+        adb_executor: "Executor",
+        binaries_dir: Optional[str] = None,
+    ):
+        """Initialize the on-device tool executor."""
+        self.adb = adb_executor
+        self.binaries_dir = binaries_dir
+        self._tool_cache: dict[str, bool] = {}
+
+    def check_tool_available(self, tool: str) -> bool:
+        """Check if a tool is available on the device."""
+        if tool in self._tool_cache:
+            return self._tool_cache[tool]
+
+        result = self.adb.execute_adb(f"shell which {tool}")
+        available = result.success and tool in result.stdout
+
+        if not available:
+            for path in ["/system/bin/", "/system/xbin/", "/data/local/tmp/"]:
+                result = self.adb.execute_adb(f"shell test -x {path}{tool} && echo exists")
+                if result.success and "exists" in result.stdout:
+                    available = True
+                    break
+
+        self._tool_cache[tool] = available
+        return available
+
+    def get_available_tools(self) -> list[str]:
+        """Get list of available tools on the device."""
+        return [t for t in self.NATIVE_TOOLS if self.check_tool_available(t)]
+
+    def push_tool(self, tool: str) -> tuple[bool, str]:
+        """Push a tool binary to the device."""
+        if tool not in self.PUSHABLE_TOOLS:
+            return False, f"Tool not in pushable list: {tool}"
+
+        config = self.PUSHABLE_TOOLS[tool]
+        binary = str(config["binary_path"])
+        device = str(config["device_path"])
+
+        full_path = os.path.join(self.binaries_dir, binary) if self.binaries_dir else binary
+
+        if not os.path.exists(full_path):
+            return False, f"Binary not found: {full_path}"
+
+        result = self.adb.execute_adb(f"push {full_path} {device}")
+        if not result.success:
+            return False, f"Push failed: {result.stderr}"
+
+        if config.get("executable"):
+            self.adb.execute_adb(f"shell chmod +x {device}")
+
+        self._tool_cache.pop(tool, None)
+        return True, f"Pushed {tool} to {device}"
+
+    def execute_tool(
+        self,
+        tool: str,
+        args: str = "",
+        timeout: Optional[int] = None,
+        auto_push: bool = False,
+    ) -> ExecutionResult:
+        """Execute a tool on the device."""
+        if not self.check_tool_available(tool):
+            if auto_push and tool in self.PUSHABLE_TOOLS:
+                success, msg = self.push_tool(tool)
+                if not success:
+                    return ExecutionResult(
+                        success=False, exit_code=-1, stdout="", duration=0.0,
+                        stderr=f"Tool not available, push failed: {msg}",
+                        command=f"{tool} {args}", error_type="tool_not_found",
+                        blocked=False, tier_used=ExecutionTier.ON_DEVICE,
+                        tools_used=[tool],
+                    )
+            else:
+                return ExecutionResult(
+                    success=False, exit_code=-1, stdout="", duration=0.0,
+                    stderr=f"Tool not available on device: {tool}",
+                    command=f"{tool} {args}", error_type="tool_not_found",
+                    blocked=False, tier_used=ExecutionTier.ON_DEVICE,
+                    tools_used=[tool],
+                )
+
+        result = self.adb.execute_adb(f"shell {tool} {args}".strip(), timeout=timeout)
+
+        return ExecutionResult(
+            success=result.success, exit_code=result.exit_code,
+            stdout=result.stdout, stderr=result.stderr,
+            duration=result.duration, command=result.command,
+            error_type=result.error_type, blocked=result.blocked,
+            tier_used=ExecutionTier.ON_DEVICE, tools_used=["adb", tool],
+        )
+
+    def execute_sqlite_query(
+        self, database_path: str, query: str, timeout: Optional[int] = None,
+    ) -> ExecutionResult:
+        """Execute a SQLite query on a database."""
+        escaped = query.replace('"', '\\"')
+        return self.execute_tool("sqlite3", f'{database_path} "{escaped}"', timeout)
+
+    def clear_tool_cache(self) -> None:
+        """Clear the tool availability cache."""
+        self._tool_cache.clear()
