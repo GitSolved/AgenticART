@@ -20,50 +20,88 @@ AgenticART already captures exploitation trajectories. The Dojo Framework formal
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          DOJO FRAMEWORK                                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  ┌────────────────┐    ┌────────────────┐    ┌────────────────┐        │
-│  │   CURRICULUM   │    │    SPARRING    │    │    GRADING     │        │
-│  │  (Challenge    │───▶│  (Execution    │───▶│  (Quality      │        │
-│  │   Progression) │    │   Against AVD) │    │   Assessment)  │        │
-│  └────────────────┘    └────────────────┘    └────────────────┘        │
-│          │                     │                     │                   │
-│          │                     ▼                     │                   │
-│          │            ┌────────────────┐             │                   │
-│          │            │    SENSEI      │             │                   │
-│          │            │  (Feedback &   │◀────────────┘                   │
-│          │            │   Correction)  │                                 │
-│          │            └────────────────┘                                 │
-│          │                     │                                         │
-│          ▼                     ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────┐        │
-│  │                    TRAINING DATA PIPELINE                     │        │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │        │
-│  │  │ Positive │  │ Negative │  │  Error   │  │ Curated  │     │        │
-│  │  │ Examples │  │ Examples │  │ Recovery │  │   Kata   │     │        │
-│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │        │
-│  └─────────────────────────────────────────────────────────────┘        │
-│                              │                                           │
-│                              ▼                                           │
-│                    ┌────────────────┐                                   │
-│                    │   FINE-TUNING  │                                   │
-│                    │    (LoRA/MLX)  │                                   │
-│                    └────────────────┘                                   │
-│                              │                                           │
-│                              ▼                                           │
-│                    ┌────────────────┐                                   │
-│                    │  BELT UPGRADE  │                                   │
-│                    │  (Model v1.1)  │                                   │
-│                    └────────────────┘                                   │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------------+
+|                          DOJO FRAMEWORK                                 |
++-------------------------------------------------------------------------+
+|                                                                         |
+|  +------------------+    +------------------+    +------------------+   |
+|  |    CURRICULUM    |    |     SPARRING     |    |     GRADING      |   |
+|  |   (Challenge     |--->|   (Execution     |--->|    (Quality      |   |
+|  |    Progression)  |    |    Against AVD)  |    |    Assessment)   |   |
+|  +------------------+    +------------------+    +------------------+   |
+|          |                       |                       |              |
+|          |                       v                       |              |
+|          |              +------------------+             |              |
+|          |              |      SENSEI      |             |              |
+|          |              |   (Feedback &    |<------------+              |
+|          |              |    Correction)   |                            |
+|          |              +------------------+                            |
+|          |                       |                                      |
+|          v                       v                                      |
+|  +------------------------------------------------------------------+  |
+|  |                    TRAINING DATA PIPELINE                         |  |
+|  |  +--------------+  +--------------+  +--------------+             |  |
+|  |  |   Positive   |  |   Negative   |  |    Error     |             |  |
+|  |  |   Examples   |  |   Examples   |  |   Recovery   |             |  |
+|  |  +--------------+  +--------------+  +--------------+             |  |
+|  +------------------------------------------------------------------+  |
+|                              |                                          |
+|                              v                                          |
+|                    +------------------+                                 |
+|                    |   FINE-TUNING    |                                 |
+|                    |    (LoRA/MLX)    |                                 |
+|                    +------------------+                                 |
+|                                                                         |
++-------------------------------------------------------------------------+
 ```
 
 ---
 
-## 1. Curriculum System (Belt Progression)
+## Directory Structure
+
+```
+dojo/
+|-- __init__.py              # Package exports
+|-- config.py                # DojoConfig settings
+|-- models.py                # Core data models (Belt, Grade, Challenge, etc.)
+|-- exceptions.py            # Custom exceptions
+|
+|-- curriculum/              # Challenge system
+|   |-- __init__.py
+|   |-- challenger.py        # Orchestrates attempts with feedback loop
+|   |-- loader.py            # Loads challenges from YAML
+|   |-- executor.py          # Executes commands against device
+|   |-- context_injector.py  # Injects error context for retries
+|   |-- error_extractor.py   # Extracts actionable error information
+|   |
+|   |-- white_belt/          # Fundamentals
+|   |   +-- challenges.yaml
+|   |-- yellow_belt/         # Reconnaissance
+|   |   +-- challenges.yaml
+|   +-- orange_belt/         # Vulnerability mapping
+|       +-- challenges.yaml
+|
+|-- sensei/                  # Grading and training data
+|   |-- __init__.py
+|   |-- sensei.py            # Main orchestrator
+|   |-- grader.py            # Evaluates challenge sessions
+|   |-- exporter.py          # Exports to Alpaca/ShareGPT/DPO formats
+|   |-- progress_tracker.py  # Tracks model progress across sessions
+|   +-- training_extractor.py # Extracts training examples from sessions
+|
+|-- finetune/                # Model training utilities
+|   |-- __init__.py
+|   |-- config.py            # FinetuneConfig
+|   +-- packager.py          # Packages data for GPU training
+|
+|-- test_end_to_end.py       # Integration test
+|-- test_phase2.py           # Curriculum tests
++-- test_phase3.py           # Sensei tests
+```
+
+---
+
+## 1. Belt Progression System
 
 ### Belt Levels
 
@@ -73,593 +111,528 @@ AgenticART already captures exploitation trajectories. The Dojo Framework formal
 | 🟨 Yellow | Reconnaissance | Package listing, permission analysis | Complete device profile extraction |
 | 🟧 Orange | Vulnerability Mapping | CVE matching, version fingerprinting | Accurate CVE-to-device correlation |
 | 🟩 Green | Scripting | Python/Bash exploit scaffolding | Syntactically correct, executable scripts |
-| 🟦 Blue | Exploitation | Known CVE reproduction (Dirty COW, etc.) | Successful privilege escalation |
+| 🟦 Blue | Exploitation | Known CVE reproduction | Successful privilege escalation |
 | 🟪 Purple | Evasion | SELinux bypass, detection avoidance | Undetected execution |
 | 🟫 Brown | Chaining | Multi-phase attack orchestration | Complete chain from recon to verify |
 | ⬛ Black | Novel Exploit | Zero-day pattern generation | Working exploit for unpatched vuln |
 
-### Directory Structure
+> **Current Implementation:** White, Yellow, and Orange belt challenges are implemented. Higher belts are planned.
 
-```
-dojo/
-├── curriculum/
-│   ├── white_belt/
-│   │   ├── challenges.yaml
-│   │   ├── kata/
-│   │   │   ├── 001_adb_connect.py
-│   │   │   ├── 002_device_properties.py
-│   │   │   └── 003_package_listing.py
-│   │   └── tests/
-│   │       └── validate_white.py
-│   ├── yellow_belt/
-│   ├── orange_belt/
-│   └── ...
-├── sensei/
-│   ├── grader.py
-│   ├── feedback.py
-│   └── corrections/
-├── training/
-│   ├── positive_examples/
-│   ├── negative_examples/
-│   ├── error_recovery/
-│   └── curated_kata/
-└── exports/
-    ├── alpaca/
-    ├── sharegpt/
-    └── mlx/
-```
-
-### Challenge Definition Format
+### Challenge YAML Format
 
 ```yaml
-# dojo/curriculum/green_belt/challenges.yaml
+# dojo/curriculum/white_belt/challenges.yaml
 challenges:
-  - id: green_001
-    name: "Frida Hook Installation"
-    description: "Generate a Frida script that hooks android.app.Activity.onCreate"
-    difficulty: 3
-    belt: green
+  - id: white_001
+    name: "Device Android Version"
+    description: |
+      Write an ADB shell command that outputs the Android version.
+      The output should be just the version number (e.g., "11").
+    belt: white
+    difficulty: 1
+    script_type: adb
 
     inputs:
-      target_class: "android.app.Activity"
-      target_method: "onCreate"
+      device_id: "emulator-5554"
       device_context:
-        android_version: "10"
-        api_level: 29
-        frida_available: true
-
-    expected_output:
-      type: frida_script
-      must_contain:
-        - "Java.perform"
-        - "Java.use"
-        - ".implementation"
-      must_not_contain:
-        - "frida.hooks"  # Fake API
-        - "Interceptor.attach"  # Wrong context for Java
+        connection: "adb"
+        task: "retrieve Android version"
 
     validation:
-      - syntax_check: true
-      - execution_test: "frida -U -f com.test.app -l {script}"
-      - expected_behavior: "logs onCreate calls"
+      type: regex_match
+      pattern: "^\\d+(\\.\\d+)*"
 
-    scoring:
-      syntax_correct: 25
-      api_valid: 25
-      executes_successfully: 30
-      achieves_objective: 20
+    hints:
+      - "Use 'adb shell getprop' to read system properties"
+      - "Android version is stored in ro.build.version.release"
+
+    kata_solution: "shell getprop ro.build.version.release"
+
+    tags:
+      - fundamentals
+      - device-info
 ```
 
 ---
 
-## 2. Sensei Module (Feedback & Correction)
+## 2. Core Components
 
-### Purpose
-The Sensei analyzes model outputs and provides structured corrections that become training data.
+### ChallengeLoader
 
-### Implementation
+Loads and validates challenges from YAML files.
 
 ```python
-# dojo/sensei/grader.py
+from dojo.curriculum import ChallengeLoader
 
-from dataclasses import dataclass
-from enum import Enum
-from typing import Optional
+loader = ChallengeLoader()
+challenge = loader.load("white_001")
+all_white = loader.load_belt(Belt.WHITE)
+```
 
-class Grade(Enum):
-    PERFECT = "A"      # No corrections needed → positive example
-    GOOD = "B"         # Minor issues → positive with notes
-    ACCEPTABLE = "C"   # Functional but needs improvement
-    POOR = "D"         # Major issues → negative example with correction
-    FAIL = "F"         # Non-functional → negative example
+### Challenger
 
-@dataclass
-class SenseiAssessment:
-    challenge_id: str
-    model_output: str
-    grade: Grade
-    score: int  # 0-100
+Orchestrates challenge attempts with the feedback loop.
 
-    # Detailed feedback
-    syntax_issues: list[str]
-    api_errors: list[str]
-    logic_flaws: list[str]
-    security_issues: list[str]
+```python
+from dojo.curriculum import Challenger, ChallengeSession
 
-    # Correction
-    corrected_output: Optional[str]
-    correction_explanation: str
+challenger = Challenger(
+    loader=loader,
+    executor=executor,
+    llm_client=llm_client,
+    max_attempts=3,
+)
 
-    # Training data classification
-    is_positive_example: bool
-    is_negative_example: bool
-    is_error_recovery_example: bool
+session: ChallengeSession = challenger.run_challenge("white_001")
+print(f"Success: {session.final_success}")
+print(f"Attempts: {len(session.attempts)}")
+```
 
-class Sensei:
-    """The master who grades and corrects student (model) output."""
+### Executor
 
-    def __init__(self, validator_rules: dict):
-        self.validators = self._load_validators(validator_rules)
+Executes commands against the Android device with tier tracking.
 
-    def assess(self, challenge: Challenge, model_output: str) -> SenseiAssessment:
-        """Grade model output and generate corrections if needed."""
+```python
+from dojo.curriculum import Executor, ExecutionResult
 
-        # 1. Syntax validation
-        syntax_issues = self._check_syntax(model_output, challenge.expected_output.type)
+executor = Executor(adb_path="/usr/bin/adb", device_id="emulator-5554")
+result: ExecutionResult = executor.execute("shell getprop ro.build.version.release")
 
-        # 2. API validation (check for hallucinated APIs)
-        api_errors = self._check_api_validity(model_output, challenge.expected_output.type)
+print(f"Success: {result.success}")
+print(f"Output: {result.stdout}")
+print(f"Tier: {result.tier_used}")  # 1=ADB, 2=ON_DEVICE
+```
 
-        # 3. Logic validation
-        logic_flaws = self._check_logic(model_output, challenge)
+### ErrorExtractor & ContextInjector
 
-        # 4. Security validation (no backdoors, proper error handling)
-        security_issues = self._check_security(model_output)
+Extracts error information and injects it into retry prompts.
 
-        # 5. Calculate score
-        score = self._calculate_score(
-            challenge.scoring,
-            syntax_issues,
-            api_errors,
-            logic_flaws,
-            security_issues
-        )
+```python
+from dojo.curriculum import ErrorExtractor, ContextInjector
 
-        # 6. Generate correction if needed
-        corrected_output = None
-        if score < 80:
-            corrected_output = self._generate_correction(
-                model_output,
-                challenge,
-                syntax_issues + api_errors + logic_flaws
-            )
+extractor = ErrorExtractor()
+error_context = extractor.extract(result)
 
-        # 7. Classify for training
-        grade = self._score_to_grade(score)
-
-        return SenseiAssessment(
-            challenge_id=challenge.id,
-            model_output=model_output,
-            grade=grade,
-            score=score,
-            syntax_issues=syntax_issues,
-            api_errors=api_errors,
-            logic_flaws=logic_flaws,
-            security_issues=security_issues,
-            corrected_output=corrected_output,
-            correction_explanation=self._explain_corrections(
-                syntax_issues + api_errors + logic_flaws
-            ),
-            is_positive_example=(grade in [Grade.PERFECT, Grade.GOOD]),
-            is_negative_example=(grade in [Grade.POOR, Grade.FAIL]),
-            is_error_recovery_example=(corrected_output is not None)
-        )
-
-    def _check_api_validity(self, output: str, script_type: str) -> list[str]:
-        """Detect hallucinated APIs."""
-        errors = []
-
-        if script_type == "frida_script":
-            INVALID_FRIDA_PATTERNS = [
-                (r"frida\.hooks\.", "frida.hooks does not exist"),
-                (r"Frida\.hook\(", "Use Java.perform() and .implementation"),
-                (r"frida\.attach\(", "Use frida -U -f or Java.perform()"),
-            ]
-            for pattern, message in INVALID_FRIDA_PATTERNS:
-                if re.search(pattern, output):
-                    errors.append(message)
-
-        elif script_type == "kernel_exploit":
-            INVALID_KERNEL_PATTERNS = [
-                (r"PF_IOC", "PF_IOC is not a valid socket family"),
-                (r"msm_audio.*CVE-2020-0069", "CVE-2020-0069 affects cmdq, not audio"),
-            ]
-            for pattern, message in INVALID_KERNEL_PATTERNS:
-                if re.search(pattern, output):
-                    errors.append(message)
-
-        return errors
+injector = ContextInjector()
+retry_prompt = injector.inject(original_prompt, error_context)
 ```
 
 ---
 
-## 3. Execution Tier System
+## 3. Sensei Module (Grading & Training Data)
+
+### Sensei
+
+The main orchestrator that connects grading, extraction, and export.
+
+```python
+from dojo.sensei import Sensei
+
+sensei = Sensei(output_dir=Path("./dojo_output"))
+
+# Evaluate a single session
+assessment, examples = sensei.evaluate_session(session, model_id="qwen-v1")
+
+# Evaluate multiple sessions and run full cycle
+result = sensei.run_training_cycle(
+    sessions=sessions,
+    model_id="qwen-v1",
+    export_formats=[ExportFormat.ALPACA, ExportFormat.DPO],
+)
+print(result.summary())
+```
+
+### Grader
+
+Evaluates challenge sessions and produces assessments.
+
+```python
+from dojo.sensei import Grader, GradingResult
+
+grader = Grader()
+assessment: SenseiAssessment = grader.grade_session(session)
+
+print(f"Grade: {assessment.grade}")  # Grade.PERFECT, GOOD, ACCEPTABLE, POOR, FAIL
+print(f"Score: {assessment.score}")  # 0-100
+print(f"Syntax Issues: {assessment.syntax_issues}")
+print(f"API Errors: {assessment.api_errors}")
+```
+
+### Grade Enum
+
+```python
+from dojo.models import Grade
+
+class Grade(Enum):
+    PERFECT = "A"      # No corrections needed -> positive example
+    GOOD = "B"         # Minor issues -> positive with notes
+    ACCEPTABLE = "C"   # Functional but needs improvement
+    POOR = "D"         # Major issues -> negative example with correction
+    FAIL = "F"         # Non-functional -> negative example
+```
+
+### TrainingExtractor
+
+Extracts training examples from graded sessions.
+
+```python
+from dojo.sensei import TrainingExtractor
+
+extractor = TrainingExtractor()
+examples: list[TrainingExample] = extractor.extract_from_session(session, assessment)
+
+# Examples include:
+# - Positive examples (Grade A/B)
+# - Negative examples (Grade D/F)
+# - Error recovery pairs (failed -> fixed)
+```
+
+### TrainingDataExporter
+
+Exports training data in multiple formats.
+
+```python
+from dojo.sensei import TrainingDataExporter, ExportFormat
+
+exporter = TrainingDataExporter(output_dir=Path("./training_data"))
+
+# Export in Alpaca format (instruction/input/output)
+path = exporter.export(examples, ExportFormat.ALPACA)
+
+# Export in DPO format (chosen/rejected pairs)
+path = exporter.export(examples, ExportFormat.DPO)
+
+# Export in ShareGPT format (conversations)
+path = exporter.export(examples, ExportFormat.SHAREGPT)
+```
+
+### ProgressTracker
+
+Tracks model progress across training sessions.
+
+```python
+from dojo.sensei import ProgressTracker
+
+tracker = ProgressTracker(storage_path=Path("./progress"))
+tracker.record_assessment(model_id, assessment)
+
+progress = tracker.get_progress(model_id)
+print(f"Belt: {progress.current_belt}")
+print(f"Pass Rate: {progress.pass_rate}%")
+print(f"Ready for Promotion: {progress.ready_for_promotion}")
+```
+
+---
+
+## 4. Execution Tier System
 
 ### Overview
 
-The Dojo Framework uses a tiered execution model that prioritizes resource efficiency and ensures the trained model only learns techniques available at deployment time.
-
-### Tier Hierarchy
+The Dojo uses a tiered execution model that prioritizes resource efficiency.
 
 | Tier | Name | Description | When to Use |
 |------|------|-------------|-------------|
 | **1** | ADB | Pure shell commands via ADB | Always try first |
-| **2** | On-Device | Tools on Android (sqlite3, frida-server, busybox) | When ADB insufficient |
+| **2** | On-Device | Tools on Android (sqlite3, toybox) | When ADB insufficient |
 | **3** | External | Kali tools (nmap, metasploit) | **Preprocessing ONLY** |
 
 ### Tier Exhaustion Strategy
 
-The model MUST exhaust lower tiers before escalating:
-
 1. **Try Tier 1 first**: Can this be done with pure ADB commands?
 2. **Escalate to Tier 2**: If ADB is insufficient, use on-device tools
-3. **Tier 3 is preprocessing only**: If Tier 3 would be needed at runtime, the challenge is a bad fit
-
-### Kali Tools: Preprocessing, Not Runtime
-
-**Critical Architectural Decision**: Kali Linux tools are for **challenge creation and preprocessing only**. They are NOT used during model training execution.
-
-**Preprocessing Workflow:**
-1. Kali discovers target information (nmap scans, CVE matches, service versions)
-2. Results embedded in challenge YAML as `inputs` metadata
-3. Challenge becomes self-contained
-4. Student model receives pre-discovered info, exploits using Tier 1/2 only
-
-**Why This Matters**: Training-deployment mismatch is a critical anti-pattern. If we train the model to rely on `nmap` or `metasploit`, it will fail at deployment when those tools aren't available. The model should learn to exploit using only what's available on the target device.
-
-### Challenge Fitness Criteria
-
-Not all challenges are good fits for the mobile platform:
-
-| Criterion | Good Fit | Bad Fit |
-|-----------|----------|---------|
-| **Exploitation Method** | ADB commands, on-device scripts | Requires external network scanning |
-| **Information Gathering** | Device properties, app analysis | Continuous external recon loop |
-| **Tool Requirements** | Tier 1/2 sufficient | Tier 3 needed at runtime |
-| **Deployment Reality** | Works on any rooted device | Requires Kali container alongside |
-
-**If a challenge requires Tier 3 tools at runtime, it should be:**
-1. Reconfigured to embed discovered information in challenge metadata
-2. Restructured to use Tier 1/2 alternatives
-3. Marked as unsuitable for the mobile training curriculum
+3. **Tier 3 is preprocessing only**: Kali tools embed results in challenge metadata
 
 ### ExecutionResult Metadata
 
-Every execution captures tier information for training data analysis:
-
 ```python
-tier_used: int = 1           # 1=ADB, 2=ON_DEVICE, 3=EXTERNAL
-tools_used: list[str] = ["adb"]  # Tools used in execution
-```
-
-This enables analysis of tier usage patterns and identification of over-escalating challenges.
-
----
-
-## 4. Training Data Pipeline
-
-### Data Categories
-
-| Category | Source | Training Purpose |
-|----------|--------|------------------|
-| **Positive Examples** | Grade A/B outputs | "This is how to do it correctly" |
-| **Negative Examples** | Grade D/F outputs | "Don't do this" (with correction) |
-| **Error Recovery** | Failed → Fixed pairs | "When you see X error, fix with Y" |
-| **Curated Kata** | Hand-crafted golden examples | Canonical exploit patterns |
-
-### Export Formats
-
-```python
-# dojo/training/exporter.py
-
-class DojoExporter:
-    """Export training data in multiple formats."""
-
-    def export_alpaca(self, assessments: list[SenseiAssessment]) -> list[dict]:
-        """Alpaca format: instruction/input/output."""
-        examples = []
-
-        for a in assessments:
-            if a.is_positive_example:
-                examples.append({
-                    "instruction": f"Complete the {a.challenge.belt} belt challenge: {a.challenge.description}",
-                    "input": json.dumps(a.challenge.inputs),
-                    "output": a.model_output
-                })
-
-            if a.is_error_recovery_example:
-                examples.append({
-                    "instruction": f"Fix this {a.challenge.expected_output.type} script that has the following issues: {a.correction_explanation}",
-                    "input": a.model_output,
-                    "output": a.corrected_output
-                })
-
-        return examples
-
-    def export_dpo(self, assessments: list[SenseiAssessment]) -> list[dict]:
-        """Direct Preference Optimization format: chosen/rejected pairs."""
-        pairs = []
-
-        for a in assessments:
-            if a.is_negative_example and a.corrected_output:
-                pairs.append({
-                    "prompt": f"{a.challenge.description}\nContext: {json.dumps(a.challenge.inputs)}",
-                    "chosen": a.corrected_output,
-                    "rejected": a.model_output
-                })
-
-        return pairs
-
-    def export_mlx_lora(self, assessments: list[SenseiAssessment]) -> dict:
-        """MLX-compatible format for Apple Silicon fine-tuning."""
-        return {
-            "data": self.export_alpaca(assessments),
-            "config": {
-                "model": "WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B",
-                "adapter": "lora",
-                "lora_rank": 16,
-                "lora_alpha": 32,
-                "learning_rate": 1e-4,
-                "epochs": 3
-            }
-        }
+@dataclass
+class ExecutionResult:
+    success: bool
+    exit_code: int
+    stdout: str
+    stderr: str
+    duration: float
+    command: str
+    tier_used: ExecutionTier  # SHELL, ON_DEVICE, EXTERNAL
+    tools_used: list[str]
 ```
 
 ---
 
-## 5. Grading Mechanics
+## 5. Fine-tuning Pipeline
 
-### Scoring Rubric
+### TrainingPackager
+
+Creates portable packages for GPU training.
 
 ```python
-# dojo/sensei/scoring.py
+from dojo.finetune import TrainingPackager, FinetuneConfig
 
-class ScoringRubric:
-    """Standardized scoring across all challenges."""
+packager = TrainingPackager(output_dir=Path("./packages"))
 
-    CATEGORIES = {
-        "syntax": {
-            "weight": 0.25,
-            "checks": [
-                ("parseable", 10, "Code parses without errors"),
-                ("no_syntax_errors", 10, "No syntax errors"),
-                ("proper_indentation", 5, "Consistent indentation"),
-            ]
-        },
-        "api_correctness": {
-            "weight": 0.25,
-            "checks": [
-                ("valid_imports", 10, "All imports are real packages"),
-                ("valid_functions", 10, "All function calls exist"),
-                ("correct_signatures", 5, "Function signatures are correct"),
-            ]
-        },
-        "functionality": {
-            "weight": 0.30,
-            "checks": [
-                ("executes", 15, "Script runs without crashing"),
-                ("achieves_goal", 15, "Script accomplishes the objective"),
-            ]
-        },
-        "quality": {
-            "weight": 0.20,
-            "checks": [
-                ("error_handling", 10, "Proper error handling"),
-                ("no_hardcoded_paths", 5, "No hardcoded paths/values"),
-                ("idiomatic", 5, "Follows language idioms"),
-            ]
-        }
-    }
+config = FinetuneConfig(
+    base_model="Qwen/Qwen2.5-Coder-7B",
+    adapter_type="lora",
+    lora_rank=16,
+    learning_rate=1e-4,
+    epochs=3,
+)
+
+package_path = packager.create_package(
+    training_data_path=Path("./training_data/combined.json"),
+    config=config,
+)
 ```
 
-### Belt Promotion Logic
+### Package Contents
 
-```python
-# dojo/curriculum/progression.py
-
-class BeltProgression:
-    """Track model's belt level based on challenge performance."""
-
-    PROMOTION_REQUIREMENTS = {
-        "white": {"min_score": 70, "challenges_passed": 5},
-        "yellow": {"min_score": 75, "challenges_passed": 8},
-        "orange": {"min_score": 75, "challenges_passed": 10},
-        "green": {"min_score": 80, "challenges_passed": 12},
-        "blue": {"min_score": 80, "challenges_passed": 15},
-        "purple": {"min_score": 85, "challenges_passed": 15},
-        "brown": {"min_score": 85, "challenges_passed": 20},
-        "black": {"min_score": 90, "challenges_passed": 25},
-    }
-
-    def check_promotion(self, model_id: str, current_belt: str) -> Optional[str]:
-        """Check if model qualifies for next belt."""
-        history = self.get_assessment_history(model_id, current_belt)
-
-        passed = [a for a in history if a.score >= self.PROMOTION_REQUIREMENTS[current_belt]["min_score"]]
-
-        if len(passed) >= self.PROMOTION_REQUIREMENTS[current_belt]["challenges_passed"]:
-            return self._next_belt(current_belt)
-
-        return None
+```
+finetune_package_20250104_120000/
+|-- data/
+|   +-- training_data.json    # Alpaca format
+|-- config.json               # FinetuneConfig
+|-- train.py                  # Training script
+|-- train_mlx.py              # MLX training (Apple Silicon)
++-- README.md                 # Instructions
 ```
 
 ---
 
-## 6. Continuous Improvement Workflow
+## 6. Data Models
+
+### Core Models (dojo/models.py)
+
+```python
+from dojo.models import (
+    Belt,              # WHITE, YELLOW, ORANGE, GREEN, BLUE, PURPLE, BROWN, BLACK
+    Grade,             # PERFECT, GOOD, ACCEPTABLE, POOR, FAIL
+    ScriptType,        # ADB, PYTHON, FRIDA, BASH
+    Challenge,         # Challenge definition
+    ChallengeInput,    # Input context for challenge
+    ExpectedOutput,    # Expected output specification
+    ScoringRubric,     # Scoring weights
+    SenseiAssessment,  # Grading result
+    TrainingExample,   # Extracted training sample
+    ModelProgress,     # Model's progress tracking
+)
+```
+
+### Belt Model
+
+```python
+class Belt(Enum):
+    WHITE = "white"
+    YELLOW = "yellow"
+    ORANGE = "orange"
+    GREEN = "green"
+    BLUE = "blue"
+    PURPLE = "purple"
+    BROWN = "brown"
+    BLACK = "black"
+
+    @property
+    def display(self) -> str:
+        """Belt with color emoji."""
+        icons = {"white": "⬜", "yellow": "🟨", ...}
+        return f"{icons[self.value]} {self.value.title()}"
+
+    def next_belt(self) -> Optional[Belt]:
+        """Get the next belt in progression."""
+        ...
+```
+
+---
+
+## 7. Running the Dojo
+
+### End-to-End Test
+
+```bash
+# Run the complete dojo pipeline
+python -m dojo.test_end_to_end
+
+# This will:
+# 1. Load white belt challenges
+# 2. Run model against challenges
+# 3. Grade outputs with Sensei
+# 4. Extract training examples
+# 5. Export to Alpaca format
+```
+
+### Programmatic Usage
+
+```python
+from dojo import (
+    ChallengeLoader,
+    Challenger,
+    Executor,
+    Sensei,
+)
+from agent.llm_client import OllamaClient
+
+# Setup
+loader = ChallengeLoader()
+executor = Executor(device_id="emulator-5554")
+llm = OllamaClient(model="qwen2.5-coder:7b")
+
+challenger = Challenger(
+    loader=loader,
+    executor=executor,
+    llm_client=llm,
+    max_attempts=3,
+)
+
+sensei = Sensei()
+
+# Run challenges
+sessions = []
+for challenge_id in ["white_001", "white_002", "white_003"]:
+    session = challenger.run_challenge(challenge_id)
+    sessions.append(session)
+
+# Grade and export
+result = sensei.run_training_cycle(
+    sessions=sessions,
+    model_id="qwen-v1",
+    export_formats=[ExportFormat.ALPACA],
+)
+
+print(result.summary())
+```
+
+---
+
+## 8. Integration with AgenticART
+
+### Existing Components -> Dojo
+
+| Existing Component | Dojo Integration |
+|-------------------|------------------|
+| `agent/llm_client.py` | LLM provider for Challenger |
+| `agent/script_generator.py` | Can use Sensei for grading |
+| `core/exploitation/` | Executor wraps these modules |
+
+### Dojo Outputs -> Fine-tuning
+
+```
+dojo_output/
+|-- training_data/
+|   |-- alpaca_20250104_120000.json
+|   |-- dpo_20250104_120000.json
+|   +-- sharegpt_20250104_120000.json
+|-- progress/
+|   +-- model_progress.json
++-- packages/
+    +-- finetune_package_20250104_120000/
+```
+
+---
+
+## 9. Continuous Improvement Workflow
 
 ### The Dojo Loop
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        DAILY DOJO ROUTINE                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Morning Session (Automated)                                         │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ 1. Load current belt challenges                              │    │
-│  │ 2. Run model against 10-20 challenges                        │    │
-│  │ 3. Sensei grades all outputs                                 │    │
-│  │ 4. Export training data (positive/negative/recovery)         │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                              │                                       │
-│                              ▼                                       │
-│  Training Session (Weekly or on-demand)                              │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ 1. Aggregate week's training data                            │    │
-│  │ 2. Balance positive/negative examples                        │    │
-│  │ 3. Run LoRA fine-tuning (MLX on M3 Max)                     │    │
-│  │ 4. Evaluate on held-out test set                            │    │
-│  │ 5. If improved → promote model version                      │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                              │                                       │
-│                              ▼                                       │
-│  Belt Evaluation (After training)                                    │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ 1. Run full belt challenge suite                             │    │
-│  │ 2. Calculate pass rate                                       │    │
-│  │ 3. If promotion threshold met → award next belt             │    │
-│  │ 4. Unlock next belt's challenges                            │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### CLI Commands
-
-```bash
-# Run daily training session
-python -m dojo train --belt green --challenges 20
-
-# Grade a specific output
-python -m dojo grade --challenge green_001 --output script.py
-
-# Export training data
-python -m dojo export --format mlx --since 2025-01-01
-
-# Check belt status
-python -m dojo status --model whiterabbit-v1
-
-# Promote model after training
-python -m dojo promote --model whiterabbit-v1 --to yellow
-
-# Run full belt evaluation
-python -m dojo evaluate --model whiterabbit-v1 --belt green
++---------------------------------------------------------------------+
+|                        TRAINING CYCLE                               |
++---------------------------------------------------------------------+
+|                                                                     |
+|  1. Challenge Session                                               |
+|  +---------------------------------------------------------------+  |
+|  | Load challenges -> Run model -> Execute -> Collect attempts   |  |
+|  +---------------------------------------------------------------+  |
+|                              |                                      |
+|                              v                                      |
+|  2. Grading                                                         |
+|  +---------------------------------------------------------------+  |
+|  | Sensei grades -> Extract examples -> Update progress          |  |
+|  +---------------------------------------------------------------+  |
+|                              |                                      |
+|                              v                                      |
+|  3. Export                                                          |
+|  +---------------------------------------------------------------+  |
+|  | Export Alpaca/DPO -> Package for training                     |  |
+|  +---------------------------------------------------------------+  |
+|                              |                                      |
+|                              v                                      |
+|  4. Fine-tune (External)                                            |
+|  +---------------------------------------------------------------+  |
+|  | Run LoRA training -> Evaluate -> Deploy improved model        |  |
+|  +---------------------------------------------------------------+  |
+|                              |                                      |
+|                              v                                      |
+|  5. Belt Evaluation                                                 |
+|  +---------------------------------------------------------------+  |
+|  | Run belt suite -> Check promotion -> Unlock next belt         |  |
+|  +---------------------------------------------------------------+  |
+|                                                                     |
++---------------------------------------------------------------------+
 ```
 
 ---
 
-## 7. Integration Points
+## 10. Metrics
 
-### Existing AgenticART Components → Dojo
-
-| Existing Component | Dojo Integration |
-|-------------------|------------------|
-| `agent/script_generator.py` | Challenger (runs model against challenges) |
-| `agent/prompts/system_prompts.py` | Challenge prompt templates |
-| `core/exploits/attack_chain.py` | Sparring session (live execution) |
-| `scripts/export-training-data.py` | Extended with Dojo formats |
-| `output/attack_chains/` | Raw data → Sensei assessment |
-
-### New Dojo Entry Points
+### TrainingCycleResult
 
 ```python
-# In agent/script_generator.py, add:
+@dataclass
+class TrainingCycleResult:
+    assessments: list[SenseiAssessment]
+    examples: list[TrainingExample]
+    exports: dict[ExportFormat, Path]
+    progress: ModelProgress
+    promotion: Optional[Belt] = None
+    stats: dict = field(default_factory=dict)
 
-from dojo.sensei import Sensei
-from dojo.curriculum import ChallengeLoader
+    def summary(self) -> str:
+        """Human-readable summary."""
+        return f"""
+=== Training Cycle Complete ===
+Sessions graded: {len(self.assessments)}
+Examples extracted: {len(self.examples)}
+Files exported: {len(self.exports)}
 
-class ScriptGenerator:
-    def __init__(self, ...):
-        # Existing init
-        self.sensei = Sensei()
-        self.curriculum = ChallengeLoader()
-
-    def generate_with_assessment(self, challenge_id: str) -> tuple[str, SenseiAssessment]:
-        """Generate script and immediately assess it."""
-        challenge = self.curriculum.load(challenge_id)
-
-        # Generate using LLM
-        script = self.generate(
-            script_type=challenge.expected_output.type,
-            action=challenge.description,
-            target_config=challenge.inputs.get("device_context", {})
-        )
-
-        # Sensei grades it
-        assessment = self.sensei.assess(challenge, script)
-
-        # Log for training
-        self._log_training_data(assessment)
-
-        return script, assessment
+Model: {self.progress.model_id}
+Belt: {self.progress.current_belt.display}
+Pass Rate: {self.progress.pass_rate:.1f}%
+"""
 ```
 
----
+### ModelProgress
 
-## 8. Metrics Dashboard
+```python
+@dataclass
+class ModelProgress:
+    model_id: str
+    current_belt: Belt
+    challenges_attempted: int
+    challenges_passed: int
+    total_score: int
+    assessment_count: int
 
-### Track Progress Over Time
+    @property
+    def pass_rate(self) -> float:
+        if self.challenges_attempted == 0:
+            return 0.0
+        return (self.challenges_passed / self.challenges_attempted) * 100
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    DOJO METRICS DASHBOARD                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Model: WhiteRabbitNeo-ART-v1.2         Current Belt: 🟩 Green      │
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ Challenge Pass Rate (Last 7 Days)                            │    │
-│  │                                                               │    │
-│  │  White:  ████████████████████ 100%                           │    │
-│  │  Yellow: ████████████████████ 100%                           │    │
-│  │  Orange: ██████████████████░░  92%                           │    │
-│  │  Green:  ██████████████░░░░░░  73%  ← Current                │    │
-│  │  Blue:   ████████░░░░░░░░░░░░  41%  (Preview)                │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ Training Data Generated                                       │    │
-│  │                                                               │    │
-│  │  Positive Examples:     1,247                                 │    │
-│  │  Negative Examples:       389                                 │    │
-│  │  Error Recovery Pairs:    156                                 │    │
-│  │  Curated Kata:             45                                 │    │
-│  │  ────────────────────────────                                │    │
-│  │  Total Training Samples:  1,837                               │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ Version History                                               │    │
-│  │                                                               │    │
-│  │  v1.0  Base WhiteRabbitNeo         Belt: ⬜ White            │    │
-│  │  v1.1  +500 samples trained        Belt: 🟨 Yellow           │    │
-│  │  v1.2  +800 samples trained        Belt: 🟩 Green  ← Current │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+    @property
+    def average_score(self) -> float:
+        if self.assessment_count == 0:
+            return 0.0
+        return self.total_score / self.assessment_count
 ```
 
 ---
 
 ## Next Steps
 
-1. **Create `dojo/` directory structure**
-2. **Define initial White Belt challenges**
-3. **Implement Sensei grading logic**
-4. **Extend export-training-data.py with Dojo formats**
-5. **Set up MLX fine-tuning pipeline for M3 Max**
-6. **Run first training cycle**
-7. **Evaluate and iterate**
+1. **Implement Green+ belt challenges** - Extend curriculum beyond Orange
+2. **Add CLI interface** - `python -m dojo train`, `python -m dojo export`
+3. **Build metrics dashboard** - Streamlit visualization of progress
+4. **Integrate with webapp** - Add Dojo tab to existing Streamlit app
+5. **Automate training loop** - Scheduled daily challenge runs
 
 ---
 
