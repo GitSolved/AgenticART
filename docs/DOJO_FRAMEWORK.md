@@ -283,7 +283,70 @@ class Sensei:
 
 ---
 
-## 3. Training Data Pipeline
+## 3. Execution Tier System
+
+### Overview
+
+The Dojo Framework uses a tiered execution model that prioritizes resource efficiency and ensures the trained model only learns techniques available at deployment time.
+
+### Tier Hierarchy
+
+| Tier | Name | Description | When to Use |
+|------|------|-------------|-------------|
+| **1** | ADB | Pure shell commands via ADB | Always try first |
+| **2** | On-Device | Tools on Android (sqlite3, frida-server, busybox) | When ADB insufficient |
+| **3** | External | Kali tools (nmap, metasploit) | **Preprocessing ONLY** |
+
+### Tier Exhaustion Strategy
+
+The model MUST exhaust lower tiers before escalating:
+
+1. **Try Tier 1 first**: Can this be done with pure ADB commands?
+2. **Escalate to Tier 2**: If ADB is insufficient, use on-device tools
+3. **Tier 3 is preprocessing only**: If Tier 3 would be needed at runtime, the challenge is a bad fit
+
+### Kali Tools: Preprocessing, Not Runtime
+
+**Critical Architectural Decision**: Kali Linux tools are for **challenge creation and preprocessing only**. They are NOT used during model training execution.
+
+**Preprocessing Workflow:**
+1. Kali discovers target information (nmap scans, CVE matches, service versions)
+2. Results embedded in challenge YAML as `inputs` metadata
+3. Challenge becomes self-contained
+4. Student model receives pre-discovered info, exploits using Tier 1/2 only
+
+**Why This Matters**: Training-deployment mismatch is a critical anti-pattern. If we train the model to rely on `nmap` or `metasploit`, it will fail at deployment when those tools aren't available. The model should learn to exploit using only what's available on the target device.
+
+### Challenge Fitness Criteria
+
+Not all challenges are good fits for the mobile platform:
+
+| Criterion | Good Fit | Bad Fit |
+|-----------|----------|---------|
+| **Exploitation Method** | ADB commands, on-device scripts | Requires external network scanning |
+| **Information Gathering** | Device properties, app analysis | Continuous external recon loop |
+| **Tool Requirements** | Tier 1/2 sufficient | Tier 3 needed at runtime |
+| **Deployment Reality** | Works on any rooted device | Requires Kali container alongside |
+
+**If a challenge requires Tier 3 tools at runtime, it should be:**
+1. Reconfigured to embed discovered information in challenge metadata
+2. Restructured to use Tier 1/2 alternatives
+3. Marked as unsuitable for the mobile training curriculum
+
+### ExecutionResult Metadata
+
+Every execution captures tier information for training data analysis:
+
+```python
+tier_used: int = 1           # 1=ADB, 2=ON_DEVICE, 3=EXTERNAL
+tools_used: list[str] = ["adb"]  # Tools used in execution
+```
+
+This enables analysis of tier usage patterns and identification of over-escalating challenges.
+
+---
+
+## 4. Training Data Pipeline
 
 ### Data Categories
 
@@ -354,7 +417,7 @@ class DojoExporter:
 
 ---
 
-## 4. Grading Mechanics
+## 5. Grading Mechanics
 
 ### Scoring Rubric
 
@@ -432,7 +495,7 @@ class BeltProgression:
 
 ---
 
-## 5. Continuous Improvement Workflow
+## 6. Continuous Improvement Workflow
 
 ### The Dojo Loop
 
@@ -495,7 +558,7 @@ python -m dojo evaluate --model whiterabbit-v1 --belt green
 
 ---
 
-## 6. Integration Points
+## 7. Integration Points
 
 ### Existing AgenticART Components → Dojo
 
@@ -543,7 +606,7 @@ class ScriptGenerator:
 
 ---
 
-## 7. Metrics Dashboard
+## 8. Metrics Dashboard
 
 ### Track Progress Over Time
 
