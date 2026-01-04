@@ -49,7 +49,7 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
                                  │             └────────┬────────┘             │
                                  │                      │                      │
                           ┌──────▼──────┐               │                      │
-                          │    RETRY    │<──────────────┘                      │
+                          │    RETRY    │<──────────────┘                      │         
                           └─────────────┘                                      │
                                                                                │
                                                                                │
@@ -57,9 +57,9 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
                                                                       ┌────────▼─────────┐
                                                                       │ TRAINING DATA    | 
                                                                       │                  |
-                                                                      │ ✓ Working         
-                                                                      │   scripts        
-                                                                      │ ✓ Error-Fix      
+                                                                      │ ✓ Working        |
+                                                                      │   scripts        |
+                                                                      │ ✓ Error-Fix      |
                                                                       │   pairs          |
                                                                       └──────────────────┘
 
