@@ -36,7 +36,7 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
 
     ┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
     │  CHALLENGE   │─────>│   GENERATE   │─────>│   EXECUTE    │─────>│   SUCCESS?   │
-    └──────────────┘      └──────┬───────┘      └──────────────┘      └──────┬───────┘
+    └──────────────┘      └──────┬───────┘      └──────────────┘      └────────┬─────┘
                                  │                                             │
                                  │                                             │
                                  │                      ┌──────────────────────┤
@@ -48,20 +48,20 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
                                  │             │ INJECT CONTEXT  │             │
                                  │             └────────┬────────┘             │
                                  │                      │                      │
-                          ┌──────▼──────┐              │                      │
-                          │    RETRY    │<─────────────┘                      │
-                          └─────────────┘                                     │
+                          ┌──────▼──────┐               │                      │
+                          │    RETRY    │<──────────────┘                      │
+                          └─────────────┘                                      │
                                                                                │
                                                                                │
                                                                                │
-                                                                      ┌────────▼────────┐
-                                                                      │ TRAINING DATA   │
-                                                                      │                 │
-                                                                      │ ✓ Working       │
-                                                                      │   scripts       │
-                                                                      │ ✓ Error-Fix     │
-                                                                      │   pairs         │
-                                                                      └─────────────────┘
+                                                                      ┌────────▼─────────┐
+                                                                      │ TRAINING DATA    | 
+                                                                      │                  |
+                                                                      │ ✓ Working         
+                                                                      │   scripts        
+                                                                      │ ✓ Error-Fix      
+                                                                      │   pairs          |
+                                                                      └──────────────────┘
 
 ``````
 ```
