@@ -193,7 +193,6 @@ class Executor:
             allow_real_device = os.getenv("ALLOW_REAL_DEVICE", "").lower() == "true"
 
         if not allow_real_device:
-            assert self.device_id is not None  # guaranteed by default value
             if not self._is_emulator_device(self.device_id):
                 raise ValueError(
                     f"Device '{self.device_id}' does not appear to be an emulator. "
@@ -265,9 +264,7 @@ class Executor:
         if command.lower().startswith("adb "):
             command = command[4:].strip()
 
-        # Build command with device specifier
-        assert self.adb_path is not None
-        assert self.device_id is not None
+        # Build command with device specifier (adb_path and device_id always have defaults)
         cmd_parts = [self.adb_path, "-s", self.device_id]
 
         # Handle shell commands specially to preserve quoting
