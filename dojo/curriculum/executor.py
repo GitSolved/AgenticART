@@ -73,6 +73,12 @@ class Executor:
     commands while still collecting useful error training data.
     """
 
+    # Instance variables (always have values after __init__ due to defaults)
+    device_id: str
+    adb_path: str
+    timeout: int
+    disable_blocklist: bool
+
     # Dangerous command patterns - blocked in training mode
     DANGEROUS_COMMAND_PATTERNS = {
         "destructive_delete": [
@@ -184,8 +190,8 @@ class Executor:
             ValueError: If device_id looks like a real device and
                 allow_real_device is False.
         """
-        self.device_id = device_id or os.getenv("EMULATOR_DEVICE", "emulator-5554")
-        self.adb_path = adb_path or os.getenv("ADB_PATH", "adb")
+        self.device_id = device_id if device_id else (os.getenv("EMULATOR_DEVICE") or "emulator-5554")
+        self.adb_path = adb_path if adb_path else (os.getenv("ADB_PATH") or "adb")
         self.timeout = timeout
         self.disable_blocklist = disable_blocklist
 
