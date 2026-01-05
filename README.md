@@ -68,6 +68,8 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
 
 **Failures become training data.** The model learns what works and how to recover from what doesn't.
 
+AgenticART targets **Android** devices, with testing focused on Samsung, Xiaomi, and Google Pixel phones and their corresponding emulator images.  
+
 ---
 
 ## Quick Start
