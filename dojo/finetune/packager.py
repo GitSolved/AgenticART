@@ -101,7 +101,7 @@ def main():
         config = json.load(f)
 
     model_path = config.get("huggingface_model", "WhiteRabbitNeo/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B")
-    
+
     print("=" * 60)
     print("AgenticART Dojo - Fine-Tuning (MLX / Apple Silicon)")
     print("=" * 60)
@@ -131,13 +131,13 @@ def main():
                 # MLX LoRA 'text' format
                 entry = {"text": f"{prompt} {completion}"}
                 f.write(json.dumps(entry) + "\\n")
-    
+
     write_jsonl(train_data, "train.jsonl")
     write_jsonl(valid_data, "valid.jsonl")
-    
+
     print(f"Data prepared. Starting MLX training...")
     print("🚀 IGNITING 40-CORE GPU via MLX CLI...")
-    
+
     # Construct MLX CLI command
     cmd = (
         f"python3 -m mlx_lm.lora "
@@ -151,9 +151,9 @@ def main():
         f"--num-layers 16 "
         f"--seed 42"
     )
-    
+
     exit_code = os.system(cmd)
-    
+
     if exit_code == 0:
         print("=" * 60)
         print("Training complete!")

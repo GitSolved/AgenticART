@@ -230,11 +230,12 @@ class MLXLLMClient:
 
     def __init__(self, model_path: str, adapter_path: Optional[str] = None):
         from pathlib import Path
+
         from mlx_lm import load
 
         # Expand variables and resolve path for local check
         expanded_path = Path(os.path.expandvars(os.path.expanduser(model_path)))
-        
+
         if expanded_path.exists():
             load_path = str(expanded_path.resolve())
             print(f"🚀 Loading Native MLX Brain (Local): {load_path}...")
@@ -256,6 +257,7 @@ class MLXLLMClient:
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         import re
+
         from mlx_lm import stream_generate
 
         # Parse the prompt to extract Instruction and Input
@@ -275,19 +277,19 @@ class MLXLLMClient:
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        
+
         full_content = instruction
         if input_context:
             full_content += f"\n\nInput:\n{input_context}"
-            
+
         messages.append({"role": "user", "content": full_content})
 
         # Try using chat template
         try:
             if hasattr(self.tokenizer, "apply_chat_template"):
                 formatted_prompt = self.tokenizer.apply_chat_template(
-                    messages, 
-                    tokenize=False, 
+                    messages,
+                    tokenize=False,
                     add_generation_prompt=True
                 )
             else:
@@ -302,7 +304,7 @@ class MLXLLMClient:
         # Manual streaming to support stop tokens
         stop_sequences = ["<|endoftext|>", "###", "Human:", "Assistant:", "\n\n", "<|im_end|>"]
         response_text = ""
-        
+
         for response in stream_generate(self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=256):
             response_text += response.text
             if any(stop in response_text for stop in stop_sequences):
@@ -313,7 +315,7 @@ class MLXLLMClient:
 
         # Post-processing to handle hallucinations
         lines = response_text.strip().split('\n')
-        
+
         # Priority 1: Find the line that actually contains the command
         for line in lines:
             clean_line = line.strip()
@@ -324,7 +326,7 @@ class MLXLLMClient:
             # Also accept 'adb shell' and strip 'adb '
             if clean_line.startswith('adb shell '):
                 return clean_line[4:] # Strip 'adb ' to keep 'shell ...'
-        
+
         # Priority 2: Return the first non-empty line if no 'shell' prefix found
         for line in lines:
             clean_line = line.strip().replace('`', '')
@@ -332,7 +334,7 @@ class MLXLLMClient:
                 # If it looks like a command but missing 'shell', maybe prepend it?
                 # But for now, just return it.
                 return clean_line
-        
+
         print(f"[DEBUG] No command found in response:\n{response_text}")
         return ""
 
@@ -350,7 +352,7 @@ def run_end_to_end(
 ) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
     import yaml
-    
+
     # Load defaults from settings.yaml
     settings = {}
     settings_path = Path(project_root) / "config" / "settings.yaml"
@@ -365,13 +367,13 @@ def run_end_to_end(
     llm_settings = settings.get("agent", {}).get("llm", {})
     if not mode:
         mode = llm_settings.get("provider", "mlx")
-    
+
     if not model:
         if mode == "mlx":
             model = llm_settings.get("mlx", {}).get("model")
         elif mode == "live":
             model = llm_settings.get("ollama", {}).get("model")
-    
+
     if not adapter and mode == "mlx":
         adapter = llm_settings.get("mlx", {}).get("adapter")
 

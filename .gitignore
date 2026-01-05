@@ -82,3 +82,4 @@ htmlcov/
 *.log
 *.tmp
 *.bak
+archived_runs/
