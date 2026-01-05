@@ -12,7 +12,14 @@ project:
 agent:
   # LLM Provider settings
   llm:
-    provider: "ollama"  # ollama | openai | anthropic
+    provider: "mlx"  # ollama | openai | anthropic | mlx
+
+    # MLX-specific settings (Apple Silicon)
+    mlx:
+      model: "mlx-community/Qwen2.5-72B-Instruct-4bit"
+      adapter: "mlx_adapters"  # Optional LoRA adapter path
+      temperature: 0.7
+      max_tokens: 2048
 
     # Ollama-specific settings
     ollama:

@@ -13,6 +13,10 @@ import argparse
 import os
 import shutil
 import sys
+
+# Suppress tokenizer parallelism warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -60,6 +64,55 @@ def find_adb_path() -> str:
                 return path
 
     return "adb"
+
+
+# --- ENGINE STATE UTILS ---
+def set_engine_state(status: str):
+    """Update the engine state file for the dashboard."""
+    output_dir = Path(project_root) / "dojo_output"
+    state_path = output_dir / "engine_state.json"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    current = {"status": "idle", "accumulated_seconds": 0, "start_time": None}
+    if state_path.exists():
+        try:
+            with open(state_path, "r") as f:
+                import json
+                current = json.load(f)
+        except Exception:
+            pass
+
+    now = datetime.now()
+    start_time_str = current.get("start_time")
+    accumulated = current.get("accumulated_seconds", 0)
+
+    if status == "running":
+        start_time_str = now.isoformat()
+    else:
+        if current.get("status") == "running" and start_time_str:
+            try:
+                start_dt = datetime.fromisoformat(str(start_time_str))
+                raw_acc = current.get("accumulated_seconds", 0.0)
+                # Ensure it's a float
+                accumulated = (
+                    float(raw_acc) if isinstance(raw_acc, (int, float, str)) else 0.0
+                )
+                accumulated += (now - start_dt).total_seconds()
+            except Exception:
+                pass
+        start_time_str = None
+
+    with open(state_path, "w") as f:
+        import json
+        json.dump(
+            {
+                "status": status,
+                "start_time": start_time_str,
+                "accumulated_seconds": accumulated,
+                "last_update": now.isoformat(),
+            },
+            f,
+        )
 
 
 # ============================================================================
@@ -172,12 +225,157 @@ class MockLLMClient:
         return "shell echo 'unknown challenge'"
 
 
+class MLXLLMClient:
+    """Native MLX client for high-performance benchmarking on Apple Silicon."""
+
+    def __init__(self, model_path: str, adapter_path: Optional[str] = None):
+        from pathlib import Path
+        from mlx_lm import load
+
+        # Expand variables and resolve path for local check
+        expanded_path = Path(os.path.expandvars(os.path.expanduser(model_path)))
+        
+        if expanded_path.exists():
+            load_path = str(expanded_path.resolve())
+            print(f"🚀 Loading Native MLX Brain (Local): {load_path}...")
+        else:
+            load_path = model_path
+            print(f"🚀 Loading Native MLX Brain (HF Hub): {load_path}...")
+
+        if adapter_path:
+            print(f"   + Adapter: {adapter_path}")
+
+        # Capture all returned values to be version-agnostic
+        if adapter_path:
+            results = load(load_path, adapter_path=adapter_path)
+        else:
+            results = load(load_path)
+
+        self.model = results[0]
+        self.tokenizer = results[1]
+
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        import re
+        from mlx_lm import stream_generate
+
+        # Parse the prompt to extract Instruction and Input
+        input_match = re.search(r"## Device Context", prompt)
+        if input_match:
+            input_start = input_match.start()
+            raw_input = prompt[input_start:]
+            input_context = raw_input.replace("## Device Context", "Device Context:")
+            pre_input = prompt[:input_start].strip()
+            diff_match = re.search(r"Difficulty: \d+/\d+", pre_input)
+            instruction = pre_input[diff_match.end():].strip() if diff_match else pre_input.strip()
+        else:
+            instruction = prompt.strip()
+            input_context = ""
+
+        # Construct messages for chat template
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        
+        full_content = instruction
+        if input_context:
+            full_content += f"\n\nInput:\n{input_context}"
+            
+        messages.append({"role": "user", "content": full_content})
+
+        # Try using chat template
+        try:
+            if hasattr(self.tokenizer, "apply_chat_template"):
+                formatted_prompt = self.tokenizer.apply_chat_template(
+                    messages, 
+                    tokenize=False, 
+                    add_generation_prompt=True
+                )
+            else:
+                raise AttributeError("No chat template")
+        except Exception:
+            # Fallback to manual formatting
+            if input_context:
+                formatted_prompt = f"### Instruction:\n{instruction}\n\n### Input:\n{input_context}\n\n### Response: "
+            else:
+                formatted_prompt = f"### Instruction:\n{instruction}\n\n### Response: "
+
+        # Manual streaming to support stop tokens
+        stop_sequences = ["<|endoftext|>", "###", "Human:", "Assistant:", "\n\n", "<|im_end|>"]
+        response_text = ""
+        
+        for response in stream_generate(self.model, self.tokenizer, prompt=formatted_prompt, max_tokens=256):
+            response_text += response.text
+            if any(stop in response_text for stop in stop_sequences):
+                for stop in stop_sequences:
+                    if stop in response_text:
+                        response_text = response_text[:response_text.find(stop)]
+                break
+
+        # Post-processing to handle hallucinations
+        lines = response_text.strip().split('\n')
+        
+        # Priority 1: Find the line that actually contains the command
+        for line in lines:
+            clean_line = line.strip()
+            # Handle markdown code blocks
+            clean_line = clean_line.replace('`', '').strip()
+            if clean_line.startswith('shell '):
+                return clean_line
+            # Also accept 'adb shell' and strip 'adb '
+            if clean_line.startswith('adb shell '):
+                return clean_line[4:] # Strip 'adb ' to keep 'shell ...'
+        
+        # Priority 2: Return the first non-empty line if no 'shell' prefix found
+        for line in lines:
+            clean_line = line.strip().replace('`', '')
+            if clean_line:
+                # If it looks like a command but missing 'shell', maybe prepend it?
+                # But for now, just return it.
+                return clean_line
+        
+        print(f"[DEBUG] No command found in response:\n{response_text}")
+        return ""
+
+
 # ============================================================================
 # End-to-End Runner
 # ============================================================================
 
-def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: str = "white", model: Optional[str] = None) -> int:
+def run_end_to_end(
+    mode: str = "mlx",
+    device_id: str = "emulator-5554",
+    belt: str = "white",
+    model: Optional[str] = None,
+    adapter: Optional[str] = None,
+) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
+    import yaml
+    
+    # Load defaults from settings.yaml
+    settings = {}
+    settings_path = Path(project_root) / "config" / "settings.yaml"
+    if settings_path.exists():
+        try:
+            with open(settings_path, "r") as f:
+                settings = yaml.safe_load(f)
+        except Exception as e:
+            print(f"Warning: Could not load settings.yaml: {e}")
+
+    # Resolve mode and model from settings if not provided
+    llm_settings = settings.get("agent", {}).get("llm", {})
+    if not mode:
+        mode = llm_settings.get("provider", "mlx")
+    
+    if not model:
+        if mode == "mlx":
+            model = llm_settings.get("mlx", {}).get("model")
+        elif mode == "live":
+            model = llm_settings.get("ollama", {}).get("model")
+    
+    if not adapter and mode == "mlx":
+        adapter = llm_settings.get("mlx", {}).get("adapter")
+
+    set_engine_state("running")
 
     belt_enum = Belt.from_string(belt)
 
@@ -204,17 +402,30 @@ def run_end_to_end(mode: str = "mock", device_id: str = "emulator-5554", belt: s
     if mode == "mock":
         llm = MockLLMClient()
         print("LLM: Mock (returns expected answers)")
+    elif mode == "mlx":
+        try:
+            model_path = model or "models/whiterabbit-7b-dojo-4bit"
+            llm = MLXLLMClient(model_path=model_path, adapter_path=adapter)
+            print(f"LLM: Native MLX ({model_path})")
+        except Exception as e:
+            print(f"ERROR: {e}")
+            return 1
     elif mode == "live":
-        model_name = model or "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"
-        llm = OllamaClient(model=model_name)
-        if not llm.is_available():
-            print("ERROR: Ollama not running")
+        try:
+            # Use OllamaClient from agent package for live mode to match imports
+            model_name = (
+                model
+                or "hf.co/bartowski/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-GGUF:Q4_K_M"
+            )
+            llm = OllamaClient(model=model_name)
+            print(f"LLM: Ollama ({llm.model})")
+        except Exception as e:
+            print(f"ERROR: {e}")
             print("Falling back to mock mode")
             llm = MockLLMClient()
-        else:
-            print(f"LLM: Ollama ({model_name})")
     else:
         print(f"Unknown mode: {mode}")
+        set_engine_state("idle")
         return 1
 
     print()
@@ -381,9 +592,9 @@ def main():
     parser = argparse.ArgumentParser(description="End-to-End Test")
     parser.add_argument(
         "--mode",
-        choices=["mock", "live"],
-        default="mock",
-        help="LLM mode: mock (expected answers) or live (Ollama)",
+        choices=["mock", "live", "mlx"],
+        default=None,
+        help="LLM mode: mock, live (Ollama), or mlx (Native Mac). Defaults to settings.yaml",
     )
     parser.add_argument(
         "--device",
@@ -401,9 +612,20 @@ def main():
         default=None,
         help="Ollama model name (default: WhiteRabbitNeo)",
     )
+    parser.add_argument(
+        "--adapter",
+        default=None,
+        help="Path to LoRA adapters (MLX mode only)",
+    )
 
     args = parser.parse_args()
-    exit_code = run_end_to_end(mode=args.mode, device_id=args.device, belt=args.belt, model=args.model)
+    exit_code = run_end_to_end(
+        mode=args.mode,
+        device_id=args.device,
+        belt=args.belt,
+        model=args.model,
+        adapter=args.adapter,
+    )
     sys.exit(exit_code)
 
 

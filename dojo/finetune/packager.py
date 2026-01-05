@@ -66,219 +66,104 @@ class TrainingPackager:
         return package_dir
 
     def _create_training_script(self, package_dir: Path, config: FinetuneConfig):
-        """Create the main training script."""
+        """Create the main training script (MLX Optimized)."""
         script = '''#!/usr/bin/env python3
 """
-Fine-tune WhiteRabbitNeo on ADB Dojo training data using Unsloth.
+Fine-tune WhiteRabbitNeo on ADB Dojo training data using MLX (Apple Silicon).
 
 Requirements:
-- NVIDIA GPU with 16GB+ VRAM (or 8GB with aggressive quantization)
+- Apple Silicon Mac (M1/M2/M3) with macOS 13.3+
 - Python 3.10+
 - See requirements.txt for dependencies
 
 Usage:
     python train.py
-    python train.py --epochs 5 --batch-size 2
+    python train.py --iters 600 --batch-size 4
 """
 
 import argparse
 import json
+import os
+import sys
 from pathlib import Path
 
 def main():
-    parser = argparse.ArgumentParser(description="Fine-tune WhiteRabbitNeo on ADB data")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
+    parser = argparse.ArgumentParser(description="Fine-tune WhiteRabbitNeo on ADB data (MLX)")
+    parser.add_argument("--iters", type=int, default=600, help="Number of training iterations")
     parser.add_argument("--batch-size", type=int, default=4, help="Batch size")
-    parser.add_argument("--learning-rate", type=float, default=2e-4, help="Learning rate")
-    parser.add_argument("--max-seq-length", type=int, default=2048, help="Max sequence length")
-    parser.add_argument("--output-dir", type=str, default="./output", help="Output directory")
+    parser.add_argument("--learning-rate", type=float, default=1e-5, help="Learning rate")
+    parser.add_argument("--adapter-path", type=str, default="mlx_adapters", help="Output adapter path")
+    parser.add_argument("--data-dir", type=str, default="data", help="Data directory")
     args = parser.parse_args()
 
     # Load config
     with open("config.json") as f:
         config = json.load(f)
 
-    # Override with CLI args
-    config["num_epochs"] = args.epochs
-    config["batch_size"] = args.batch_size
-    config["learning_rate"] = args.learning_rate
-    config["max_seq_length"] = args.max_seq_length
-    config["output_dir"] = args.output_dir
-
+    model_path = config.get("huggingface_model", "WhiteRabbitNeo/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B")
+    
     print("=" * 60)
-    print("AgenticART Dojo - Fine-Tuning")
+    print("AgenticART Dojo - Fine-Tuning (MLX / Apple Silicon)")
     print("=" * 60)
-    print(f"Model: {config['huggingface_model']}")
-    print(f"Epochs: {config['num_epochs']}")
-    print(f"Batch Size: {config['batch_size']}")
-    print(f"Learning Rate: {config['learning_rate']}")
-    print()
+    print(f"Model: {model_path}")
+    print(f"Iterations: {args.iters}")
+    print(f"Batch Size: {args.batch_size}")
+    print(f"Adapter Path: {args.adapter_path}")
+    print("=" * 60)
 
-    try:
-        from unsloth import FastLanguageModel
-        from unsloth import is_bfloat16_supported
-        USE_UNSLOTH = True
-        print("Using Unsloth for optimized training")
-    except ImportError:
-        USE_UNSLOTH = False
-        print("Unsloth not available, using standard transformers")
-
-    from datasets import Dataset
-    from transformers import TrainingArguments
-    from trl import SFTTrainer
-
-    # Load training data
-    print("\\nLoading training data...")
+    # Prepare Data for MLX (JSONL format)
+    print(f"Preparing data in {args.data_dir}...")
     with open(config["training_data_path"]) as f:
-        training_data = json.load(f)
-    print(f"Loaded {len(training_data)} examples")
+        raw_data = json.load(f)
 
-    # Format for training
-    def format_alpaca(example):
-        if example.get("input"):
-            text = f"""### Instruction:
-{example["instruction"]}
+    # Split data (90/10)
+    split_idx = int(len(raw_data) * 0.9)
+    train_data = raw_data[:split_idx]
+    valid_data = raw_data[split_idx:] or [raw_data[-1]]
 
-### Input:
-{example["input"]}
-
-### Response:
-{example["output"]}"""
-        else:
-            text = f"""### Instruction:
-{example["instruction"]}
-
-### Response:
-{example["output"]}"""
-        return {"text": text}
-
-    dataset = Dataset.from_list(training_data)
-    dataset = dataset.map(format_alpaca)
-    print(f"Formatted {len(dataset)} training examples")
-
-    # Load model
-    print(f"\\nLoading model: {config['huggingface_model']}...")
-
-    if USE_UNSLOTH:
-        model, tokenizer = FastLanguageModel.from_pretrained(
-            model_name=config["huggingface_model"],
-            max_seq_length=config["max_seq_length"],
-            dtype=None,  # Auto-detect
-            load_in_4bit=config["use_4bit"],
-        )
-
-        # Add LoRA adapters
-        model = FastLanguageModel.get_peft_model(
-            model,
-            r=config["lora_r"],
-            target_modules=config["target_modules"],
-            lora_alpha=config["lora_alpha"],
-            lora_dropout=config["lora_dropout"],
-            bias="none",
-            use_gradient_checkpointing="unsloth",
-            random_state=42,
-        )
-    else:
-        from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-        from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-        import torch
-
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-        )
-
-        model = AutoModelForCausalLM.from_pretrained(
-            config["huggingface_model"],
-            quantization_config=bnb_config,
-            device_map="auto",
-            trust_remote_code=True,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            config["huggingface_model"],
-            trust_remote_code=True,
-        )
-
-        model = prepare_model_for_kbit_training(model)
-
-        lora_config = LoraConfig(
-            r=config["lora_r"],
-            lora_alpha=config["lora_alpha"],
-            target_modules=config["target_modules"],
-            lora_dropout=config["lora_dropout"],
-            bias="none",
-            task_type="CAUSAL_LM",
-        )
-        model = get_peft_model(model, lora_config)
-
-    # Ensure pad token
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    # Training arguments
-    training_args = TrainingArguments(
-        output_dir=config["output_dir"],
-        num_train_epochs=config["num_epochs"],
-        per_device_train_batch_size=config["batch_size"],
-        gradient_accumulation_steps=config["gradient_accumulation_steps"],
-        learning_rate=config["learning_rate"],
-        warmup_ratio=config["warmup_ratio"],
-        logging_steps=10,
-        save_steps=100,
-        save_total_limit=3,
-        fp16=not (USE_UNSLOTH and is_bfloat16_supported()),
-        bf16=USE_UNSLOTH and is_bfloat16_supported(),
-        optim="adamw_8bit",
-        weight_decay=0.01,
-        lr_scheduler_type="cosine",
-        seed=42,
-        report_to="none",
+    def write_jsonl(data, filename):
+        path = Path(args.data_dir) / filename
+        with open(path, "w") as f:
+            for item in data:
+                # Format: ### Instruction: ... ### Input: ... ### Response: ...
+                prompt = f"### Instruction:\\n{item['instruction']}\\n\\n### Input:\\n{item.get('input', '')}\\n\\n### Response:"
+                completion = item['output']
+                # MLX LoRA 'text' format
+                entry = {"text": f"{prompt} {completion}"}
+                f.write(json.dumps(entry) + "\\n")
+    
+    write_jsonl(train_data, "train.jsonl")
+    write_jsonl(valid_data, "valid.jsonl")
+    
+    print(f"Data prepared. Starting MLX training...")
+    print("🚀 IGNITING 40-CORE GPU via MLX CLI...")
+    
+    # Construct MLX CLI command
+    cmd = (
+        f"python3 -m mlx_lm.lora "
+        f"--model {model_path} "
+        f"--train "
+        f"--data {args.data_dir} "
+        f"--iters {args.iters} "
+        f"--batch-size {args.batch_size} "
+        f"--adapter-path {args.adapter_path} "
+        f"--learning-rate {args.learning_rate} "
+        f"--num-layers 16 "
+        f"--seed 42"
     )
-
-    # Create trainer
-    trainer = SFTTrainer(
-        model=model,
-        tokenizer=tokenizer,
-        train_dataset=dataset,
-        args=training_args,
-        dataset_text_field="text",
-        max_seq_length=config["max_seq_length"],
-        packing=True,
-    )
-
-    # Train
-    print("\\nStarting training...")
-    print("-" * 60)
-    trainer.train()
-
-    # Save model
-    print("\\nSaving model...")
-    output_path = Path(config["output_dir"]) / config["output_name"]
-
-    if USE_UNSLOTH:
-        # Save in multiple formats
-        model.save_pretrained_merged(
-            str(output_path) + "_merged",
-            tokenizer,
-            save_method="merged_16bit",
-        )
-        # Save GGUF for Ollama
-        model.save_pretrained_gguf(
-            str(output_path) + "_gguf",
-            tokenizer,
-            quantization_method="q4_k_m",
-        )
+    
+    exit_code = os.system(cmd)
+    
+    if exit_code == 0:
+        print("=" * 60)
+        print("Training complete!")
+        print(f"Adapters saved to: {args.adapter_path}")
+        print("To test:")
+        print(f"python -m dojo.test_end_to_end --mode mlx --adapter {args.adapter_path}")
+        print("=" * 60)
     else:
-        model.save_pretrained(str(output_path) + "_lora")
-        tokenizer.save_pretrained(str(output_path) + "_lora")
-
-    print("=" * 60)
-    print("Training complete!")
-    print(f"Model saved to: {output_path}")
-    print("=" * 60)
-
+        print("Training failed.")
+        sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()
@@ -484,19 +369,14 @@ if __name__ == "__main__":
         requirements = """# Fine-tuning requirements
 # Install with: pip install -r requirements.txt
 
+# MLX (Apple Silicon)
+mlx>=0.6.0
+mlx-lm>=0.1.0
+
 # Core
 torch>=2.0.0
 transformers>=4.36.0
 datasets>=2.14.0
-accelerate>=0.25.0
-
-# Fine-tuning
-trl>=0.7.0
-peft>=0.7.0
-bitsandbytes>=0.41.0
-
-# Optimized training (recommended)
-unsloth>=2024.1
 
 # Utilities
 sentencepiece
@@ -506,55 +386,53 @@ protobuf
             f.write(requirements)
 
     def _create_readme(self, package_dir: Path, config: FinetuneConfig):
-        """Create README with instructions."""
-        readme = f"""# AgenticART Dojo - Fine-Tuning Package
+        """Create README with instructions (MLX Optimized)."""
+        readme = f"""# AgenticART Dojo - Fine-Tuning Package (MLX Edition)
 
-This package contains everything needed to fine-tune WhiteRabbitNeo on ADB command data.
+This package contains everything needed to fine-tune WhiteRabbitNeo on ADB command data using **Apple Silicon (MLX)**.
 
 ## Contents
 
-- `data/training_data.json` - Training data in Alpaca format (60 examples)
-- `train.py` - Main training script
-- `finetune_colab.ipynb` - Google Colab notebook (free GPU)
+- `data/training_data.json` - Training data in Alpaca format
+- `train.py` - Main training script (uses `mlx_lm.lora`)
 - `config.json` - Training configuration
-- `requirements.txt` - Python dependencies
+- `requirements.txt` - Python dependencies (MLX)
 - `Modelfile` - Ollama Modelfile (lightweight alternative)
 
 ## Requirements
 
-- **GPU:** NVIDIA with 16GB+ VRAM (or 8GB with aggressive settings)
-- **RAM:** 32GB recommended
+- **Hardware:** Apple Silicon Mac (M1/M2/M3)
+- **OS:** macOS 13.3+
 - **Python:** 3.10+
+- **RAM:** 16GB+ recommended
 
 ## Quick Start
 
-### Option 1: Local Training (GPU required)
+### 1. Install Dependencies
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run training
-python train.py
-
-# Or with custom settings
-python train.py --epochs 5 --batch-size 2
 ```
 
-### Option 2: Google Colab (Free GPU)
+### 2. Run Training
 
-1. Open `finetune_colab.ipynb` in Google Colab
-2. Upload `data/training_data.json`
-3. Run all cells
-4. Download the GGUF model
-
-### Option 3: Ollama Modelfile (No fine-tuning)
-
-For a quick boost without GPU training:
+This will use the Neural Engine / GPU on your Mac.
 
 ```bash
-ollama create whiterabbit-adb-dojo -f Modelfile
-ollama run whiterabbit-adb-dojo
+# Standard run (default settings)
+python train.py
+
+# Custom settings
+python train.py --iters 1000 --batch-size 8 --learning-rate 1e-5
+```
+
+### 3. Test Your Model
+
+After training, adapters are saved to `mlx_adapters/`. Test them in the Dojo:
+
+```bash
+cd ../..
+python -m dojo.test_end_to_end --mode mlx --adapter dojo_finetune_package/finetune_package_<timestamp>/mlx_adapters
 ```
 
 ## Configuration
@@ -566,52 +444,17 @@ Default settings in `config.json`:
 | Base Model | {config.huggingface_model} |
 | LoRA Rank | {config.lora_r} |
 | LoRA Alpha | {config.lora_alpha} |
-| Epochs | {config.num_epochs} |
+| Epochs/Iters | {config.num_epochs} (converted to iters) |
 | Batch Size | {config.batch_size} |
-| Learning Rate | {config.learning_rate} |
-| Max Seq Length | {config.max_seq_length} |
 
-## After Training
+## Alternative: Ollama
 
-### Import to Ollama
+If you prefer to run the base model in Ollama without fine-tuning:
 
 ```bash
-# Create Modelfile pointing to your GGUF
-echo 'FROM ./WhiteRabbitNeo-ADB-Dojo.gguf' > Modelfile
-
-# Create the model
 ollama create whiterabbit-adb-dojo -f Modelfile
-
-# Test it
-ollama run whiterabbit-adb-dojo "Write an ADB command to list installed packages"
+ollama run whiterabbit-adb-dojo
 ```
-
-### Test in Dojo
-
-```bash
-cd AgenticART
-python -m dojo.test_end_to_end --mode live --belt white
-```
-
-## Training Data Statistics
-
-- **Total Examples:** 60
-- **Belts Covered:** White, Yellow, Orange
-- **Example Types:**
-  - Positive (successful): 15
-  - Negative (with corrections): 28
-  - Error recovery: 23
-  - Kata (reference): 45
-
-## Expected Results
-
-After fine-tuning, the model should improve on:
-- Correct ADB command syntax
-- Proper use of `shell` prefix vs `adb` prefix
-- Pipe and grep operations
-- Android-specific commands (dumpsys, am, pm)
-
-Target: 80%+ pass rate on white/yellow belt challenges.
 """
         with open(package_dir / "README.md", "w") as f:
             f.write(readme)
