@@ -20,7 +20,7 @@ jobs:
           cache: 'pip'
           
       - name: Install Linting Tools
-        run: pip install ruff mypy types-paramiko types-requests
+        run: pip install ruff mypy types-paramiko types-requests types-PyYAML
         
       - name: Run Ruff Check
         run: ruff check .
