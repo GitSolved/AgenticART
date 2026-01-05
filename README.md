@@ -12,6 +12,8 @@
 
 </div>
 
+<img width="1344" height="768" alt="image" src="https://github.com/user-attachments/assets/60b8fcb5-c581-4459-b325-6a416ff3b5c4" />
+
 ---
 
 ## The Problem
