@@ -156,6 +156,11 @@ class ProgressTracker:
                 else None
             ),
             "tags": progress.tags,
+            # Enhanced metrics (NEW)
+            "total_hallucinations": progress.total_hallucinations,
+            "total_attempts": progress.total_attempts,
+            "total_time_seconds": progress.total_time_seconds,
+            "scores_history": progress.scores_history[-100:],  # Keep last 100
             # Store assessment summaries, not full objects
             "assessment_count": len(progress.assessments),
             "assessments_summary": self._summarize_assessments(progress.assessments),
@@ -191,6 +196,11 @@ class ProgressTracker:
                 total_score=data.get("total_score", 0),
                 training_examples_generated=data.get("training_examples_generated", 0),
                 tags=data.get("tags", []),
+                # Enhanced metrics (NEW)
+                total_hallucinations=data.get("total_hallucinations", 0),
+                total_attempts=data.get("total_attempts", 0),
+                total_time_seconds=data.get("total_time_seconds", 0.0),
+                scores_history=data.get("scores_history", []),
             )
 
             if data.get("last_training_date"):
@@ -221,6 +231,7 @@ class ProgressTracker:
                 "challenge_id": a.challenge_id,
                 "grade": a.grade.value,
                 "score": a.score,
+                "hallucination_count": a.hallucination_count,
                 "timestamp": a.timestamp.isoformat(),
             }
             for a in assessments[-50:]  # Keep last 50
@@ -290,6 +301,11 @@ class ProgressTracker:
                     "pass_rate": round(progress.pass_rate, 2),
                     "average_score": round(progress.average_score, 2),
                     "tags": progress.tags,
+                    # Enhanced metrics (NEW)
+                    "hallucination_rate": round(progress.hallucination_rate, 2),
+                    "avg_iterations": round(progress.avg_iterations, 2),
+                    "avg_time_to_success": round(progress.avg_time_to_success, 2),
+                    "improvement_trend": round(progress.improvement_trend, 2),
                 }
             )
 

@@ -61,6 +61,31 @@ class Grader:
         "eval_usage": r'\beval\b',
     }
 
+    # Hallucination detection patterns (NEW)
+    HALLUCINATED_API_PATTERNS = [
+        r"android\.[a-z]+\.[A-Z][a-zA-Z]+\(\)",  # Fake Android APIs
+        r"/proc/[a-z_]+_fake",  # Fake proc paths
+        r"getprop\s+ro\.[a-z]+\.[a-z_]+_invalid",  # Invalid props
+    ]
+
+    # Valid ADB subcommands for hallucination detection
+    VALID_ADB_COMMANDS = {
+        "shell", "push", "pull", "install", "uninstall", "logcat",
+        "devices", "connect", "disconnect", "root", "remount",
+        "forward", "reverse", "reboot", "wait-for-device", "start-server",
+        "kill-server", "get-state", "get-serialno", "get-devpath",
+        "bugreport", "jdwp", "backup", "restore", "help", "version",
+    }
+
+    # Placeholder path patterns indicating hallucinations
+    HALLUCINATED_PATH_PATTERNS = [
+        r"/path/to/",
+        r"/your/",
+        r"/example/",
+        r"<[^>]+>",  # <placeholder> style
+        r"\$\{[^}]+\}",  # ${VARIABLE} not resolved
+    ]
+
     def __init__(self, attempt_penalty: int = 5):
         """
         Initialize the grader.
@@ -94,6 +119,11 @@ class Grader:
         exec_ok, exec_issues = self._evaluate_execution(session)
         obj_ok, obj_issues = self._evaluate_objective(session)
         security_issues = self._identify_security_issues(model_output)
+
+        # Detect hallucinations (NEW)
+        hallucination_count, hallucination_types = self._detect_hallucinations(
+            model_output, challenge
+        )
 
         # Calculate base score
         rubric = challenge.scoring
@@ -131,6 +161,8 @@ class Grader:
             api_errors=api_errors,
             logic_flaws=obj_issues,
             security_issues=security_issues,
+            hallucination_count=hallucination_count,
+            hallucination_types=hallucination_types,
             corrected_output=corrected_output,
             correction_explanation=correction_explanation,
             execution_output=exec_output,
@@ -293,6 +325,52 @@ class Grader:
 
         return issues
 
+    def _detect_hallucinations(
+        self,
+        output: str,
+        challenge: Challenge,
+    ) -> tuple[int, list[str]]:
+        """
+        Detect hallucinated APIs, commands, or paths in model output.
+
+        Hallucinations include:
+        - Non-existent Android APIs
+        - Invalid ADB subcommands
+        - Placeholder paths that weren't filled in
+
+        Args:
+            output: The model output to check.
+            challenge: The challenge for context.
+
+        Returns:
+            Tuple of (hallucination_count, list of hallucination_types).
+        """
+        hallucinations: list[str] = []
+
+        if not output:
+            return 0, hallucinations
+
+        # Check for fake API patterns
+        for pattern in self.HALLUCINATED_API_PATTERNS:
+            matches = re.findall(pattern, output)
+            for match in matches:
+                hallucinations.append(f"fake_api:{match}")
+
+        # Check for invalid ADB subcommands
+        adb_matches = re.findall(r"adb\s+([a-z_-]+)", output, re.IGNORECASE)
+        for cmd in adb_matches:
+            cmd_lower = cmd.lower()
+            if cmd_lower not in self.VALID_ADB_COMMANDS:
+                hallucinations.append(f"invalid_adb_cmd:{cmd}")
+
+        # Check for placeholder paths
+        for pattern in self.HALLUCINATED_PATH_PATTERNS:
+            matches = re.findall(pattern, output, re.IGNORECASE)
+            for match in matches:
+                hallucinations.append(f"placeholder_path:{match}")
+
+        return len(hallucinations), hallucinations
+
     def _generate_correction(
         self,
         session: ChallengeSession,
@@ -390,6 +468,10 @@ class Grader:
         total_score = sum(a.score for a in assessments)
         passed = sum(1 for a in assessments if a.grade.is_passing)
 
+        # Calculate hallucination stats
+        total_hallucinations = sum(a.hallucination_count for a in assessments)
+        assessments_with_hallucinations = sum(1 for a in assessments if a.has_hallucinations)
+
         return {
             "total": total,
             "by_grade": by_grade,
@@ -397,4 +479,7 @@ class Grader:
             "pass_rate": round((passed / total) * 100, 2),
             "positive_examples": sum(1 for a in assessments if a.is_positive_example),
             "negative_examples": sum(1 for a in assessments if a.is_negative_example),
+            "total_hallucinations": total_hallucinations,
+            "hallucination_rate": round(total_hallucinations / total, 2),
+            "assessments_with_hallucinations": assessments_with_hallucinations,
         }

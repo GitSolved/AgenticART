@@ -91,6 +91,37 @@ class ChallengeSession:
             })
         return history
 
+    @property
+    def time_to_success(self) -> Optional[float]:
+        """
+        Get seconds from session start to first successful attempt.
+
+        Returns:
+            Seconds to success, or None if no successful attempt.
+        """
+        for attempt in self.attempts:
+            if attempt.execution_result.success:
+                return (attempt.timestamp - self.started_at).total_seconds()
+        return None
+
+    @property
+    def avg_attempt_interval(self) -> float:
+        """
+        Get average seconds between attempts.
+
+        Returns:
+            Average interval in seconds, or 0.0 if fewer than 2 attempts.
+        """
+        if len(self.attempts) < 2:
+            return 0.0
+
+        intervals = []
+        for i in range(1, len(self.attempts)):
+            delta = (self.attempts[i].timestamp - self.attempts[i - 1].timestamp).total_seconds()
+            intervals.append(delta)
+
+        return sum(intervals) / len(intervals) if intervals else 0.0
+
     def to_dict(self) -> dict:
         """Convert to dictionary."""
         return {
@@ -100,6 +131,8 @@ class ChallengeSession:
             "final_success": self.final_success,
             "total_attempts": self.total_attempts,
             "duration": self.duration,
+            "time_to_success": self.time_to_success,
+            "avg_attempt_interval": round(self.avg_attempt_interval, 2),
             "started_at": self.started_at.isoformat(),
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "attempts": [a.to_dict() for a in self.attempts],

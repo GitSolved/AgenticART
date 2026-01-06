@@ -323,6 +323,10 @@ class SenseiAssessment:
     logic_flaws: list[str] = field(default_factory=list)
     security_issues: list[str] = field(default_factory=list)
 
+    # Hallucination tracking (NEW)
+    hallucination_count: int = 0
+    hallucination_types: list[str] = field(default_factory=list)
+
     # Correction (if grade is D or F)
     corrected_output: Optional[str] = None
     correction_explanation: Optional[str] = None
@@ -348,6 +352,11 @@ class SenseiAssessment:
         return self.corrected_output is not None
 
     @property
+    def has_hallucinations(self) -> bool:
+        """Check if hallucinations were detected in this assessment."""
+        return self.hallucination_count > 0
+
+    @property
     def all_issues(self) -> list[str]:
         """Get all issues combined."""
         return self.syntax_issues + self.api_errors + self.logic_flaws + self.security_issues
@@ -368,6 +377,8 @@ class SenseiAssessment:
             "api_errors": self.api_errors,
             "logic_flaws": self.logic_flaws,
             "security_issues": self.security_issues,
+            "hallucination_count": self.hallucination_count,
+            "hallucination_types": self.hallucination_types,
             "corrected_output": self.corrected_output,
             "correction_explanation": self.correction_explanation,
             "timestamp": self.timestamp.isoformat(),
@@ -375,6 +386,7 @@ class SenseiAssessment:
             "is_positive_example": self.is_positive_example,
             "is_negative_example": self.is_negative_example,
             "is_error_recovery_example": self.is_error_recovery_example,
+            "has_hallucinations": self.has_hallucinations,
         }
 
 
@@ -449,6 +461,12 @@ class ModelProgress:
     last_training_date: Optional[datetime] = None
     tags: list[str] = field(default_factory=list)
 
+    # Enhanced metrics (NEW)
+    total_hallucinations: int = 0
+    total_attempts: int = 0  # Sum of all retry attempts across challenges
+    total_time_seconds: float = 0.0
+    scores_history: list[int] = field(default_factory=list)
+
     @property
     def pass_rate(self) -> float:
         """Calculate pass rate as percentage."""
@@ -463,6 +481,45 @@ class ModelProgress:
             return 0.0
         return self.total_score / self.challenges_attempted
 
+    @property
+    def hallucination_rate(self) -> float:
+        """Calculate hallucinations per challenge attempted."""
+        if self.challenges_attempted == 0:
+            return 0.0
+        return self.total_hallucinations / self.challenges_attempted
+
+    @property
+    def avg_iterations(self) -> float:
+        """Calculate average attempts per challenge."""
+        if self.challenges_attempted == 0:
+            return 0.0
+        return self.total_attempts / self.challenges_attempted
+
+    @property
+    def avg_time_to_success(self) -> float:
+        """Calculate average seconds per challenge."""
+        if self.challenges_attempted == 0:
+            return 0.0
+        return self.total_time_seconds / self.challenges_attempted
+
+    @property
+    def improvement_trend(self) -> float:
+        """
+        Calculate score improvement trend.
+
+        Positive = improving, Negative = declining.
+        Compares last 5 scores to previous 5.
+        """
+        if len(self.scores_history) < 10:
+            return 0.0
+        recent = self.scores_history[-5:]
+        earlier = self.scores_history[-10:-5]
+        recent_avg = sum(recent) / len(recent)
+        earlier_avg = sum(earlier) / len(earlier)
+        if earlier_avg == 0:
+            return 0.0
+        return ((recent_avg - earlier_avg) / earlier_avg) * 100
+
     def record_assessment(self, assessment: SenseiAssessment) -> None:
         """Record a new assessment."""
         self.assessments.append(assessment)
@@ -470,6 +527,9 @@ class ModelProgress:
         self.total_score += assessment.score
         if assessment.grade.is_passing:
             self.challenges_passed += 1
+        # Track enhanced metrics
+        self.total_hallucinations += assessment.hallucination_count
+        self.scores_history.append(assessment.score)
 
     def check_promotion_eligibility(self, required_pass_rate: float = 80.0, required_challenges: int = 5) -> bool:
         """Check if model is eligible for belt promotion."""
@@ -491,6 +551,14 @@ class ModelProgress:
             "training_examples_generated": self.training_examples_generated,
             "last_training_date": self.last_training_date.isoformat() if self.last_training_date else None,
             "tags": self.tags,
+            # Enhanced metrics
+            "total_hallucinations": self.total_hallucinations,
+            "hallucination_rate": round(self.hallucination_rate, 2),
+            "total_attempts": self.total_attempts,
+            "avg_iterations": round(self.avg_iterations, 2),
+            "total_time_seconds": round(self.total_time_seconds, 2),
+            "avg_time_to_success": round(self.avg_time_to_success, 2),
+            "improvement_trend": round(self.improvement_trend, 2),
         }
 
     def display_status(self) -> str:
