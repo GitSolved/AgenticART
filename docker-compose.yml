@@ -99,6 +99,24 @@ services:
     profiles:
       - test
 
+  # ─── Sandbox Executor (isolated script execution) ─────────────────────────
+  sandbox:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.sandbox
+    image: agentic-sandbox:latest
+    container_name: llm-pentest-sandbox
+    networks:
+      - sandbox-net
+    environment:
+      - EMULATOR_DEVICE=${EMULATOR_DEVICE:-host.docker.internal:5555}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Security constraints (applied at runtime by DockerExecutor)
+    # This service is for building the image only
+    profiles:
+      - build-only
+
   # ─── ADB Bridge (connects to host's Genymotion) ────────────────────────────
   adb-bridge:
     image: sorccu/adb:latest
@@ -181,3 +199,12 @@ volumes:
 networks:
   default:
     name: llm-pentest-network
+
+  # Restricted network for sandbox containers (no internet access)
+  sandbox-net:
+    name: agentic-sandbox-net
+    driver: bridge
+    internal: true  # Blocks external internet access
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24

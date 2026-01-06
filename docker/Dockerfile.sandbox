@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# AgenticART Sandbox - Minimal isolated execution environment
+#
+# Security features:
+# - Non-root user (pentester)
+# - Minimal attack surface (no setuid binaries)
+# - Only essential tools installed
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM python:3.11-slim-bookworm
+
+# Build arguments for user creation
+ARG PENTESTER_UID=1000
+ARG PENTESTER_GID=1000
+
+# Install only essential tools for Android exploitation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    android-tools-adb \
+    && rm -rf /var/lib/apt/lists/* \
+    # Remove setuid/setgid binaries to prevent privilege escalation
+    && find / -perm /6000 -type f -exec chmod a-s {} \; 2>/dev/null || true
+
+# Create non-root user
+RUN groupadd -g ${PENTESTER_GID} pentester && \
+    useradd -u ${PENTESTER_UID} -g pentester -m -s /bin/bash pentester
+
+# Set up workspace
+WORKDIR /workspace
+RUN chown pentester:pentester /workspace
+
+# Switch to non-root user
+USER pentester
+
+# Default command (will be overridden by DockerExecutor)
+CMD ["echo", "AgenticART Sandbox Ready"]

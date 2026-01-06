@@ -213,16 +213,18 @@ def render_sidebar():
     st.sidebar.subheader("Execution Mode")
     st.session_state.execution_mode = st.sidebar.radio(
         "Mode",
-        options=["dry_run", "sandboxed", "live"],
+        options=["dry_run", "docker", "live"],
         format_func=lambda x: {
             "dry_run": "Dry Run (Safe)",
-            "sandboxed": "Sandboxed",
-            "live": "Live (Caution!)",
+            "docker": "Docker Sandbox (Recommended)",
+            "live": "Live (No Isolation!)",
         }[x],
     )
 
     if st.session_state.execution_mode == "live":
-        st.sidebar.warning("Live mode will execute commands on real devices!")
+        st.sidebar.warning("Live mode executes directly on host with NO isolation!")
+    elif st.session_state.execution_mode == "docker":
+        st.sidebar.info("Scripts run in isolated Docker container with ADB access")
 
     # Connection Test
     st.sidebar.subheader("Connection")
