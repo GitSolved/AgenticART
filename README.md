@@ -7,9 +7,10 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg)](https://github.com/GitSolved/AgenticART/actions)
+[![Docs](https://img.shields.io/badge/docs-live-blue.svg)](https://www.secureyourgear.com/AgenticART/)
 [![arXiv](https://img.shields.io/badge/arXiv-2509.07933-b31b1b.svg)](https://arxiv.org/abs/2509.07933)
 
-[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Belt System](#belt-progression) · [Docs](docs/)
+[Quick Start](#quick-start) · [How It Works](#how-it-works) · [Belt System](#belt-progression) · [Docs](https://www.secureyourgear.com/AgenticART/)
 
 </div>
 
@@ -133,14 +134,15 @@ Models advance through structured difficulty levels:
 
 ## Documentation
 
+📚 **[View Full Documentation](https://www.secureyourgear.com/AgenticART/)**
+
 | Doc | Description |
 |-----|-------------|
-| [Architecture](docs/architecture.md) | System design and components |
-| [Dojo Framework](docs/DOJO_FRAMEWORK.md) | Training methodology |
-| [Setup Guide](docs/SETUP.md) | Detailed installation |
-| [Governance](docs/GOVERNANCE.md) | Safety controls and approval tiers |
-| [Tools](docs/TOOLS.md) | Available security tools |
-| [Docker Sandbox](docs/DOCKER_SANDBOX.md) | Isolated script execution |
+| [Quick Start](https://www.secureyourgear.com/AgenticART/quickstart/) | Get running in 5 minutes |
+| [Architecture](https://www.secureyourgear.com/AgenticART/architecture/) | System design and components |
+| [Dojo Framework](https://www.secureyourgear.com/AgenticART/DOJO_FRAMEWORK/) | Training methodology |
+| [Docker Sandbox](https://www.secureyourgear.com/AgenticART/DOCKER_SANDBOX/) | Isolated script execution |
+| [Governance](https://www.secureyourgear.com/AgenticART/GOVERNANCE/) | Safety controls and approval tiers |
 
 ---
 
