@@ -140,6 +140,7 @@ Models advance through structured difficulty levels:
 | [Setup Guide](docs/SETUP.md) | Detailed installation |
 | [Governance](docs/GOVERNANCE.md) | Safety controls and approval tiers |
 | [Tools](docs/TOOLS.md) | Available security tools |
+| [Docker Sandbox](docs/DOCKER_SANDBOX.md) | Isolated script execution |
 
 ---
 
