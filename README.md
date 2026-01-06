@@ -148,7 +148,7 @@ Models advance through structured difficulty levels:
 
 ## Research
 
-Based on [**"LLM-Powered Android Exploitation"**](https://arxiv.org/abs/2509.07933) which introduces the feedback loop methodology.
+Inspired by [**"LLM-Powered Android Exploitation"**](https://arxiv.org/abs/2509.07933) which introduces the feedback loop methodology.
 
 ---
 
