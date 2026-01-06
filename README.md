@@ -7,6 +7,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/GitSolved/AgenticART/actions/workflows/ci.yml/badge.svg)](https://github.com/GitSolved/AgenticART/actions)
+[![arXiv](https://img.shields.io/badge/arXiv-2509.07933-b31b1b.svg)](https://arxiv.org/abs/2509.07933)
 
 [Quick Start](#quick-start) · [How It Works](#how-it-works) · [Belt System](#belt-progression) · [Docs](docs/)
 
