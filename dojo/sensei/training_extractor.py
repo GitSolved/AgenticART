@@ -22,10 +22,16 @@ class ExtractionConfig:
     include_negative: bool = True
     include_error_recovery: bool = True
     include_kata: bool = True
+    include_dpo_pairs: bool = True  # NEW: Extract DPO preference pairs
     min_grade_for_positive: Grade = Grade.B
 
     # Only extract error recovery when improvement was made
     require_improvement_for_recovery: bool = True
+
+    # Hallucination filtering (NEW)
+    exclude_hallucinated_positives: bool = True  # Skip positive examples with hallucinations
+    include_hallucination_info_in_negatives: bool = True  # Add hallucination details to negative examples
+    max_hallucinations_for_positive: int = 0  # Max allowed hallucinations in positive examples
 
 
 class TrainingExtractor:
@@ -87,6 +93,11 @@ class TrainingExtractor:
             if example:
                 examples.append(example)
 
+        # DPO pairs using hallucination data (NEW)
+        if self.config.include_dpo_pairs:
+            dpo_examples = self._extract_dpo_pairs(session, assessment)
+            examples.extend(dpo_examples)
+
         return examples
 
     def _extract_positive_example(
@@ -106,6 +117,11 @@ class TrainingExtractor:
         """
         if not session.final_success or not session.successful_output:
             return None
+
+        # Filter out hallucinated outputs (NEW)
+        if self.config.exclude_hallucinated_positives:
+            if assessment.hallucination_count > self.config.max_hallucinations_for_positive:
+                return None  # Skip - contains hallucinations
 
         challenge = session.challenge
 
@@ -143,8 +159,19 @@ class TrainingExtractor:
         # Format as incorrect/correct pair
         output_text = (
             f"INCORRECT:\n{failed_output}\n\n"
-            f"CORRECT:\n{assessment.corrected_output}"
         )
+
+        # Add hallucination info if present and configured (NEW)
+        if (
+            self.config.include_hallucination_info_in_negatives
+            and assessment.has_hallucinations
+        ):
+            output_text += "HALLUCINATIONS DETECTED:\n"
+            for h_type in assessment.hallucination_types[:5]:  # Limit to 5
+                output_text += f"  - {h_type}\n"
+            output_text += "\n"
+
+        output_text += f"CORRECT:\n{assessment.corrected_output}"
 
         # Add explanation if available
         if assessment.correction_explanation:
@@ -245,6 +272,105 @@ class TrainingExtractor:
             example_type="kata",
             belt=challenge.belt,
             grade=Grade.A,  # Kata is always Grade A
+        )
+
+    def _extract_dpo_pairs(
+        self,
+        session: ChallengeSession,
+        assessment: SenseiAssessment,
+    ) -> list[TrainingExample]:
+        """
+        Extract DPO (Direct Preference Optimization) pairs.
+
+        Creates chosen/rejected pairs based on:
+        1. Hallucinated vs non-hallucinated outputs
+        2. Successful vs failed attempts
+        3. Kata vs model output (if kata exists)
+
+        Args:
+            session: The challenge session.
+            assessment: The grading assessment.
+
+        Returns:
+            List of DPO-formatted training examples.
+        """
+        examples = []
+        challenge = session.challenge
+
+        # Case 1: Kata (chosen) vs hallucinated model output (rejected)
+        if (
+            challenge.kata_solution
+            and assessment.has_hallucinations
+        ):
+            prompt = f"{self._build_instruction(challenge)}\n\n{self._build_input(challenge)}"
+            dpo_output = self._format_dpo_output(
+                chosen=challenge.kata_solution,
+                rejected=assessment.model_output,
+                rejection_reason=f"Contains hallucinations: {', '.join(assessment.hallucination_types[:3])}",
+            )
+            examples.append(
+                TrainingExample(
+                    instruction="Generate a correct command. Prefer the CHOSEN response over the REJECTED one.",
+                    input_text=prompt,
+                    output_text=dpo_output,
+                    source_challenge_id=challenge.id,
+                    example_type="dpo_hallucination",
+                    belt=challenge.belt,
+                    grade=assessment.grade,
+                )
+            )
+
+        # Case 2: Successful attempt (chosen) vs failed attempt with hallucinations (rejected)
+        if len(session.attempts) >= 2:
+            for i, attempt in enumerate(session.attempts[:-1]):
+                next_attempt = session.attempts[i + 1]
+
+                # Check if current failed and next succeeded
+                if (
+                    not attempt.execution_result.success
+                    and next_attempt.execution_result.success
+                ):
+                    prompt = f"{self._build_instruction(challenge)}\n\n{self._build_input(challenge)}"
+                    dpo_output = self._format_dpo_output(
+                        chosen=next_attempt.model_output,
+                        rejected=attempt.model_output,
+                        rejection_reason="Failed execution",
+                    )
+                    examples.append(
+                        TrainingExample(
+                            instruction="Generate a correct command. Prefer the CHOSEN response over the REJECTED one.",
+                            input_text=prompt,
+                            output_text=dpo_output,
+                            source_challenge_id=challenge.id,
+                            example_type="dpo_execution",
+                            belt=challenge.belt,
+                        )
+                    )
+                    break  # Only one DPO pair per session
+
+        return examples
+
+    def _format_dpo_output(
+        self,
+        chosen: str,
+        rejected: str,
+        rejection_reason: str,
+    ) -> str:
+        """
+        Format output for DPO training.
+
+        Args:
+            chosen: The preferred output.
+            rejected: The rejected output.
+            rejection_reason: Why the rejected output is worse.
+
+        Returns:
+            Formatted DPO output string.
+        """
+        return (
+            f"CHOSEN:\n{chosen}\n\n"
+            f"REJECTED:\n{rejected}\n\n"
+            f"REASON: {rejection_reason}"
         )
 
     def _build_instruction(self, challenge: Challenge) -> str:
