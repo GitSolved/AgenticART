@@ -36,7 +36,7 @@ sequenceDiagram
 
     U->>E: Execute script
 
-    E->>E: Select mode:<br/>DRY_RUN / SANDBOXED / LIVE
+    E->>E: Select mode:<br/>DRY_RUN / DOCKER / LIVE
 
     E->>T: adb push script.py
     E->>T: adb shell python script.py
