@@ -1,0 +1,815 @@
+# Static Analysis Pillar - Challenges
+# Purpose: Train code review skills without execution
+# Focus: Reading and understanding code to identify security issues
+#
+# NOTE: All code examples are EDUCATIONAL demonstrations of vulnerable patterns.
+# Ground truth sections explain proper secure implementations.
+
+challenges:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # WHITE BELT - Basic Code Pattern Recognition
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: static_basic_white_001
+    name: "Identifying Security-Relevant Code Patterns"
+    version: 2
+
+    type: observation
+    pillar: static_analysis
+    belt: white
+    difficulty: 2
+
+    description: |
+      Learn to identify security-relevant patterns in Android code.
+      Not all patterns are vulnerabilities - just learn to NOTICE them.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Code from a banking app - identify security-relevant sections"
+        content: |
+          // EDUCATIONAL: Identify which parts are security-relevant
+
+          public class TransferActivity extends Activity {
+
+              private SharedPreferences prefs;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  // Section A
+                  prefs = getSharedPreferences("user_data", MODE_PRIVATE);
+                  String userId = prefs.getString("user_id", "");
+
+                  // Section B
+                  WebView webView = findViewById(R.id.webview);
+                  webView.getSettings().setJavaScriptEnabled(true);
+
+                  // Section C
+                  String amount = getIntent().getStringExtra("amount");
+                  String recipient = getIntent().getStringExtra("recipient");
+
+                  // Section D
+                  Log.d("Transfer", "User " + userId + " transferring " + amount);
+
+                  // Section E
+                  if (amount != null && recipient != null) {
+                      initiateTransfer(userId, recipient, amount);
+                  }
+              }
+
+              private void initiateTransfer(String user, String to, String amount) {
+                  // ... transfer logic
+              }
+          }
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          For each section (A through E), answer:
+          1. Is it security-relevant? (Yes/No)
+          2. WHY is it relevant (or not)?
+          3. What CATEGORY of security concern? (data storage, input, logging, etc.)
+
+          Do NOT say whether it's vulnerable - just identify relevance.
+
+        expected_output_schema:
+          type: object
+          properties:
+            section_analysis:
+              type: array
+              items:
+                section: string
+                is_relevant: boolean
+                why: string
+                category: string
+
+        evaluation_criteria:
+          - name: correct_identification
+            weight: 0.40
+            description: "Correctly identifies relevant sections"
+          - name: correct_reasoning
+            weight: 0.35
+            description: "Valid reasoning for relevance"
+          - name: categorization
+            weight: 0.25
+            description: "Proper category assignment"
+
+        max_tokens: 1500
+
+    ground_truth:
+      key_observations:
+        - "Section A: Yes - data storage, sensitive user data"
+        - "Section B: Yes - WebView with JS, potential attack surface"
+        - "Section C: Yes - input handling, external data source"
+        - "Section D: Yes - logging, may expose sensitive data"
+        - "Section E: Yes - business logic with external inputs"
+        - "ALL sections are security-relevant in this code"
+
+    training:
+      common_mistakes:
+        - "Missing logging as security-relevant"
+        - "Not recognizing Intent extras as external input"
+        - "Jumping to 'vulnerable' instead of 'relevant'"
+
+    tags: [static_analysis, code_review, observation]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # YELLOW BELT - Data Flow Tracing
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: static_dataflow_yellow_001
+    name: "Tracing User Input Through Code"
+    version: 2
+
+    type: observation
+    pillar: static_analysis
+    belt: yellow
+    difficulty: 4
+
+    description: |
+      Security analysis requires tracing data from SOURCE to SINK.
+      Source = where untrusted data enters
+      Sink = where data causes action (database, network, display, etc.)
+
+    artifacts:
+      - type: decompiled_code
+        context: "Trace data flow through this code"
+        content: |
+          // EDUCATIONAL: Data flow tracing exercise
+
+          public class SearchHandler {
+
+              public void handleSearch(Intent intent) {
+                  // SOURCE: External Intent
+                  String rawQuery = intent.getStringExtra("query");
+
+                  // Transformation 1
+                  String trimmed = rawQuery.trim();
+
+                  // Transformation 2
+                  String normalized = trimmed.toLowerCase();
+
+                  // Branch 1
+                  if (normalized.length() > 100) {
+                      normalized = normalized.substring(0, 100);
+                  }
+
+                  // Store for later
+                  this.lastQuery = normalized;
+
+                  // Branch 2: Display
+                  searchView.setText(normalized);  // SINK 1
+
+                  // Branch 3: Database
+                  performDatabaseSearch(normalized);  // SINK 2
+              }
+
+              private void performDatabaseSearch(String term) {
+                  // SINK 2 implementation
+                  String query = "SELECT * FROM products WHERE name LIKE '%" + term + "%'";
+                  database.rawQuery(query, null);
+              }
+          }
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          Trace the data flow:
+
+          1. Identify the SOURCE (where untrusted data enters)
+          2. Identify all TRANSFORMATIONS (what happens to the data)
+          3. Identify all SINKS (where data causes action)
+          4. For each sink, does the data reach it TAINTED or SANITIZED?
+
+        expected_output_schema:
+          type: object
+          properties:
+            source:
+              location: string
+              data_type: string
+              trust_level: string
+            transformations:
+              type: array
+              items:
+                location: string
+                operation: string
+                security_effect: string
+            sinks:
+              type: array
+              items:
+                location: string
+                sink_type: string
+                data_state: string
+                risk_assessment: string
+
+        evaluation_criteria:
+          - name: source_identification
+            weight: 0.20
+            description: "Correctly identifies source"
+          - name: transformation_tracking
+            weight: 0.30
+            description: "Tracks all transformations"
+          - name: sink_identification
+            weight: 0.30
+            description: "Identifies all sinks"
+          - name: taint_assessment
+            weight: 0.20
+            description: "Correct taint state at sinks"
+
+        max_tokens: 2000
+
+    ground_truth:
+      root_cause: |
+        DATA FLOW ANALYSIS:
+
+        SOURCE:
+        - Location: intent.getStringExtra("query")
+        - Type: String from external Intent
+        - Trust: UNTRUSTED (external app can send anything)
+
+        TRANSFORMATIONS:
+        1. trim() - removes whitespace, NO security effect
+        2. toLowerCase() - case normalization, NO security effect
+        3. substring(0,100) - length limit, PARTIAL defense (DoS only)
+
+        None of these sanitize SQL special characters!
+
+        SINKS:
+        1. searchView.setText(normalized)
+           - Type: UI display
+           - Data state: Still tainted but UI display is generally safe
+           - Risk: Low (Android TextView escapes by default)
+
+        2. database.rawQuery(...)
+           - Type: SQL execution
+           - Data state: TAINTED - reaches SQL string concatenation
+           - Risk: HIGH - SQL injection possible
+
+        KEY INSIGHT:
+        Data flows from untrusted source to SQL sink without sanitization.
+        The transformations (trim, toLowerCase, substring) are NOT security controls.
+
+    training:
+      common_mistakes:
+        - "Thinking trim() provides security"
+        - "Missing the UI sink"
+        - "Not recognizing rawQuery as dangerous sink"
+
+    tags: [data_flow, static_analysis, source_sink]
+    cwe_tags: [CWE-89]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ORANGE BELT - Cross-Function Analysis
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: static_crossfunc_orange_001
+    name: "Multi-Function Vulnerability Analysis"
+    version: 2
+
+    type: hypothesis
+    pillar: static_analysis
+    belt: orange
+    difficulty: 5
+
+    description: |
+      Real vulnerabilities often span multiple functions.
+      Practice connecting code across function boundaries.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Multiple interconnected functions"
+        content: |
+          // EDUCATIONAL: Cross-function analysis exercise
+
+          public class UserManager {
+
+              // Function A: Public entry point
+              public void processUserRequest(String action, String data) {
+                  if ("update_profile".equals(action)) {
+                      updateProfile(data);
+                  } else if ("delete_account".equals(action)) {
+                      deleteAccount(data);
+                  }
+              }
+
+              // Function B: Profile update
+              private void updateProfile(String profileJson) {
+                  JSONObject profile = new JSONObject(profileJson);
+                  String name = profile.getString("name");
+                  String bio = profile.getString("bio");
+
+                  // Validate name
+                  if (name.length() > 50) {
+                      throw new ValidationException("Name too long");
+                  }
+
+                  // Store in database
+                  saveProfile(name, bio);
+              }
+
+              // Function C: Database save
+              private void saveProfile(String name, String bio) {
+                  String insertSql = "INSERT INTO profiles (name, bio) VALUES ('"
+                      + name + "', '" + bio + "')";
+                  database.execSQL(insertSql);
+              }
+
+              // Function D: Account deletion
+              private void deleteAccount(String userId) {
+                  // Only admin can delete
+                  if (isCurrentUserAdmin()) {
+                      String deleteSql = "DELETE FROM users WHERE id = ?";
+                      database.execSQL(deleteSql, new Object[]{userId});
+                  }
+              }
+          }
+
+    phases:
+      - phase_id: hypothesize
+        instruction: |
+          Analyze the code flow across functions:
+
+          1. What entry points exist?
+          2. Trace data flow through each path
+          3. Where is validation present? Where is it missing?
+          4. Form hypotheses about vulnerabilities
+          5. Note which paths are secure and why
+
+        expected_output_schema:
+          type: object
+          properties:
+            entry_points:
+              type: array
+              items: string
+            data_paths:
+              type: array
+              items:
+                path: string
+                validation_points: array
+                gaps: array
+            hypotheses:
+              type: array
+              items:
+                statement: string
+                affected_path: string
+                confidence: float
+                cwe: string
+            secure_paths:
+              type: array
+              items:
+                path: string
+                why_secure: string
+
+        evaluation_criteria:
+          - name: path_identification
+            weight: 0.25
+            description: "Identifies all code paths"
+          - name: validation_analysis
+            weight: 0.25
+            description: "Finds validation gaps"
+          - name: hypothesis_quality
+            weight: 0.30
+            description: "Valid, specific hypotheses"
+          - name: secure_recognition
+            weight: 0.20
+            description: "Recognizes secure code"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        CROSS-FUNCTION ANALYSIS:
+
+        ENTRY POINT: processUserRequest(action, data)
+        - action: controls which path
+        - data: user-controlled payload
+
+        PATH 1: update_profile → updateProfile → saveProfile
+        - Validation: name length checked (<=50)
+        - Gap: bio NOT validated at all
+        - Gap: Neither name nor bio sanitized for SQL
+        - VULNERABLE: SQL injection via name OR bio field
+
+        PATH 2: delete_account → deleteAccount
+        - Validation: Admin check (isCurrentUserAdmin)
+        - Database: Uses parameterized query (?)
+        - SECURE: Authorization check + parameterized query
+
+        HYPOTHESES:
+
+        H1: SQL injection via bio field in profile update
+        - Path: processUserRequest → updateProfile → saveProfile
+        - bio is extracted from JSON but never validated or sanitized
+        - Confidence: 0.9
+        - CWE: CWE-89
+
+        H2: SQL injection via name field despite length check
+        - Path: Same as above
+        - Length check (50 chars) doesn't prevent injection
+        - Attacker can inject within 50 chars
+        - Confidence: 0.85
+        - CWE: CWE-89
+
+        SECURE PATTERNS NOTED:
+        - deleteAccount uses parameterized queries (good!)
+        - deleteAccount has authorization check (good!)
+        - This shows the developers KNOW how to write secure code
+          but didn't apply it consistently
+
+      key_observations:
+        - "Same codebase has secure and insecure patterns"
+        - "Validation (length) is not the same as sanitization"
+        - "Cross-function analysis reveals inconsistency"
+
+    training:
+      common_mistakes:
+        - "Only analyzing single function"
+        - "Thinking length validation prevents injection"
+        - "Missing that bio has NO validation"
+
+    tags: [cross_function, static_analysis, sql_injection]
+    cwe_tags: [CWE-89]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GREEN BELT - Component Interaction Analysis
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: static_component_green_001
+    name: "Android Component Interaction Analysis"
+    version: 2
+
+    type: hypothesis
+    pillar: static_analysis
+    belt: green
+    difficulty: 6
+
+    description: |
+      Android apps have multiple components (Activities, Services, Providers).
+      Analyze how they interact and where trust boundaries exist.
+
+    artifacts:
+      - type: manifest
+        context: "AndroidManifest.xml"
+        content: |
+          <manifest package="com.example.vault">
+              <application>
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                      </intent-filter>
+                  </activity>
+
+                  <activity android:name=".UnlockActivity" android:exported="false" />
+
+                  <service android:name=".VaultService" android:exported="false" />
+
+                  <provider
+                      android:name=".VaultProvider"
+                      android:authorities="com.example.vault.data"
+                      android:exported="true"
+                      android:readPermission="com.example.vault.READ" />
+
+                  <receiver android:name=".BackupReceiver" android:exported="true">
+                      <intent-filter>
+                          <action android:name="com.example.vault.BACKUP" />
+                      </intent-filter>
+                  </receiver>
+              </application>
+          </manifest>
+
+      - type: decompiled_code
+        context: "Key component implementations"
+        content: |
+          // EDUCATIONAL: Component interaction analysis
+
+          // MainActivity - the launcher
+          public class MainActivity extends Activity {
+              protected void onCreate(Bundle b) {
+                  if (isUnlocked()) {
+                      showVaultContents();
+                  } else {
+                      startActivity(new Intent(this, UnlockActivity.class));
+                  }
+              }
+          }
+
+          // VaultProvider - data access
+          public class VaultProvider extends ContentProvider {
+              public Cursor query(Uri uri, ...) {
+                  // Returns vault data
+                  return database.query("vault_items", ...);
+              }
+          }
+
+          // BackupReceiver - handles backup requests
+          public class BackupReceiver extends BroadcastReceiver {
+              public void onReceive(Context ctx, Intent intent) {
+                  String destination = intent.getStringExtra("backup_path");
+                  if (destination != null) {
+                      performBackup(destination);
+                  }
+              }
+
+              private void performBackup(String path) {
+                  // Copies vault database to specified path
+                  File src = ctx.getDatabasePath("vault.db");
+                  File dst = new File(path);
+                  copyFile(src, dst);
+              }
+          }
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Analyze the component architecture:
+
+          1. Map all exported vs non-exported components
+          2. Identify trust boundaries
+          3. For each exported component, what can external apps do?
+          4. Are there paths to bypass non-exported protections?
+          5. Form security hypotheses
+
+        expected_output_schema:
+          type: object
+          properties:
+            component_map:
+              type: array
+              items:
+                component: string
+                type: string
+                exported: boolean
+                protection: string
+            trust_boundaries:
+              type: array
+              items: string
+            attack_surface:
+              type: array
+              items:
+                component: string
+                external_capability: string
+            bypass_paths:
+              type: array
+              items:
+                description: string
+                mechanism: string
+            hypotheses:
+              type: array
+              items:
+                statement: string
+                confidence: float
+                cwe: string
+
+        evaluation_criteria:
+          - name: component_mapping
+            weight: 0.25
+            description: "Correct component analysis"
+          - name: trust_analysis
+            weight: 0.25
+            description: "Identifies trust boundaries"
+          - name: attack_surface
+            weight: 0.25
+            description: "Maps external capabilities"
+          - name: hypothesis_quality
+            weight: 0.25
+            description: "Valid security hypotheses"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        COMPONENT ANALYSIS:
+
+        EXPORTED COMPONENTS (Attack Surface):
+        1. MainActivity - exported (launcher), reasonable
+        2. VaultProvider - exported with READ permission, controllable
+        3. BackupReceiver - exported with NO permission, DANGEROUS
+
+        NON-EXPORTED (Protected):
+        1. UnlockActivity - correctly protected
+        2. VaultService - correctly protected
+
+        TRUST BOUNDARIES:
+        - App boundary: MainActivity requires unlock before showing data
+        - Provider boundary: Requires READ permission
+        - Receiver boundary: NO BOUNDARY - anyone can send
+
+        CRITICAL FINDING - BackupReceiver:
+        - Exported with no permission
+        - Accepts backup_path from Intent
+        - Copies vault database to attacker-specified location
+
+        ATTACK SCENARIO:
+        1. Attacker app broadcasts: com.example.vault.BACKUP
+        2. Intent extra: backup_path="/sdcard/attacker/vault.db"
+        3. BackupReceiver copies entire vault database
+        4. Attacker reads copied database
+
+        This BYPASSES all other security:
+        - Doesn't need to unlock (UnlockActivity bypass)
+        - Doesn't need READ permission (VaultProvider bypass)
+        - Gets ENTIRE database, not just query results
+
+        HYPOTHESES:
+
+        H1: Vault data theft via BackupReceiver
+        - Mechanism: Broadcast with controlled backup_path
+        - Confidence: 0.95
+        - CWE: CWE-926 + CWE-22 (path traversal potential)
+
+        H2: Path traversal in backup destination
+        - Mechanism: backup_path="../../../sensitive/location"
+        - Confidence: 0.70
+        - CWE: CWE-22
+
+      key_observations:
+        - "Exported receiver with no permission is extremely dangerous"
+        - "One weak component can bypass all other security"
+        - "The unlock flow is meaningless if data can be extracted directly"
+
+    training:
+      common_mistakes:
+        - "Only analyzing Activities"
+        - "Missing the BackupReceiver danger"
+        - "Not considering broadcast-based attacks"
+
+    tags: [component_analysis, static_analysis, android_security]
+    cwe_tags: [CWE-926, CWE-22]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BLUE BELT - Cryptographic Code Review
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: static_crypto_blue_001
+    name: "Cryptographic Implementation Review"
+    version: 2
+
+    type: hypothesis
+    pillar: static_analysis
+    belt: blue
+    difficulty: 7
+
+    description: |
+      Cryptographic code is easy to get wrong. Learn to identify
+      common crypto mistakes through static analysis.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Encryption utility class"
+        content: |
+          // EDUCATIONAL: Crypto review exercise - find the issues
+
+          public class SecureStorage {
+
+              private static final String KEY = "MySecretKey12345";  // 16 bytes
+
+              public String encrypt(String plaintext) {
+                  try {
+                      SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes(), "AES");
+                      Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+                      cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+                      byte[] encrypted = cipher.doFinal(plaintext.getBytes());
+                      return Base64.encodeToString(encrypted, Base64.DEFAULT);
+                  } catch (Exception e) {
+                      return null;
+                  }
+              }
+
+              public String decrypt(String ciphertext) {
+                  try {
+                      SecretKeySpec keySpec = new SecretKeySpec(KEY.getBytes(), "AES");
+                      Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+                      cipher.init(Cipher.DECRYPT_MODE, keySpec);
+                      byte[] decrypted = cipher.doFinal(Base64.decode(ciphertext, Base64.DEFAULT));
+                      return new String(decrypted);
+                  } catch (Exception e) {
+                      return null;
+                  }
+              }
+
+              public String hashPassword(String password) {
+                  try {
+                      MessageDigest md = MessageDigest.getInstance("MD5");
+                      byte[] hash = md.digest(password.getBytes());
+                      return bytesToHex(hash);
+                  } catch (Exception e) {
+                      return null;
+                  }
+              }
+
+              private String bytesToHex(byte[] bytes) {
+                  StringBuilder sb = new StringBuilder();
+                  for (byte b : bytes) {
+                      sb.append(String.format("%02x", b));
+                  }
+                  return sb.toString();
+              }
+          }
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Review this cryptographic code for vulnerabilities:
+
+          1. List all cryptographic operations
+          2. For each, identify what's wrong (if anything)
+          3. Explain WHY it's a problem
+          4. What's the correct implementation?
+          5. Rank severity of each issue
+
+        expected_output_schema:
+          type: object
+          properties:
+            crypto_operations:
+              type: array
+              items:
+                operation: string
+                issues:
+                  type: array
+                  items:
+                    issue: string
+                    why_bad: string
+                    severity: string
+                    correct_approach: string
+            overall_assessment: string
+
+        evaluation_criteria:
+          - name: issue_identification
+            weight: 0.35
+            description: "Finds all crypto issues"
+          - name: explanation_quality
+            weight: 0.30
+            description: "Explains why each is bad"
+          - name: fix_knowledge
+            weight: 0.20
+            description: "Knows correct approach"
+          - name: severity_ranking
+            weight: 0.15
+            description: "Appropriate severity"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        CRYPTOGRAPHIC ISSUES FOUND:
+
+        ISSUE 1: Hardcoded encryption key
+        - Location: KEY = "MySecretKey12345"
+        - Why bad: Key visible in decompiled code, same for all users
+        - Severity: CRITICAL
+        - Fix: Derive key from user password with PBKDF2, or use Android Keystore
+
+        ISSUE 2: ECB mode for AES
+        - Location: "AES/ECB/PKCS5Padding"
+        - Why bad: ECB encrypts identical blocks to identical ciphertext
+          (famous "ECB penguin" problem), allows pattern analysis
+        - Severity: HIGH
+        - Fix: Use AES/GCM/NoPadding or AES/CBC/PKCS5Padding with random IV
+
+        ISSUE 3: No IV (Initialization Vector)
+        - Location: cipher.init without IV
+        - Why bad: Even with CBC, same plaintext always produces same
+          ciphertext. Makes encryption deterministic.
+        - Severity: HIGH
+        - Fix: Generate random IV, prepend to ciphertext
+
+        ISSUE 4: MD5 for password hashing
+        - Location: MessageDigest.getInstance("MD5")
+        - Why bad: MD5 is broken, fast to brute force, no salt
+        - Severity: CRITICAL
+        - Fix: Use bcrypt, scrypt, or Argon2 with salt
+
+        ISSUE 5: No salt for password hash
+        - Location: md.digest(password.getBytes())
+        - Why bad: Same password always produces same hash,
+          vulnerable to rainbow tables
+        - Severity: HIGH
+        - Fix: Generate random salt per user, hash(salt + password)
+
+        ISSUE 6: Silent exception handling
+        - Location: catch (Exception e) { return null; }
+        - Why bad: Crypto failures should be loud, not silent
+        - Severity: MEDIUM
+        - Fix: Throw or log, never silently fail
+
+        OVERALL: This is "cargo cult cryptography" - using crypto APIs
+        without understanding the requirements. Every aspect is wrong.
+
+      key_observations:
+        - "Hardcoded key defeats the purpose of encryption"
+        - "ECB mode is almost never appropriate"
+        - "MD5 hasn't been acceptable for passwords since ~2010"
+
+    training:
+      common_mistakes:
+        - "Thinking 'uses AES' means secure"
+        - "Missing the ECB issue"
+        - "Not knowing why MD5 is bad"
+
+    tags: [cryptography, static_analysis, code_review]
+    cwe_tags: [CWE-798, CWE-327, CWE-328, CWE-916]

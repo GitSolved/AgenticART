@@ -1,0 +1,492 @@
+# AgenticART V2 Challenge Schema
+# This schema defines the structure for reasoning-oriented vulnerability discovery challenges
+
+version: "2.0"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHALLENGE STRUCTURE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+challenge:
+  # Required: Unique identifier
+  id: string  # Format: {pillar}_{type}_{belt}_{number} e.g., "static_obs_white_001"
+
+  # Required: Human-readable name
+  name: string
+
+  # Fixed version marker
+  version: 2
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # CLASSIFICATION
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Challenge type determines what cognitive skill is being trained
+  type:
+    enum:
+      - observation      # Identify security-relevant artifacts
+      - hypothesis       # Form testable security hypotheses
+      - verification     # Design and execute tests
+      - root_cause       # Deep analysis of WHY vulnerabilities exist
+      - negative         # Recognize secure patterns (NOT vulnerable)
+      - transfer         # Apply patterns across different contexts
+      - synthesis        # End-to-end discovery on novel targets
+
+  # Pillar determines which training corpus this belongs to
+  pillar:
+    enum:
+      - static_analysis      # Code review without execution
+      - negative_knowledge   # What's NOT vulnerable
+      - root_cause           # Deep WHY analysis
+      - pattern_transfer     # Same vuln across contexts
+      - methodology          # Hypothesis-driven approach
+      - taxonomy             # CWE/OWASP classification
+      - patch_analysis       # Learning from CVE fixes
+
+  # Belt determines difficulty progression
+  belt:
+    enum: [white, yellow, orange, green, blue, purple, brown, black]
+
+  # Granular difficulty within belt (1-10)
+  difficulty: integer  # 1=easiest, 10=hardest
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # CONTENT
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Main challenge description
+  description: string  # Markdown supported
+
+  # Input artifacts provided to the model
+  artifacts:
+    type: array
+    items:
+      type:
+        enum:
+          - decompiled_code    # Java/Smali from jadx/apktool
+          - manifest           # AndroidManifest.xml
+          - binary_properties  # Native library info
+          - runtime_trace      # Frida/logcat output
+          - network_capture    # HTTP/traffic data
+          - frida_output       # Frida script results
+          - logcat             # Android logs
+          - previous_output    # Output from prior phase
+          - apk_metadata       # Package info, permissions
+          - cve_description    # CVE details for patch analysis
+          - patch_diff         # Code diff showing fix
+
+      # The actual content
+      content: string
+
+      # Context explaining what this artifact represents
+      context: string  # Optional but recommended
+
+      # Original source file if applicable
+      source_file: string  # Optional
+
+      # Additional metadata
+      metadata: object  # Optional
+
+  # Reasoning phases (multi-phase challenges have multiple)
+  phases:
+    type: array
+    items:
+      phase_id:
+        enum: [observe, hypothesize, test, analyze, synthesize]
+
+      # What to do in this phase
+      instruction: string
+
+      # JSON schema for expected output structure
+      expected_output_schema: object
+
+      # Evaluation criteria for this phase
+      evaluation_criteria:
+        type: array
+        items:
+          name: string
+          weight: float  # 0.0-1.0, must sum to 1.0
+          description: string
+          scoring_guide: object  # Optional: score -> description
+
+      # Token limit for response
+      max_tokens: integer  # Default: 2000
+
+      # Is this phase required?
+      required: boolean  # Default: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # GROUND TRUTH
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  ground_truth:
+    # Is there a vulnerability?
+    vulnerability_present: boolean
+
+    # What type?
+    vulnerability_type: string  # Optional if not vulnerable
+
+    # CWE classification
+    cwe_id: string  # e.g., "CWE-89"
+
+    # Severity
+    cvss_score: float  # Optional
+
+    # Deep explanation of WHY
+    root_cause: string
+
+    # For negative challenges: what makes it secure
+    secure_properties:
+      type: array
+      items: string
+
+    # Must-find observations
+    key_observations:
+      type: array
+      items: string
+
+    # Valid hypotheses (multiple may be acceptable)
+    valid_hypotheses:
+      type: array
+      items:
+        statement: string
+        confidence_range: [float, float]  # Acceptable confidence range
+        required_elements: array  # Must mention these
+
+    # Valid test approaches
+    valid_tests:
+      type: array
+      items:
+        approach: string
+        tools_allowed: array
+        expected_result: string
+
+    # How to exploit (if vulnerable)
+    exploitation_path: string  # Optional
+
+    # Patch description (for patch_analysis pillar)
+    patch_description: string  # Optional
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # TRAINING METADATA
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  training:
+    # Should full reasoning chain be captured?
+    reasoning_chain_required: boolean  # Default: true
+
+    # Can DPO pairs be generated?
+    dpo_pairs_available: boolean  # Default: true
+
+    # What should the model NOT conclude?
+    negative_examples:
+      type: array
+      items: string  # Common wrong conclusions
+
+    # Frequent mistakes to train against
+    common_mistakes:
+      type: array
+      items: string
+
+    # Pattern family for transfer learning
+    pattern_family: string  # Optional, e.g., "sql_injection"
+
+    # What makes this challenge difficult?
+    difficulty_factors:
+      type: array
+      items: string
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # RELATIONSHIPS
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Challenges that should be completed first
+  prerequisites:
+    type: array
+    items: string  # Challenge IDs
+
+  # Challenges this unlocks upon completion
+  unlocks:
+    type: array
+    items: string  # Challenge IDs
+
+  # Related challenges for context
+  related_challenges:
+    type: array
+    items: string  # Challenge IDs
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # TAGS
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  tags:
+    type: array
+    items: string  # General tags
+
+  cwe_tags:
+    type: array
+    items: string  # CWE IDs
+
+  owasp_tags:
+    type: array
+    items: string  # OWASP categories
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EVALUATION RUBRICS BY PHASE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+rubrics:
+  observation:
+    criteria:
+      - name: completeness
+        weight: 0.30
+        description: "Did it find all key security-relevant artifacts?"
+        scoring_guide:
+          1.0: "Found all key observations plus relevant extras"
+          0.8: "Found all key observations"
+          0.6: "Found most key observations (>70%)"
+          0.4: "Found some key observations (40-70%)"
+          0.2: "Found few key observations (<40%)"
+          0.0: "Missed all key observations"
+
+      - name: accuracy
+        weight: 0.30
+        description: "Are observations factually correct?"
+        scoring_guide:
+          1.0: "All observations accurate, no errors"
+          0.8: "Minor inaccuracies that don't affect conclusions"
+          0.6: "Some inaccuracies but core findings correct"
+          0.4: "Significant inaccuracies affecting analysis"
+          0.2: "Many errors, unreliable observations"
+          0.0: "Fundamentally incorrect observations"
+
+      - name: relevance
+        weight: 0.20
+        description: "Is security relevance correctly assessed?"
+        scoring_guide:
+          1.0: "Perfect relevance ranking, correct prioritization"
+          0.8: "Good relevance assessment, minor misordering"
+          0.6: "Acceptable relevance, some important items underranked"
+          0.4: "Poor relevance assessment, key items missed/buried"
+          0.0: "Completely wrong relevance assessment"
+
+      - name: no_hallucination
+        weight: 0.20
+        description: "No made-up APIs, paths, or methods?"
+        scoring_guide:
+          1.0: "Zero hallucinations"
+          0.5: "Minor hallucination that doesn't affect analysis"
+          0.0: "Hallucinations present affecting conclusions"
+
+  hypothesis:
+    criteria:
+      - name: validity
+        weight: 0.25
+        description: "Is the hypothesis logically sound?"
+        scoring_guide:
+          1.0: "Hypothesis follows logically from observations"
+          0.7: "Sound hypothesis with minor logical gaps"
+          0.4: "Hypothesis has logical issues but is reasonable"
+          0.0: "Hypothesis is illogical or contradicts evidence"
+
+      - name: testability
+        weight: 0.25
+        description: "Can the hypothesis be verified/falsified?"
+        scoring_guide:
+          1.0: "Clear test plan that would definitively verify/falsify"
+          0.7: "Testable but test might be inconclusive"
+          0.4: "Partially testable, would need refinement"
+          0.0: "Not testable with available tools/access"
+
+      - name: specificity
+        weight: 0.20
+        description: "Is hypothesis precise enough to act on?"
+        scoring_guide:
+          1.0: "Specific: identifies exact location, mechanism, impact"
+          0.7: "Mostly specific with some ambiguity"
+          0.4: "Vague but actionable direction"
+          0.0: "Too vague to act upon"
+
+      - name: coverage
+        weight: 0.15
+        description: "Does it address key observations?"
+        scoring_guide:
+          1.0: "Addresses all relevant observations"
+          0.7: "Addresses most relevant observations"
+          0.4: "Addresses some but misses key points"
+          0.0: "Ignores key observations"
+
+      - name: cwe_mapping
+        weight: 0.15
+        description: "Correct vulnerability classification?"
+        scoring_guide:
+          1.0: "Exact CWE match"
+          0.7: "Related CWE in same family"
+          0.4: "Wrong CWE but correct vulnerability category"
+          0.0: "Completely wrong classification"
+
+  root_cause:
+    criteria:
+      - name: depth
+        weight: 0.30
+        description: "Goes beyond surface to fundamental cause?"
+        scoring_guide:
+          1.0: "Identifies fundamental principle, not just symptom"
+          0.7: "Good depth, connects to security principles"
+          0.4: "Surface level but accurate"
+          0.0: "Only describes symptom, no understanding"
+
+      - name: accuracy
+        weight: 0.25
+        description: "Correctly identifies the real cause?"
+        scoring_guide:
+          1.0: "Root cause matches expert analysis"
+          0.7: "Correct direction, minor misattribution"
+          0.4: "Partially correct, missing key factors"
+          0.0: "Wrong root cause identification"
+
+      - name: generalization
+        weight: 0.25
+        description: "Identifies transferable patterns?"
+        scoring_guide:
+          1.0: "Correctly identifies pattern family and variants"
+          0.7: "Identifies pattern but misses some variants"
+          0.4: "Limited generalization"
+          0.0: "No generalization, treats as isolated case"
+
+      - name: taxonomy
+        weight: 0.20
+        description: "Correct CWE/OWASP mapping?"
+        scoring_guide:
+          1.0: "Correct primary and parent CWE, OWASP mapping"
+          0.7: "Correct primary CWE, incomplete hierarchy"
+          0.4: "Related CWE, close but not exact"
+          0.0: "Wrong taxonomy mapping"
+
+  negative:
+    criteria:
+      - name: correct_classification
+        weight: 0.40
+        description: "Correctly identifies as NOT vulnerable?"
+        scoring_guide:
+          1.0: "Correctly identifies as secure with high confidence"
+          0.5: "Correctly identifies but low confidence"
+          0.0: "False positive - claims vulnerability exists"
+
+      - name: security_property_id
+        weight: 0.30
+        description: "Identifies what MAKES it secure?"
+        scoring_guide:
+          1.0: "Identifies all key security properties"
+          0.7: "Identifies most security properties"
+          0.4: "Identifies some but misses key properties"
+          0.0: "Cannot explain why it's secure"
+
+      - name: attack_resistance
+        weight: 0.20
+        description: "Explains why attacks would fail?"
+        scoring_guide:
+          1.0: "Explains resistance to all relevant attack vectors"
+          0.7: "Explains most attack resistance"
+          0.4: "Partial explanation"
+          0.0: "No attack resistance analysis"
+
+      - name: no_false_positives
+        weight: 0.10
+        description: "Doesn't hallucinate vulnerabilities?"
+        scoring_guide:
+          1.0: "No false vulnerabilities claimed"
+          0.0: "Claims vulnerabilities that don't exist"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPECTED OUTPUT SCHEMAS BY PHASE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+output_schemas:
+  observation:
+    type: object
+    properties:
+      observations:
+        type: array
+        items:
+          artifact: string          # What was found
+          location: string          # Where in code/config
+          relevance: enum [high, medium, low]
+          reasoning: string         # Why it's security-relevant
+
+      security_context: string      # Overall security posture assessment
+      recommended_next_steps: array # What to investigate next
+    required: [observations]
+
+  hypothesis:
+    type: object
+    properties:
+      hypotheses:
+        type: array
+        items:
+          statement: string         # The hypothesis
+          confidence: float         # 0.0-1.0
+          testable: boolean
+          test_plan: string         # How to verify
+          cwe_mapping: string       # Suspected CWE
+          expected_impact: string   # If confirmed, what's the impact?
+    required: [hypotheses]
+
+  verification:
+    type: object
+    properties:
+      test_executed: string         # What test was run
+      tools_used: array             # Frida, ADB, etc.
+      raw_output: string            # Actual tool output
+      interpretation: string        # What the output means
+      hypothesis_status: enum [confirmed, refuted, inconclusive]
+      evidence: string              # Proof of finding
+    required: [test_executed, hypothesis_status]
+
+  root_cause:
+    type: object
+    properties:
+      surface_cause: string         # Immediate cause
+      root_cause: string            # Fundamental cause
+      fundamental_principle: string # Security principle violated
+      similar_patterns: array       # Where else this appears
+      taxonomy:
+        cwe: string
+        parent_cwe: string
+        owasp_mobile: string
+    required: [root_cause, taxonomy]
+
+  negative:
+    type: object
+    properties:
+      is_vulnerable: boolean        # Should be false
+      confidence: float             # How sure
+      security_properties:
+        type: array
+        items:
+          property: string          # What security property
+          status: enum [secure, partial, weak]
+          reasoning: string         # Why it's secure
+      attempted_attacks:
+        type: array
+        items:
+          attack: string            # Attack tried
+          result: enum [blocked, mitigated, n/a]
+          why: string               # Why it failed
+    required: [is_vulnerable, security_properties]
+
+  synthesis:
+    type: object
+    properties:
+      observations: object          # Full observation output
+      hypotheses: object            # Full hypothesis output
+      verification: object          # Full verification output
+      root_cause: object            # Full root cause output
+      vulnerability_report:
+        title: string
+        severity: enum [critical, high, medium, low, info]
+        cwe: string
+        description: string
+        proof_of_concept: string
+        remediation: string
+    required: [vulnerability_report]

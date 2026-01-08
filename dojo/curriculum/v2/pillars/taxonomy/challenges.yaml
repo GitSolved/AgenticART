@@ -1,0 +1,692 @@
+# Taxonomy Pillar - Challenges
+# Purpose: Train correct CWE/OWASP classification and hierarchy understanding
+# Focus: Precise categorization enables pattern recognition and research lookup
+
+challenges:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # WHITE BELT - Basic CWE Understanding
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: taxonomy_basic_white_001
+    name: "CWE Hierarchy Navigation"
+    version: 2
+
+    type: observation
+    pillar: taxonomy
+    belt: white
+    difficulty: 2
+
+    description: |
+      CWEs form a hierarchy from abstract (pillars) to specific (variants).
+      Understanding this hierarchy helps you:
+      - Find related vulnerabilities
+      - Understand root causes
+      - Research mitigations
+
+    artifacts:
+      - type: cve_description
+        context: "A vulnerability report to classify"
+        content: |
+          VULNERABILITY FOUND:
+          The Android app's ContentProvider allows SQL injection through the
+          selection parameter. An attacker can extract all database contents
+          by crafting malicious queries.
+
+          Example exploit: content://app.provider/users --where "1=1 OR 1=1--"
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Classify this vulnerability in the CWE hierarchy:
+
+          1. What is the SPECIFIC CWE? (variant level)
+          2. What is its PARENT CWE? (base level)
+          3. What is the ROOT CWE? (class or pillar level)
+          4. What are SIBLING CWEs? (same parent)
+          5. Why does hierarchy matter for this vulnerability?
+
+        expected_output_schema:
+          type: object
+          properties:
+            specific_cwe:
+              cwe_id: string
+              name: string
+              why_this_one: string
+            parent_cwe:
+              cwe_id: string
+              name: string
+            root_cwe:
+              cwe_id: string
+              name: string
+            sibling_cwes:
+              type: array
+              items:
+                cwe_id: string
+                name: string
+            hierarchy_importance: string
+
+        evaluation_criteria:
+          - name: correct_specific
+            weight: 0.30
+            description: "Correct specific CWE"
+          - name: correct_hierarchy
+            weight: 0.30
+            description: "Accurate parent chain"
+          - name: sibling_awareness
+            weight: 0.20
+            description: "Knows related CWEs"
+          - name: understanding
+            weight: 0.20
+            description: "Explains why hierarchy matters"
+
+        max_tokens: 1500
+
+    ground_truth:
+      cwe_id: "CWE-89"
+
+      root_cause: |
+        CWE HIERARCHY:
+
+        SPECIFIC (Variant):
+        CWE-89: Improper Neutralization of Special Elements used in an SQL Command
+        - This is THE SQL injection CWE
+        - Most precise match for this vulnerability
+
+        PARENT (Base):
+        CWE-943: Improper Neutralization of Special Elements in Data Query Logic
+        - Covers SQL, NoSQL, ORM injection
+        - Parent of CWE-89, CWE-90 (LDAP), CWE-652 (XPath)
+
+        ROOT (Class):
+        CWE-74: Improper Neutralization of Special Elements in Output Used by a
+                Downstream Component ('Injection')
+        - The fundamental injection class
+        - Parent of ALL injection types
+
+        PILLAR:
+        CWE-707: Improper Neutralization
+        - Highest level abstraction
+        - Covers all input handling issues
+
+        SIBLINGS (Same parent as CWE-89):
+        - CWE-564: SQL Injection: Hibernate
+        - CWE-566: SQL Injection via JDBC
+
+        WHY HIERARCHY MATTERS:
+        1. Research: CWE-89 research applies, but CWE-74 research gives
+           broader understanding of injection
+        2. Mitigation: Fixes for CWE-943 (parameterization) work for all
+           children including CWE-89
+        3. Pattern recognition: If you find CWE-89, look for siblings
+           (maybe LDAP or XPath injection too)
+
+      key_observations:
+        - "CWE-89 is the canonical SQL injection ID"
+        - "Parent CWE-943 covers all query injection"
+        - "Root CWE-74 is the injection pillar"
+
+    training:
+      common_mistakes:
+        - "Using CWE-74 when CWE-89 is more precise"
+        - "Not knowing parent chain"
+        - "Missing siblings"
+
+    tags: [cwe, taxonomy, sql_injection]
+    cwe_tags: [CWE-89, CWE-943, CWE-74]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # YELLOW BELT - OWASP Mobile Top 10 Mapping
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: taxonomy_owasp_yellow_001
+    name: "OWASP Mobile Top 10 Classification"
+    version: 2
+
+    type: observation
+    pillar: taxonomy
+    belt: yellow
+    difficulty: 3
+
+    description: |
+      Map vulnerabilities to OWASP Mobile Top 10 categories.
+      This helps communicate findings to stakeholders and prioritize fixes.
+
+    artifacts:
+      - type: previous_output
+        context: "Vulnerability findings from assessment"
+        content: |
+          FINDING 1: API key hardcoded in BuildConfig
+          The Stripe API key is embedded in the app source code.
+
+          FINDING 2: Insecure data storage
+          User credentials stored in SharedPreferences without encryption.
+
+          FINDING 3: Certificate pinning bypass
+          App doesn't implement certificate pinning, allowing MitM attacks.
+
+          FINDING 4: Debug logging enabled
+          Production build logs sensitive user data to logcat.
+
+          FINDING 5: Exported activity allows settings change
+          SettingsActivity is exported without permission protection.
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Map each finding to:
+          1. The correct OWASP Mobile Top 10 (2024) category
+          2. The specific CWE(s)
+          3. Brief justification for the mapping
+
+          OWASP Mobile Top 10 2024:
+          M1: Improper Credential Usage
+          M2: Inadequate Supply Chain Security
+          M3: Insecure Authentication/Authorization
+          M4: Insufficient Input/Output Validation
+          M5: Insecure Communication
+          M6: Inadequate Privacy Controls
+          M7: Insufficient Binary Protections
+          M8: Security Misconfiguration
+          M9: Insecure Data Storage
+          M10: Insufficient Cryptography
+
+        expected_output_schema:
+          type: object
+          properties:
+            mappings:
+              type: array
+              items:
+                finding_id: integer
+                owasp_category: string
+                cwe_ids: array
+                justification: string
+
+        evaluation_criteria:
+          - name: correct_owasp
+            weight: 0.40
+            description: "Correct OWASP category"
+          - name: correct_cwe
+            weight: 0.30
+            description: "Correct CWE mapping"
+          - name: justification
+            weight: 0.30
+            description: "Clear reasoning"
+
+        max_tokens: 1500
+
+    ground_truth:
+      root_cause: |
+        CORRECT MAPPINGS:
+
+        FINDING 1 (Hardcoded API key):
+        - OWASP: M1 - Improper Credential Usage
+        - CWE: CWE-798 (Hardcoded Credentials)
+        - Justification: Credentials embedded in source code
+
+        FINDING 2 (Unencrypted SharedPreferences):
+        - OWASP: M9 - Insecure Data Storage
+        - CWE: CWE-312 (Cleartext Storage of Sensitive Information)
+        - Justification: Sensitive data stored without encryption
+
+        FINDING 3 (No certificate pinning):
+        - OWASP: M5 - Insecure Communication
+        - CWE: CWE-295 (Improper Certificate Validation)
+        - Justification: TLS without pinning allows MitM
+
+        FINDING 4 (Debug logging):
+        - OWASP: M8 - Security Misconfiguration
+        - Also touches: M6 - Inadequate Privacy Controls
+        - CWE: CWE-532 (Insertion of Sensitive Information into Log File)
+        - Justification: Logging sensitive data is a configuration error
+
+        FINDING 5 (Exported activity):
+        - OWASP: M8 - Security Misconfiguration
+        - Also touches: M3 - Insecure Authentication/Authorization
+        - CWE: CWE-926 (Improper Export of Android Application Components)
+        - Justification: Component exposure without protection
+
+      key_observations:
+        - "Some findings map to multiple categories"
+        - "M8 (Misconfiguration) is a catch-all for many issues"
+        - "CWE provides more precision than OWASP category"
+
+    training:
+      common_mistakes:
+        - "Confusing M1 (Credential Usage) with M9 (Data Storage)"
+        - "Not recognizing multi-category mappings"
+        - "Using outdated OWASP Mobile Top 10"
+
+    tags: [owasp, taxonomy, mobile_top_10]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ORANGE BELT - Ambiguous Classification
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: taxonomy_ambiguous_orange_001
+    name: "Resolving Classification Ambiguity"
+    version: 2
+
+    type: root_cause
+    pillar: taxonomy
+    belt: orange
+    difficulty: 5
+
+    description: |
+      Some vulnerabilities could fit multiple CWEs. Learn to choose the
+      MOST PRECISE and MOST USEFUL classification.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Ambiguous vulnerability"
+        content: |
+          // EDUCATIONAL: Vulnerability with multiple possible classifications
+          public class FileDownloader {
+              public void downloadFile(String url, String filename) {
+                  // Download file from url
+                  byte[] data = httpClient.get(url);
+
+                  // Save to downloads directory
+                  File outFile = new File(getExternalFilesDir("downloads"), filename);
+                  FileOutputStream fos = new FileOutputStream(outFile);
+                  fos.write(data);
+                  fos.close();
+              }
+          }
+
+          // Called from exported Activity:
+          public class DownloadActivity extends Activity {
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  String url = getIntent().getStringExtra("url");
+                  String name = getIntent().getStringExtra("filename");
+                  new FileDownloader().downloadFile(url, name);
+              }
+          }
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          This code has multiple potential vulnerabilities that could be
+          classified different ways. For each issue:
+
+          1. What CWEs COULD apply? (list all reasonable options)
+          2. Which CWE is MOST PRECISE?
+          3. Which CWE is MOST USEFUL for remediation?
+          4. What's your final classification and why?
+
+        expected_output_schema:
+          type: object
+          properties:
+            vulnerabilities:
+              type: array
+              items:
+                description: string
+                possible_cwes:
+                  type: array
+                  items:
+                    cwe_id: string
+                    why_possible: string
+                most_precise: string
+                most_useful: string
+                final_classification: string
+                reasoning: string
+
+        evaluation_criteria:
+          - name: comprehensive_options
+            weight: 0.25
+            description: "Lists reasonable CWE options"
+          - name: precision_judgment
+            weight: 0.30
+            description: "Chooses most precise"
+          - name: utility_judgment
+            weight: 0.25
+            description: "Considers remediation utility"
+          - name: reasoning_quality
+            weight: 0.20
+            description: "Clear justification"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        VULNERABILITY 1: Path Traversal via filename
+
+        Possible CWEs:
+        - CWE-22: Path Traversal (general)
+        - CWE-23: Relative Path Traversal
+        - CWE-73: External Control of File Name or Path
+        - CWE-434: Unrestricted Upload of File with Dangerous Type
+
+        Most Precise: CWE-73
+        - The attacker controls the filename parameter directly
+        - More specific than CWE-22/23 because it's about EXTERNAL CONTROL
+
+        Most Useful: CWE-22
+        - More research available
+        - Developers more likely to understand
+        - Remediation guidance is well-documented
+
+        Final: CWE-73 with CWE-22 as parent reference
+        - Precise for the report, familiar for remediation
+
+        ---
+
+        VULNERABILITY 2: SSRF via url parameter
+
+        Possible CWEs:
+        - CWE-918: Server-Side Request Forgery
+        - CWE-441: Unintended Proxy or Intermediary
+        - CWE-610: Externally Controlled Reference to a Resource
+
+        Most Precise: CWE-918 (SSRF)
+        - Exact match for this vulnerability pattern
+
+        Most Useful: CWE-918
+        - Well-known, well-documented
+        - Clear remediation (allowlist URLs)
+
+        Final: CWE-918
+
+        ---
+
+        VULNERABILITY 3: Exported Activity without protection
+
+        Possible CWEs:
+        - CWE-926: Improper Export of Android Application Components
+        - CWE-862: Missing Authorization
+        - CWE-284: Improper Access Control
+
+        Most Precise: CWE-926
+        - Android-specific, exact match
+
+        Most Useful: CWE-926
+        - Android developers will recognize it
+        - Clear fix: exported="false" or add permission
+
+        Final: CWE-926
+
+      key_observations:
+        - "Multiple valid CWEs exist for each issue"
+        - "Precision vs familiarity is a real tradeoff"
+        - "Include both: precise primary, familiar parent"
+
+    training:
+      common_mistakes:
+        - "Picking first matching CWE without considering options"
+        - "Always choosing most general (CWE-284) instead of specific"
+        - "Not considering remediation utility"
+
+    tags: [taxonomy, ambiguity, cwe_selection]
+    cwe_tags: [CWE-22, CWE-73, CWE-918, CWE-926]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GREEN BELT - CWE Chain Analysis
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: taxonomy_chain_green_001
+    name: "Vulnerability Chain Classification"
+    version: 2
+
+    type: root_cause
+    pillar: taxonomy
+    belt: green
+    difficulty: 6
+
+    description: |
+      Complex exploits chain multiple weaknesses. Learn to classify
+      each step in the chain AND the overall impact.
+
+    artifacts:
+      - type: previous_output
+        context: "Multi-step exploit chain"
+        content: |
+          EXPLOIT CHAIN ANALYSIS:
+
+          Step 1: Attacker calls exported IntentForwarder activity
+          Step 2: IntentForwarder extracts and forwards nested Intent
+          Step 3: Nested Intent targets internal AdminPanel activity
+          Step 4: AdminPanel processes attacker-controlled extras
+          Step 5: Admin command executed with elevated privileges
+
+          IMPACT: Privilege escalation from unprivileged app to admin
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Classify each step in the exploit chain:
+
+          1. What CWE applies to EACH STEP?
+          2. What is the PRIMARY CWE for the overall chain?
+          3. What is the IMPACT CWE (what the attacker achieves)?
+          4. How do these CWEs relate in the hierarchy?
+
+        expected_output_schema:
+          type: object
+          properties:
+            step_classifications:
+              type: array
+              items:
+                step: integer
+                cwe_id: string
+                cwe_name: string
+                role_in_chain: string
+            primary_cwe: string
+            impact_cwe: string
+            chain_relationship: string
+            complete_classification: string
+
+        evaluation_criteria:
+          - name: step_accuracy
+            weight: 0.30
+            description: "Correct CWE per step"
+          - name: primary_selection
+            weight: 0.25
+            description: "Identifies primary weakness"
+          - name: impact_mapping
+            weight: 0.25
+            description: "Correct impact classification"
+          - name: chain_understanding
+            weight: 0.20
+            description: "Understands chain relationship"
+
+        max_tokens: 2000
+
+    ground_truth:
+      root_cause: |
+        STEP-BY-STEP CWE CLASSIFICATION:
+
+        Step 1 (Call exported activity):
+        - CWE-926: Improper Export of Android Application Components
+        - Role: Entry point, enables chain initiation
+
+        Step 2 (Forward nested intent):
+        - CWE-927: Use of Implicit Intent for Sensitive Communication
+        - Role: Amplification, extends reach to internal components
+
+        Step 3 (Access internal activity):
+        - CWE-441: Unintended Proxy or Intermediary (Confused Deputy)
+        - Role: Core vulnerability, trusted component acts on attacker's behalf
+
+        Step 4 (Process attacker extras):
+        - CWE-20: Improper Input Validation
+        - Role: Enabler, allows malicious data to flow through
+
+        Step 5 (Execute admin command):
+        - CWE-269: Improper Privilege Management
+        - Role: Impact realization
+
+        PRIMARY CWE: CWE-441 (Confused Deputy)
+        - This is the ROOT CAUSE of the chain
+        - IntentForwarder acts as confused deputy
+
+        IMPACT CWE: CWE-269 (Improper Privilege Management)
+        - What the attacker ultimately achieves
+        - Could also use CWE-272 (Least Privilege Violation)
+
+        COMPLETE CLASSIFICATION:
+        CWE-926 (entry) → CWE-441 (root cause) → CWE-269 (impact)
+
+        Report as: CWE-441 with CWE-269 impact
+        Secondary: CWE-926, CWE-927 as contributing factors
+
+      key_observations:
+        - "Each step has its own CWE"
+        - "Primary CWE is the root cause, not first or last"
+        - "Report primary + impact + contributing"
+
+    training:
+      common_mistakes:
+        - "Classifying only final impact"
+        - "Classifying only entry point"
+        - "Not identifying confused deputy as root"
+
+    tags: [chain_analysis, taxonomy, privilege_escalation]
+    cwe_tags: [CWE-441, CWE-926, CWE-927, CWE-269]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BLUE BELT - New Vulnerability Classification
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: taxonomy_novel_blue_001
+    name: "Classifying Novel Vulnerabilities"
+    version: 2
+
+    type: root_cause
+    pillar: taxonomy
+    belt: blue
+    difficulty: 7
+
+    description: |
+      When you discover a vulnerability that doesn't perfectly match
+      existing CWEs, how do you classify it? Learn to handle edge cases.
+
+    artifacts:
+      - type: previous_output
+        context: "Novel vulnerability discovered"
+        content: |
+          NOVEL FINDING:
+
+          An Android app uses a custom IPC mechanism where components
+          communicate via a shared SQLite database. Component A writes
+          "commands" to a table, Component B polls and executes them.
+
+          The vulnerability: Component B doesn't verify that commands
+          came from Component A. Any app with database access (via
+          exported ContentProvider) can inject commands.
+
+          This is kind of like:
+          - SQL injection (database involved)
+          - Command injection (commands executed)
+          - Confused deputy (B executes on attacker's behalf)
+          - IPC vulnerability (inter-component communication)
+
+          But none of these are an EXACT match.
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          For this novel vulnerability:
+
+          1. What CWEs are CLOSE but not exact?
+          2. What makes each one imperfect?
+          3. What's the BEST classification strategy?
+          4. Would you propose a new CWE or use existing ones?
+          5. How would you document this in a report?
+
+        expected_output_schema:
+          type: object
+          properties:
+            candidate_cwes:
+              type: array
+              items:
+                cwe_id: string
+                match_quality: string
+                why_imperfect: string
+            classification_strategy: string
+            primary_cwe: string
+            secondary_cwes: array
+            documentation_approach: string
+
+        evaluation_criteria:
+          - name: candidate_analysis
+            weight: 0.30
+            description: "Analyzes candidate CWEs"
+          - name: strategy_quality
+            weight: 0.30
+            description: "Sound classification strategy"
+          - name: practical_resolution
+            weight: 0.25
+            description: "Practical documentation approach"
+          - name: reasoning
+            weight: 0.15
+            description: "Clear reasoning throughout"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        CANDIDATE CWE ANALYSIS:
+
+        CWE-89 (SQL Injection):
+        - Match: Database involved
+        - Imperfect: Not injecting SQL syntax, injecting commands
+
+        CWE-78 (Command Injection):
+        - Match: Commands being executed
+        - Imperfect: Not OS commands, custom app commands
+
+        CWE-441 (Confused Deputy):
+        - Match: Component B acts on attacker's behalf
+        - Imperfect: Good match but doesn't capture IPC aspect
+
+        CWE-502 (Deserialization):
+        - Match: Data becomes action
+        - Imperfect: Not really deserialization
+
+        CWE-94 (Code Injection):
+        - Match: Injecting executable instructions
+        - Imperfect: Not code per se, but command data
+
+        CWE-913 (Improper Control of Dynamically-Managed Code Resources):
+        - Match: Dynamic command execution
+        - Better match than CWE-94
+
+        BEST CLASSIFICATION STRATEGY:
+        Use CWE hierarchy - pick the most accurate PARENT, note specifics.
+
+        Primary: CWE-74 (Injection)
+        - The fundamental issue is injection: attacker input becomes executed
+        - Use the class-level CWE when variants don't fit
+
+        Secondary: CWE-441 (Confused Deputy)
+        - Captures the trust relationship abuse
+
+        Tertiary: CWE-862 (Missing Authorization)
+        - Component B should verify command source
+
+        DOCUMENTATION APPROACH:
+        "This vulnerability is classified as CWE-74 (Injection) with aspects
+        of CWE-441 (Confused Deputy). The custom IPC mechanism creates an
+        injection point where attacker-controlled database records become
+        executed commands. While not matching existing CWE variants exactly,
+        the root cause is injection of command data into an interpreter
+        (Component B's command processor)."
+
+      key_observations:
+        - "Novel vulns often need class-level CWEs"
+        - "Multiple CWEs capture different aspects"
+        - "Document the nuance in the report"
+
+    training:
+      common_mistakes:
+        - "Forcing an imperfect CWE match"
+        - "Saying 'no CWE applies'"
+        - "Not using hierarchy for novel cases"
+
+    tags: [novel_vulnerability, taxonomy, classification]
+    cwe_tags: [CWE-74, CWE-441, CWE-862]

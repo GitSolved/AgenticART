@@ -1,0 +1,680 @@
+# Negative Knowledge Pillar - Challenges
+# Purpose: Train recognition of SECURE patterns
+# Focus: Understanding why code is NOT vulnerable
+
+# This pillar is CRITICAL for reducing false positives.
+# A model that only sees vulnerable code will hallucinate vulnerabilities everywhere.
+
+challenges:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # WHITE BELT - Recognize Basic Security
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: neg_secure_white_001
+    name: "Secure Password Storage"
+    version: 2
+
+    type: negative
+    pillar: negative_knowledge
+    belt: white
+    difficulty: 2
+
+    description: |
+      Analyze this password storage implementation.
+      Determine if it is vulnerable or secure, and explain your reasoning.
+
+    artifacts:
+      - type: decompiled_code
+        context: "SecureCredentialManager from a banking app"
+        content: |
+          public class SecureCredentialManager {
+              private static final int ITERATIONS = 100000;
+              private static final int KEY_LENGTH = 256;
+
+              public String hashPassword(String password) {
+                  byte[] salt = new byte[16];
+                  new SecureRandom().nextBytes(salt);
+
+                  PBEKeySpec spec = new PBEKeySpec(
+                      password.toCharArray(),
+                      salt,
+                      ITERATIONS,
+                      KEY_LENGTH
+                  );
+
+                  SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+                  byte[] hash = factory.generateSecret(spec).getEncoded();
+
+                  // Store salt:hash together
+                  return Base64.encodeToString(salt, Base64.NO_WRAP) + ":" +
+                         Base64.encodeToString(hash, Base64.NO_WRAP);
+              }
+
+              public boolean verifyPassword(String password, String stored) {
+                  String[] parts = stored.split(":");
+                  byte[] salt = Base64.decode(parts[0], Base64.NO_WRAP);
+                  byte[] storedHash = Base64.decode(parts[1], Base64.NO_WRAP);
+
+                  PBEKeySpec spec = new PBEKeySpec(
+                      password.toCharArray(),
+                      salt,
+                      ITERATIONS,
+                      KEY_LENGTH
+                  );
+
+                  SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+                  byte[] testHash = factory.generateSecret(spec).getEncoded();
+
+                  return MessageDigest.isEqual(storedHash, testHash);
+              }
+          }
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          Analyze this password handling code.
+          For each security-relevant pattern you observe, determine:
+          1. What the pattern is
+          2. Whether it strengthens or weakens security
+          3. Why
+
+        expected_output_schema:
+          type: object
+          properties:
+            is_vulnerable: boolean
+            confidence: number
+            security_properties:
+              type: array
+              items:
+                property: string
+                status: string
+                reasoning: string
+            attempted_attacks:
+              type: array
+              items:
+                attack: string
+                result: string
+                why: string
+
+        evaluation_criteria:
+          - name: correct_classification
+            weight: 0.40
+            description: "Correctly identifies as NOT vulnerable"
+          - name: security_property_id
+            weight: 0.30
+            description: "Identifies what makes it secure"
+          - name: attack_resistance
+            weight: 0.20
+            description: "Explains why attacks fail"
+          - name: no_false_positives
+            weight: 0.10
+            description: "Doesn't claim vulnerabilities that don't exist"
+
+        max_tokens: 1500
+
+    ground_truth:
+      vulnerability_present: false
+      vulnerability_type: null
+      cwe_id: null
+
+      secure_properties:
+        - "PBKDF2 with SHA256 - modern, NIST-approved key derivation"
+        - "100,000 iterations - meets current recommendations"
+        - "Random 16-byte salt per password - prevents rainbow tables"
+        - "256-bit key length - computationally secure"
+        - "SecureRandom for salt - cryptographically secure randomness"
+        - "MessageDigest.isEqual for comparison - timing-attack resistant"
+
+      key_observations:
+        - "Uses PBKDF2 not MD5/SHA1"
+        - "Salt is random and per-password"
+        - "High iteration count"
+        - "Constant-time comparison"
+
+    training:
+      reasoning_chain_required: true
+      dpo_pairs_available: true
+      negative_examples:
+        - "Claiming PBKDF2 is weak (it's not)"
+        - "Claiming Base64 is encryption (it's encoding for storage)"
+        - "Claiming any vulnerability exists"
+      common_mistakes:
+        - "Confusing encoding (Base64) with encryption"
+        - "Not recognizing constant-time comparison"
+        - "False positive on iteration count"
+      pattern_family: "secure_password_storage"
+
+    tags: [crypto, password, pbkdf2, secure]
+    cwe_tags: []
+    owasp_tags: []
+
+
+  - id: neg_secure_white_002
+    name: "Secure WebView Configuration"
+    version: 2
+
+    type: negative
+    pillar: negative_knowledge
+    belt: white
+    difficulty: 3
+
+    description: |
+      Review this WebView implementation for security issues.
+      Determine if the configuration is secure or vulnerable.
+
+    artifacts:
+      - type: decompiled_code
+        context: "SecureWebViewActivity for displaying help content"
+        content: |
+          public class SecureWebViewActivity extends Activity {
+              private WebView webView;
+              private static final Set<String> ALLOWED_HOSTS = new HashSet<>(Arrays.asList(
+                  "help.myapp.com",
+                  "docs.myapp.com"
+              ));
+
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  webView = new WebView(this);
+                  setContentView(webView);
+
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setAllowFileAccess(false);
+                  settings.setAllowContentAccess(false);
+                  settings.setAllowFileAccessFromFileURLs(false);
+                  settings.setAllowUniversalAccessFromFileURLs(false);
+
+                  webView.setWebViewClient(new WebViewClient() {
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          Uri uri = request.getUrl();
+
+                          if (!"https".equals(uri.getScheme())) {
+                              return true; // Block non-HTTPS
+                          }
+
+                          if (!ALLOWED_HOSTS.contains(uri.getHost())) {
+                              // Open external links in browser
+                              Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                              startActivity(intent);
+                              return true;
+                          }
+
+                          return false; // Allow loading in WebView
+                      }
+                  });
+
+                  // Load from trusted source only
+                  webView.loadUrl("https://help.myapp.com/");
+              }
+          }
+
+      - type: manifest
+        context: "Activity declaration"
+        content: |
+          <activity
+              android:name=".SecureWebViewActivity"
+              android:exported="false" />
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          Analyze this WebView configuration.
+          Identify all security controls and assess their effectiveness.
+          Determine if this implementation is vulnerable to common WebView attacks.
+
+        expected_output_schema:
+          type: object
+          properties:
+            is_vulnerable: boolean
+            confidence: number
+            security_properties:
+              type: array
+            attempted_attacks:
+              type: array
+
+        evaluation_criteria:
+          - name: correct_classification
+            weight: 0.40
+            description: "Correctly identifies as secure"
+          - name: security_property_id
+            weight: 0.30
+            description: "Identifies security controls"
+          - name: attack_resistance
+            weight: 0.20
+            description: "Explains defense against attacks"
+          - name: no_false_positives
+            weight: 0.10
+            description: "Doesn't hallucinate vulnerabilities"
+
+        max_tokens: 1500
+
+    ground_truth:
+      vulnerability_present: false
+
+      secure_properties:
+        - "exported=false - not accessible from other apps"
+        - "HTTPS-only enforcement via URL scheme check"
+        - "Host allowlist with strict matching"
+        - "File access disabled (setAllowFileAccess(false))"
+        - "Content access disabled"
+        - "Cross-origin file access blocked"
+        - "No JavaScript interface exposed"
+        - "External links opened in browser, not WebView"
+
+      key_observations:
+        - "Activity not exported - no external attack surface"
+        - "URL validation before loading"
+        - "Allowlist approach (safer than blocklist)"
+        - "All dangerous WebSettings disabled"
+
+    training:
+      negative_examples:
+        - "Claiming JavaScript enabled is a vulnerability (it's not without exposed interfaces)"
+        - "Claiming any URL can be loaded (allowlist prevents this)"
+      common_mistakes:
+        - "False positive on JavaScript being enabled"
+        - "Not recognizing the layered defense"
+      pattern_family: "secure_webview"
+
+    tags: [webview, secure_config, allowlist]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # YELLOW BELT - Compare Secure vs Insecure
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: neg_compare_yellow_001
+    name: "SQL Query Comparison"
+    version: 2
+
+    type: negative
+    pillar: negative_knowledge
+    belt: yellow
+    difficulty: 4
+
+    description: |
+      Compare these two SQL query implementations.
+      Identify which is secure, which is vulnerable, and explain why.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Two different query implementations from same app"
+        content: |
+          // Implementation A - UserRepository.java
+          public class UserRepositoryA {
+              public User findByUsername(String username) {
+                  String query = "SELECT * FROM users WHERE username = '" + username + "'";
+                  return db.rawQuery(query, null);
+              }
+          }
+
+          // Implementation B - UserRepository.java (refactored)
+          public class UserRepositoryB {
+              public User findByUsername(String username) {
+                  String query = "SELECT * FROM users WHERE username = ?";
+                  return db.rawQuery(query, new String[]{username});
+              }
+          }
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          Compare both implementations.
+          For each:
+          1. Determine if it's vulnerable or secure
+          2. Explain the specific mechanism that makes it so
+          3. Show how an attack would succeed or fail
+
+        expected_output_schema:
+          type: object
+          properties:
+            implementation_a:
+              is_vulnerable: boolean
+              vulnerability_type: string
+              attack_example: string
+            implementation_b:
+              is_vulnerable: boolean
+              security_mechanism: string
+              why_attack_fails: string
+            key_difference: string
+
+        evaluation_criteria:
+          - name: correct_classification
+            weight: 0.30
+            description: "Correctly identifies A=vulnerable, B=secure"
+          - name: mechanism_explanation
+            weight: 0.30
+            description: "Explains parameterization defense"
+          - name: attack_demonstration
+            weight: 0.25
+            description: "Shows valid attack for A, explains failure for B"
+          - name: no_errors
+            weight: 0.15
+            description: "No factual errors"
+
+        max_tokens: 1500
+
+    ground_truth:
+      vulnerability_present: true  # In implementation A
+
+      key_observations:
+        - "A uses string concatenation - VULNERABLE to SQL injection"
+        - "B uses parameterized query with ? placeholder - SECURE"
+        - "The difference is how user input is incorporated into query"
+
+      secure_properties:
+        - "Parameterized queries separate code from data"
+        - "Database treats parameter as literal value, not SQL code"
+        - "Special characters in input are automatically escaped"
+
+    training:
+      common_mistakes:
+        - "Not recognizing ? placeholder as parameterization"
+        - "Claiming both are vulnerable"
+        - "Claiming both are secure"
+      pattern_family: "sql_injection_comparison"
+
+    tags: [sql, parameterized_query, comparison]
+    cwe_tags: [CWE-89]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ORANGE BELT - Subtle Security Properties
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: neg_subtle_orange_001
+    name: "Secure Intent Handling"
+    version: 2
+
+    type: negative
+    pillar: negative_knowledge
+    belt: orange
+    difficulty: 5
+
+    description: |
+      Analyze this deep link handler. Despite being exported, it implements
+      several security controls. Determine if it's still vulnerable.
+
+    artifacts:
+      - type: decompiled_code
+        context: "PaymentDeepLinkHandler - handles payment intents"
+        content: |
+          public class PaymentDeepLinkHandler extends Activity {
+
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  // Verify calling package
+                  String callingPackage = getCallingPackage();
+                  if (callingPackage == null) {
+                      // Started via deep link, not startActivityForResult
+                      // Require user authentication
+                      if (!isUserAuthenticated()) {
+                          redirectToLogin();
+                          return;
+                      }
+                  } else if (!isAllowedCaller(callingPackage)) {
+                      finish();
+                      return;
+                  }
+
+                  Uri data = getIntent().getData();
+                  if (data == null || !"https".equals(data.getScheme())) {
+                      finish();
+                      return;
+                  }
+
+                  // Validate signature parameter
+                  String amount = data.getQueryParameter("amount");
+                  String recipient = data.getQueryParameter("recipient");
+                  String timestamp = data.getQueryParameter("timestamp");
+                  String signature = data.getQueryParameter("signature");
+
+                  if (!verifySignature(amount, recipient, timestamp, signature)) {
+                      showError("Invalid request signature");
+                      finish();
+                      return;
+                  }
+
+                  // Check timestamp freshness (5 minute window)
+                  long ts = Long.parseLong(timestamp);
+                  if (Math.abs(System.currentTimeMillis() - ts) > 300000) {
+                      showError("Request expired");
+                      finish();
+                      return;
+                  }
+
+                  // Show confirmation dialog
+                  showPaymentConfirmation(amount, recipient);
+              }
+
+              private boolean verifySignature(String amount, String recipient,
+                                              String timestamp, String signature) {
+                  String data = amount + "|" + recipient + "|" + timestamp;
+                  try {
+                      PublicKey key = getServerPublicKey();
+                      Signature sig = Signature.getInstance("SHA256withRSA");
+                      sig.initVerify(key);
+                      sig.update(data.getBytes());
+                      return sig.verify(Base64.decode(signature, Base64.NO_WRAP));
+                  } catch (Exception e) {
+                      return false;
+                  }
+              }
+
+              private boolean isAllowedCaller(String packageName) {
+                  // Only allow calls from our own apps
+                  return packageName.startsWith("com.ourcompany.");
+              }
+
+              private boolean isUserAuthenticated() {
+                  // Check if user has active session with biometric/PIN
+                  return SessionManager.getInstance().isAuthenticated();
+              }
+          }
+
+      - type: manifest
+        context: "Activity declaration"
+        content: |
+          <activity
+              android:name=".PaymentDeepLinkHandler"
+              android:exported="true">
+              <intent-filter>
+                  <action android:name="android.intent.action.VIEW" />
+                  <category android:name="android.intent.category.DEFAULT" />
+                  <category android:name="android.intent.category.BROWSABLE" />
+                  <data android:scheme="https" android:host="pay.ourapp.com" />
+              </intent-filter>
+          </activity>
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          This activity is exported and handles payments - a high-value target.
+          Analyze ALL security controls implemented.
+          Determine if despite being exported, it's adequately protected.
+
+        expected_output_schema:
+          type: object
+          properties:
+            is_vulnerable: boolean
+            confidence: number
+            security_controls:
+              type: array
+              items:
+                control: string
+                effectiveness: string
+                bypass_possible: boolean
+            overall_assessment: string
+
+        evaluation_criteria:
+          - name: correct_classification
+            weight: 0.35
+            description: "Correctly assesses overall security"
+          - name: control_identification
+            weight: 0.30
+            description: "Identifies all security controls"
+          - name: bypass_analysis
+            weight: 0.25
+            description: "Correctly assesses bypass potential"
+          - name: no_false_positives
+            weight: 0.10
+            description: "Doesn't claim false vulnerabilities"
+
+        max_tokens: 2000
+
+    ground_truth:
+      vulnerability_present: false  # Well-protected despite being exported
+
+      secure_properties:
+        - "Caller package verification for startActivityForResult"
+        - "User authentication required for deep link access"
+        - "HTTPS scheme enforcement"
+        - "Cryptographic signature verification on parameters"
+        - "Server's public key for signature (asymmetric - can't forge)"
+        - "Timestamp freshness check (5 min window) prevents replay"
+        - "User confirmation dialog before action"
+
+      key_observations:
+        - "Multiple layers of defense"
+        - "Signature is RSA with server key - attacker can't forge"
+        - "Timestamp prevents replay attacks"
+        - "Even if deep link is triggered, user must confirm"
+        - "Authentication required blocks unauthorized access"
+
+    training:
+      negative_examples:
+        - "Claiming exported=true means vulnerable (defense in depth)"
+        - "Claiming signature can be forged (asymmetric crypto)"
+        - "Missing the timestamp replay protection"
+      common_mistakes:
+        - "Assuming exported means vulnerable"
+        - "Not understanding RSA signature verification"
+        - "Missing the layered defense approach"
+      pattern_family: "secure_deep_link"
+
+    prerequisites: [neg_secure_white_002]
+    tags: [deep_link, signature, authentication, layered_defense]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PURPLE BELT - False Positive Resistance
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: neg_fp_purple_001
+    name: "Apparent Vulnerability That Isn't"
+    version: 2
+
+    type: negative
+    pillar: negative_knowledge
+    belt: purple
+    difficulty: 7
+
+    description: |
+      This code appears to have a path traversal vulnerability at first glance.
+      Analyze carefully to determine if it's actually exploitable.
+
+    artifacts:
+      - type: decompiled_code
+        context: "FileDownloadService with apparent path traversal"
+        content: |
+          public class FileDownloadService {
+              private static final String BASE_DIR = "/data/data/com.app/files/downloads/";
+
+              public File getDownloadedFile(String filename) {
+                  // Looks vulnerable - filename directly used!
+                  File requested = new File(BASE_DIR + filename);
+
+                  // But wait...
+                  String canonicalPath;
+                  try {
+                      canonicalPath = requested.getCanonicalPath();
+                  } catch (IOException e) {
+                      throw new SecurityException("Invalid file path");
+                  }
+
+                  // Verify the canonical path is still within allowed directory
+                  if (!canonicalPath.startsWith(BASE_DIR)) {
+                      throw new SecurityException(
+                          "Access denied: path escapes download directory"
+                      );
+                  }
+
+                  if (!requested.exists()) {
+                      throw new FileNotFoundException("File not found");
+                  }
+
+                  return requested;
+              }
+          }
+
+    phases:
+      - phase_id: observe
+        instruction: |
+          At first glance, this looks like path traversal (filename directly concatenated).
+          Analyze the FULL code flow to determine if it's actually exploitable.
+          Consider what getCanonicalPath() does and how the check works.
+
+        expected_output_schema:
+          type: object
+          properties:
+            initial_impression: string
+            actual_vulnerability: boolean
+            defense_mechanism: string
+            attack_attempts:
+              type: array
+              items:
+                payload: string
+                blocked_by: string
+                explanation: string
+
+        evaluation_criteria:
+          - name: correct_final_assessment
+            weight: 0.40
+            description: "Correctly determines NOT vulnerable"
+          - name: defense_understanding
+            weight: 0.30
+            description: "Understands canonical path check"
+          - name: attack_analysis
+            weight: 0.20
+            description: "Shows why attacks fail"
+          - name: reasoning_quality
+            weight: 0.10
+            description: "Clear reasoning chain"
+
+        max_tokens: 1500
+
+    ground_truth:
+      vulnerability_present: false
+
+      secure_properties:
+        - "getCanonicalPath() resolves ../.. sequences"
+        - "startsWith check on CANONICAL path, not raw input"
+        - "Throws SecurityException on escape attempt"
+        - "BASE_DIR constant prevents manipulation"
+
+      key_observations:
+        - "Initial concatenation LOOKS dangerous"
+        - "But canonical path resolution happens BEFORE the check"
+        - "../../etc/passwd resolves to /etc/passwd"
+        - "/etc/passwd does NOT start with /data/data/com.app/files/downloads/"
+        - "Therefore, attack is blocked"
+
+    training:
+      negative_examples:
+        - "Claiming path traversal exists (the canonical check prevents it)"
+        - "Not understanding what getCanonicalPath does"
+      common_mistakes:
+        - "Stopping analysis at the concatenation"
+        - "Not following through to see the defense"
+        - "Not understanding canonical path resolution"
+      pattern_family: "path_traversal_defense"
+      difficulty_factors:
+        - "Requires understanding Java File canonicalization"
+        - "Initial appearance is deceptive"
+        - "Defense is non-obvious"
+
+    tags: [path_traversal, canonicalization, false_positive]
+    cwe_tags: []

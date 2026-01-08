@@ -1,0 +1,535 @@
+# Root Cause Analysis Pillar - Challenges
+# Purpose: Train deep understanding of WHY vulnerabilities exist
+# Focus: Fundamental security principles, not just symptoms
+
+challenges:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BLUE BELT - Root Cause Fundamentals
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: root_fund_blue_001
+    name: "SQL Injection Root Cause"
+    version: 2
+
+    type: root_cause
+    pillar: root_cause
+    belt: blue
+    difficulty: 5
+
+    description: |
+      A SQL injection vulnerability was found and exploited.
+      Your task is to explain WHY this vulnerability exists at a fundamental level,
+      not just WHAT the vulnerability is.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Vulnerable search function"
+        content: |
+          public List<Product> searchProducts(String searchTerm) {
+              String query = "SELECT * FROM products WHERE name LIKE '%" + searchTerm + "%'";
+              return db.rawQuery(query, null);
+          }
+
+      - type: previous_output
+        context: "Confirmed exploitation"
+        content: |
+          Exploitation confirmed:
+          - Input: "'; DROP TABLE products; --"
+          - Result: Table dropped, data lost
+          - CWE: CWE-89 (SQL Injection)
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Go beyond "string concatenation is bad" to explain:
+          1. What FUNDAMENTAL security principle is violated?
+          2. WHY does this principle matter?
+          3. What is the DEEPER cause that enables this class of vulnerabilities?
+          4. Where else does this same fundamental issue appear?
+
+        expected_output_schema:
+          type: object
+          properties:
+            surface_cause: string
+            root_cause: string
+            fundamental_principle: string
+            principle_explanation: string
+            similar_patterns:
+              type: array
+              items:
+                vulnerability_class: string
+                same_principle: string
+            taxonomy:
+              cwe: string
+              parent_cwe: string
+              root_cwe: string
+
+        evaluation_criteria:
+          - name: depth
+            weight: 0.35
+            description: "Goes beyond surface to fundamental cause"
+          - name: accuracy
+            weight: 0.25
+            description: "Correctly identifies root cause"
+          - name: generalization
+            weight: 0.25
+            description: "Identifies transferable patterns"
+          - name: taxonomy
+            weight: 0.15
+            description: "Correct CWE hierarchy"
+
+        max_tokens: 2000
+
+    ground_truth:
+      vulnerability_present: true
+      vulnerability_type: "SQL Injection"
+      cwe_id: "CWE-89"
+
+      root_cause: |
+        SURFACE CAUSE: User input is concatenated into SQL query string.
+
+        ROOT CAUSE: Mixing of control plane (SQL syntax) with data plane (user input).
+
+        FUNDAMENTAL PRINCIPLE VIOLATED: Separation of Code and Data
+
+        The SQL interpreter cannot distinguish between:
+        - Code: SELECT * FROM products WHERE name LIKE '%
+        - Data: user's search term
+        - More Code: %'
+
+        Because they're all delivered as one string, the interpreter treats
+        the entire string as code. User input that contains SQL syntax
+        (like ' or ;) is interpreted as code, not data.
+
+        This is an instance of the "Confused Deputy" problem: a privileged
+        component (database) is tricked into misusing its authority by
+        treating untrusted input as trusted instructions.
+
+      key_observations:
+        - "Control plane and data plane are conflated"
+        - "Trust boundary is crossed without validation"
+        - "Interpreter cannot distinguish code from data"
+
+    training:
+      negative_examples:
+        - "Just saying 'user input not sanitized' (surface, not root)"
+        - "Just saying 'string concatenation' (mechanism, not cause)"
+      common_mistakes:
+        - "Describing WHAT happens instead of WHY"
+        - "Not connecting to fundamental security principles"
+        - "Not identifying the pattern family"
+      pattern_family: "injection"
+
+    tags: [sql_injection, root_cause, code_data_separation]
+    cwe_tags: [CWE-89, CWE-943, CWE-74]
+
+
+  - id: root_fund_blue_002
+    name: "Hardcoded Credentials Root Cause"
+    version: 2
+
+    type: root_cause
+    pillar: root_cause
+    belt: blue
+    difficulty: 5
+
+    description: |
+      API keys were found hardcoded in an Android app and extracted.
+      Explain the fundamental issue that makes this a vulnerability.
+
+    artifacts:
+      - type: decompiled_code
+        context: "API client with hardcoded key"
+        content: |
+          public class PaymentApiClient {
+              private static final String API_KEY = "sk_live_51H7...[REDACTED]";
+
+              public PaymentResponse charge(String token, int amount) {
+                  Request request = new Request.Builder()
+                      .url("https://api.payment.com/v1/charges")
+                      .addHeader("Authorization", "Bearer " + API_KEY)
+                      .post(RequestBody.create(JSON, body))
+                      .build();
+                  // ...
+              }
+          }
+
+      - type: previous_output
+        context: "Extraction confirmed"
+        content: |
+          Key extracted via: jadx -d output app.apk && grep -r "sk_live"
+          Result: Full production API key exposed
+          Impact: Attacker can make charges on merchant account
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          This seems obvious, but explain the FUNDAMENTAL reason why
+          hardcoded credentials in client apps are ALWAYS vulnerable,
+          regardless of obfuscation or encryption.
+
+        expected_output_schema:
+          type: object
+          properties:
+            surface_cause: string
+            root_cause: string
+            fundamental_principle: string
+            why_unfixable_client_side: string
+            correct_architecture: string
+            taxonomy:
+              cwe: string
+              related_cwes: array
+
+        evaluation_criteria:
+          - name: depth
+            weight: 0.35
+            description: "Explains fundamental impossibility"
+          - name: accuracy
+            weight: 0.25
+            description: "Correct technical reasoning"
+          - name: architecture
+            weight: 0.25
+            description: "Describes correct alternative"
+          - name: clarity
+            weight: 0.15
+            description: "Clear explanation"
+
+        max_tokens: 1800
+
+    ground_truth:
+      root_cause: |
+        SURFACE CAUSE: API key visible in decompiled code.
+
+        ROOT CAUSE: Secrets in client-controlled environments are fundamentally unprotectable.
+
+        FUNDAMENTAL PRINCIPLE: You cannot hide secrets from the person holding the secret.
+
+        An Android APK runs on the user's device. The user (or attacker with
+        physical/logical access to the device) has COMPLETE control over:
+        - The APK binary (can decompile, patch, analyze)
+        - The runtime environment (can attach debuggers, hook functions)
+        - Network traffic (can intercept, modify, replay)
+
+        No amount of obfuscation, encryption, or anti-tampering can change this
+        fundamental truth. Encryption requires a key - where do you store THAT key?
+        It's turtles all the way down.
+
+        THE ONLY SOLUTION: Don't put secrets in the client.
+        - Use user-specific tokens, not shared API keys
+        - Backend proxies requests to payment API
+        - Client authenticates to YOUR server, server authenticates to payment
+
+      key_observations:
+        - "Client environment is fundamentally untrusted"
+        - "Obfuscation is not security"
+        - "The attacker has everything the app has"
+
+    training:
+      negative_examples:
+        - "Suggesting better obfuscation would help"
+        - "Suggesting encrypting the key would help"
+        - "Not explaining WHY client secrets are impossible"
+      pattern_family: "client_side_secrets"
+
+    tags: [hardcoded_credentials, client_secrets, architecture]
+    cwe_tags: [CWE-798, CWE-522]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BROWN BELT - Complex Root Cause Chains
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: root_chain_brown_001
+    name: "Intent Redirection Chain"
+    version: 2
+
+    type: root_cause
+    pillar: root_cause
+    belt: brown
+    difficulty: 7
+
+    description: |
+      A complex vulnerability chain was discovered involving intent redirection.
+      Multiple components interact to create an exploitable condition.
+      Analyze the ROOT causes at each level.
+
+    artifacts:
+      - type: decompiled_code
+        context: "IntentForwarder - forwards intents to target activities"
+        content: |
+          // Component 1: Intent Forwarder (exported)
+          public class IntentForwarder extends Activity {
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  Intent forward = getIntent().getParcelableExtra("forward_intent");
+                  if (forward != null) {
+                      startActivity(forward);
+                  }
+                  finish();
+              }
+          }
+
+          // Component 2: Internal Admin Panel (not exported)
+          public class AdminPanel extends Activity {
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  // Sensitive admin operations
+                  // Assumes only reachable from within app
+                  displayAdminControls();
+              }
+          }
+
+      - type: manifest
+        context: "Component declarations"
+        content: |
+          <activity android:name=".IntentForwarder" android:exported="true" />
+          <activity android:name=".AdminPanel" android:exported="false" />
+
+      - type: previous_output
+        context: "Exploitation chain"
+        content: |
+          Attack:
+          1. Attacker creates Intent targeting AdminPanel
+          2. Wraps it as "forward_intent" extra
+          3. Sends to exported IntentForwarder
+          4. IntentForwarder extracts and starts AdminPanel
+          5. AdminPanel launches despite exported="false"
+
+          Result: Exported component acts as proxy to non-exported component
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          Analyze the ROOT CAUSE at multiple levels:
+          1. Why does exported="false" fail to protect AdminPanel?
+          2. What security assumption was incorrect?
+          3. What is the fundamental architectural issue?
+          4. How does this relate to other vulnerability patterns?
+
+        expected_output_schema:
+          type: object
+          properties:
+            attack_chain_analysis:
+              type: array
+              items:
+                step: string
+                root_cause: string
+            incorrect_assumptions:
+              type: array
+            fundamental_issue: string
+            defense_principle_violated: string
+            similar_patterns:
+              type: array
+            remediation:
+              immediate: string
+              architectural: string
+
+        evaluation_criteria:
+          - name: chain_analysis
+            weight: 0.30
+            description: "Analyzes each step's root cause"
+          - name: assumption_identification
+            weight: 0.25
+            description: "Identifies flawed security assumptions"
+          - name: fundamental_issue
+            weight: 0.25
+            description: "Identifies core architectural problem"
+          - name: generalization
+            weight: 0.20
+            description: "Connects to broader patterns"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        MULTI-LEVEL ROOT CAUSE ANALYSIS:
+
+        Level 1 - Immediate Cause:
+        IntentForwarder blindly forwards any Intent provided by external caller.
+
+        Level 2 - Assumption Failure:
+        AdminPanel assumes exported="false" means it can ONLY be reached from
+        within the app. This assumption is FALSE when another component can
+        forward intents to it.
+
+        Level 3 - Architectural Issue:
+        The security model conflates "who can START the component" with
+        "who can REACH the component". These are different:
+        - Start: Direct invocation from another app
+        - Reach: Indirect access via trusted component
+
+        Level 4 - Fundamental Principle:
+        "Confused Deputy" - IntentForwarder is a privileged deputy that
+        can access internal components. Attacker tricks it into using
+        its privilege on attacker's behalf.
+
+        DEFENSE PRINCIPLE VIOLATED: Defense in Depth
+        AdminPanel relies SOLELY on exported="false". It should ALSO verify:
+        - Calling component (getCallingActivity())
+        - User authentication state
+        - Action legitimacy
+
+        SIMILAR PATTERNS:
+        - Open Redirect: Web app forwards to attacker-controlled URL
+        - SSRF: Server makes requests on attacker's behalf
+        - Privilege Escalation: Any proxy that doesn't validate requests
+
+    training:
+      common_mistakes:
+        - "Only identifying the immediate cause"
+        - "Not recognizing the assumption failure"
+        - "Missing the confused deputy pattern"
+      pattern_family: "confused_deputy"
+
+    tags: [intent_redirection, confused_deputy, privilege_escalation]
+    cwe_tags: [CWE-926, CWE-927, CWE-441]
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # BLACK BELT - Novel Root Cause Identification
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: root_novel_black_001
+    name: "Timing Side-Channel Root Cause"
+    version: 2
+
+    type: root_cause
+    pillar: root_cause
+    belt: black
+    difficulty: 9
+
+    description: |
+      A timing side-channel was discovered in the token validation.
+      This is subtle - the code LOOKS correct. Explain the fundamental
+      issue and why it's exploitable.
+
+    artifacts:
+      - type: decompiled_code
+        context: "Token validation with timing leak"
+        content: |
+          public class TokenValidator {
+
+              public boolean validateToken(String providedToken, String expectedToken) {
+                  if (providedToken == null || expectedToken == null) {
+                      return false;
+                  }
+
+                  if (providedToken.length() != expectedToken.length()) {
+                      return false;
+                  }
+
+                  // Character-by-character comparison
+                  for (int i = 0; i < expectedToken.length(); i++) {
+                      if (providedToken.charAt(i) != expectedToken.charAt(i)) {
+                          return false;  // Early return on mismatch
+                      }
+                  }
+
+                  return true;
+              }
+          }
+
+      - type: previous_output
+        context: "Timing attack results"
+        content: |
+          Measurement data (average response time in microseconds):
+          - Token "AAAA...": 12.3 μs (immediate fail at position 0)
+          - Token "XAAA...": 14.1 μs (fail at position 1)
+          - Token "XBAA...": 15.8 μs (fail at position 2)
+          - Token "XBCA...": 17.5 μs (fail at position 3)
+          ...
+          - Token "XBCDEFGH": 45.2 μs (all characters correct)
+
+          Attack recovered full 32-character token in ~32 * 256 = 8192 attempts
+          (vs 256^32 for brute force)
+
+    phases:
+      - phase_id: analyze
+        instruction: |
+          The code uses == for comparison, checks length, and iterates correctly.
+          Why is it STILL vulnerable? Explain:
+          1. The fundamental information leak
+          2. Why early return creates a side channel
+          3. The mathematical impact on attack complexity
+          4. Why this is hard to fix without constant-time comparison
+
+        expected_output_schema:
+          type: object
+          properties:
+            surface_cause: string
+            information_leak: string
+            root_cause: string
+            mathematical_analysis:
+              brute_force_complexity: string
+              timing_attack_complexity: string
+              improvement_factor: string
+            fundamental_principle: string
+            constant_time_solution: string
+            taxonomy:
+              cwe: string
+              related_cwes: array
+
+        evaluation_criteria:
+          - name: leak_identification
+            weight: 0.30
+            description: "Correctly identifies information leak"
+          - name: mathematical_analysis
+            weight: 0.25
+            description: "Accurate complexity analysis"
+          - name: root_cause_depth
+            weight: 0.25
+            description: "Fundamental cause explained"
+          - name: solution_understanding
+            weight: 0.20
+            description: "Understands constant-time requirement"
+
+        max_tokens: 2500
+
+    ground_truth:
+      root_cause: |
+        INFORMATION LEAK:
+        The early return leaks HOW MANY characters were correct before failure.
+        Each additional correct character adds measurable execution time.
+
+        ROOT CAUSE:
+        Execution time is correlated with secret data (correct prefix length).
+        This violates the principle: "Observable behavior should not vary based
+        on secret values."
+
+        MATHEMATICAL IMPACT:
+        - Brute force: O(k^n) where k=charset size, n=token length
+          For 32-char alphanumeric: 62^32 ≈ 10^57 attempts
+        - Timing attack: O(k*n) = 62 * 32 ≈ 2000 attempts
+          Each position can be determined independently!
+
+        FUNDAMENTAL PRINCIPLE VIOLATED:
+        Constant-Time Cryptographic Operations
+
+        Secret-dependent branching (the early return) creates timing variation.
+        Even sub-microsecond differences can be amplified through:
+        - Statistical analysis over many samples
+        - Network jitter filtering
+        - Local timing measurement
+
+        WHY IT'S HARD TO FIX:
+        Compilers optimize code. A "fixed" loop might be optimized back to
+        early-return form. Must use:
+        - Hardware-backed constant-time primitives
+        - MessageDigest.isEqual() in Java
+        - crypto libraries designed for constant-time
+
+    training:
+      negative_examples:
+        - "Saying '== is wrong' (it's the early return, not the operator)"
+        - "Not quantifying the attack improvement"
+        - "Suggesting obfuscation as a fix"
+      common_mistakes:
+        - "Focusing on == instead of control flow"
+        - "Not understanding why early return leaks"
+        - "Underestimating timing precision"
+      pattern_family: "timing_side_channel"
+
+    tags: [timing_attack, side_channel, cryptography, constant_time]
+    cwe_tags: [CWE-208, CWE-385]
