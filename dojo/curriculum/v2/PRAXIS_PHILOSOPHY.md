@@ -4,11 +4,56 @@
 
 > "Knowledge gains meaning only when put to functional use. Reasoning is the cognitive architecture that emerges through application, not a prerequisite taught in isolation."
 
-## Core Principle: Problem-First, Reasoning-Emergent
+## Core Principle: Explicit Instruction + Continuous Application
 
-Traditional training assumes: **Teach reasoning → Apply to problems**
+Three flawed approaches:
+1. **Traditional**: Teach reasoning → Apply later (reasoning atrophies without practice)
+2. **Pure Emergence**: Let reasoning emerge through exposure (implicit learning is weak)
+3. **Blind Activism**: Just try things until something works (no transferable learning)
 
-This is backwards. Reasoning doesn't exist prior to application - it IS application.
+The synthesis: **Explicit cognitive frameworks taught through continuous application**
+
+Reasoning must be taught explicitly, but its development requires continuous application to authentic problems. Neither alone is sufficient.
+
+## The Dual Mandate: Disposition + Capacity
+
+Training must cultivate:
+
+1. **The Disposition to Reason**: Deep-seated habits of discriminating tested beliefs from mere assertions
+2. **The Capacity to Act**: Skills to apply those habits to real problems
+
+This dual mandate requires:
+
+| Component | What It Means | How We Train It |
+|-----------|---------------|-----------------|
+| **Question Authority** | Don't accept claims because they're authoritative | Challenge CVE descriptions, vendor claims, "best practices" |
+| **Decondition Bad Habits** | Unlearn incorrect patterns | Explicitly contrast wrong approaches with correct ones |
+| **Dispel False Beliefs** | Correct misconceptions actively | Training pairs that surface and correct security myths |
+| **Epistemic Calibration** | Confidence proportional to evidence | Require evidence for claims, penalize overconfidence |
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              THE DUAL MANDATE                                │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│   DISPOSITION TO REASON          CAPACITY TO ACT            │
+│   (Epistemic Virtues)            (Practical Skills)         │
+│                                                              │
+│   • Question assertions          • Apply frameworks         │
+│   • Demand evidence              • Execute exploits         │
+│   • Calibrate confidence         • Verify outcomes          │
+│   • Recognize uncertainty        • Adapt to failures        │
+│                                                              │
+│            ↓                           ↓                     │
+│            └───────────┬───────────────┘                     │
+│                        │                                     │
+│                        ▼                                     │
+│              CRITICALLY REFLECTIVE                           │
+│              PRACTICALLY CAPABLE                             │
+│              SECURITY ANALYST                                │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ```
 WRONG (Traditional):
