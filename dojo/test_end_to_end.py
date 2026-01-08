@@ -363,17 +363,16 @@ def run_end_to_end(
         except Exception as e:
             print(f"Warning: Could not load settings.yaml: {e}")
 
-    # Resolve mode and model from settings if not provided
-    llm_settings = settings.get("agent", {}).get("llm", {})
-    if not mode:
-        mode = llm_settings.get("provider", "mlx")
-
-    if not model:
-        if mode == "mlx":
-            model = llm_settings.get("mlx", {}).get("model")
-        elif mode == "live":
-            model = llm_settings.get("ollama", {}).get("model")
-
+        # Resolve mode and model from settings if not provided
+        llm_settings = settings.get("agent", {}).get("llm", {})
+        if mode is None:
+            mode = llm_settings.get("provider", "mlx")
+        
+        if model is None:
+            if mode == "mlx":
+                model = llm_settings.get("mlx", {}).get("model")
+            elif mode == "live" or mode == "ollama":
+                model = llm_settings.get("ollama", {}).get("model")
     if not adapter and mode == "mlx":
         adapter = llm_settings.get("mlx", {}).get("adapter")
 
