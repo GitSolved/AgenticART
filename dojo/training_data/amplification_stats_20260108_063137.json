@@ -1,0 +1,59 @@
+{
+  "total_pairs": 1640,
+  "target_pairs": 2000,
+  "by_pillar": {
+    "pattern_transfer": {
+      "challenges": 4,
+      "pairs": 193,
+      "pairs_per_challenge": 48.25
+    },
+    "static_analysis": {
+      "challenges": 5,
+      "pairs": 246,
+      "pairs_per_challenge": 49.2
+    },
+    "root_cause": {
+      "challenges": 4,
+      "pairs": 191,
+      "pairs_per_challenge": 47.75
+    },
+    "methodology": {
+      "challenges": 5,
+      "pairs": 240,
+      "pairs_per_challenge": 48.0
+    },
+    "negative_knowledge": {
+      "challenges": 5,
+      "pairs": 239,
+      "pairs_per_challenge": 47.8
+    },
+    "taxonomy": {
+      "challenges": 5,
+      "pairs": 239,
+      "pairs_per_challenge": 47.8
+    },
+    "patch_analysis": {
+      "challenges": 3,
+      "pairs": 292,
+      "pairs_per_challenge": 97.33333333333333
+    }
+  },
+  "rejection_distribution": {
+    "methodology_confirmation_bias": 111,
+    "methodology_no_hypothesis": 121,
+    "surface_only": 105,
+    "logical_reversed_logic": 110,
+    "incomplete_mild": 125,
+    "wrong_classification": 120,
+    "logical_non_sequitur": 117,
+    "hallucination": 360,
+    "incomplete_moderate": 108,
+    "false_negative": 106,
+    "overconfidence": 116,
+    "missing_one_observation": 34,
+    "wrong_confidence": 34,
+    "weak_justification": 34,
+    "wrong_cwe_hierarchy": 22,
+    "false_positive": 17
+  }
+}
