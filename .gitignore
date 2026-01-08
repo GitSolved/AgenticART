@@ -83,3 +83,9 @@ htmlcov/
 *.tmp
 *.bak
 archived_runs/
+
+# Local/temporary directories
+RAG/
+data/
+dojo/curriculum/v1/
+settings_backup.ab
