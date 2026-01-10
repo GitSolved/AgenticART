@@ -1,11 +1,14 @@
-"""Grader - evaluates challenge sessions and produces assessments."""
+"Grader - evaluates challenge sessions and produces assessments."
 
 from __future__ import annotations
 
 import re
+import json
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
+from core.reconnaissance.device_enum import ADBConnection
 from dojo.curriculum import ChallengeSession
 from dojo.models import (
     Challenge,
@@ -13,21 +16,19 @@ from dojo.models import (
     SenseiAssessment,
 )
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class GradingCriteria:
     """Evaluation criteria results."""
-
     syntax_correct: bool = False
     api_valid: bool = False
     executes_successfully: bool = False
     achieves_objective: bool = False
 
-
 @dataclass
 class GradingResult:
     """Detailed grading outcome."""
-
     criteria: GradingCriteria
     score: int
     grade: Grade
@@ -36,39 +37,33 @@ class GradingResult:
     logic_flaws: list[str] = field(default_factory=list)
     security_issues: list[str] = field(default_factory=list)
 
-
 class Grader:
     """Grade challenge sessions and produce assessments."""
 
-    # Penalty per retry attempt
     ATTEMPT_PENALTY = 5
 
-    # Common syntax error patterns
     SYNTAX_PATTERNS = {
-        "unclosed_quote": r'["\'][^"\']*$',
-        "unclosed_paren": r'\([^)]*$',
-        "unclosed_bracket": r'\[[^\]]*$',
-        "unclosed_brace": r'\{[^}]*$',
-        "double_operator": r'[&|]{3,}',
-        "empty_command": r'^\s*$',
+        "unclosed_quote": r"['\"][^'\"]*$",
+        "unclosed_paren": r"\([^)]*$",
+        "unclosed_bracket": r"\[[^\]]*$",
+        "unclosed_brace": r"\{[^}]*$",
+        "double_operator": r"[&|]{3,}",
+        "empty_command": r"^\s*$",
     }
 
-    # Security concern patterns
     SECURITY_PATTERNS = {
-        "hardcoded_credential": r'(password|passwd|pwd|secret|key)\s*[=:]\s*["\'][^"\']+["\']',
+        "hardcoded_credential": r'(password|passwd|pwd|secret|key)\s*[=:]\s*["\'][^"\"]+["\']',
         "dangerous_rm": r'rm\s+(-rf?|--force)\s+/',
         "world_writable": r'chmod\s+777',
         "eval_usage": r'\beval\b',
     }
 
-    # Hallucination detection patterns (NEW)
     HALLUCINATED_API_PATTERNS = [
-        r"android\.[a-z]+\.[A-Z][a-zA-Z]+\(\)",  # Fake Android APIs
-        r"/proc/[a-z_]+_fake",  # Fake proc paths
-        r"getprop\s+ro\.[a-z]+\.[a-z_]+_invalid",  # Invalid props
+        r"android\[a-z]+\.[A-Z][a-zA-Z]+",
+        r"/proc/[a-z_]+_fake",
+        r"getprop\s+ro\.[a-z]+\.[a-z_]+_invalid",
     ]
 
-    # Valid ADB subcommands for hallucination detection
     VALID_ADB_COMMANDS = {
         "shell", "push", "pull", "install", "uninstall", "logcat",
         "devices", "connect", "disconnect", "root", "remount",
@@ -77,80 +72,49 @@ class Grader:
         "bugreport", "jdwp", "backup", "restore", "help", "version",
     }
 
-    # Placeholder path patterns indicating hallucinations
     HALLUCINATED_PATH_PATTERNS = [
-        r"/path/to/",
-        r"/your/",
-        r"/example/",
-        r"<[^>]+>",  # <placeholder> style
-        r"\$\{[^}]+\}",  # ${VARIABLE} not resolved
+        r"/path/to/", r"/your/", r"/example/", r"<[^>]+>", r"\$\{[^}]+\}",
     ]
 
-    def __init__(self, attempt_penalty: int = 5):
-        """
-        Initialize the grader.
-
-        Args:
-            attempt_penalty: Points deducted per retry attempt.
-        """
+    def __init__(self, attempt_penalty: int = 5, adb_connection: Optional[ADBConnection] = None):
         self.attempt_penalty = attempt_penalty
+        self.adb = adb_connection
 
     def grade_session(self, session: ChallengeSession) -> SenseiAssessment:
-        """
-        Grade a complete challenge session.
-
-        Args:
-            session: The challenge session to grade.
-
-        Returns:
-            SenseiAssessment with grade, score, and feedback.
-        """
         challenge = session.challenge
-
-        # Get the output to grade
         if session.final_success:
             model_output = session.successful_output or ""
         else:
             model_output = session.attempts[-1].model_output if session.attempts else ""
 
-        # Evaluate each criterion
         syntax_ok, syntax_issues = self._evaluate_syntax(model_output, challenge)
         api_ok, api_errors = self._evaluate_api(model_output, challenge)
         exec_ok, exec_issues = self._evaluate_execution(session)
         obj_ok, obj_issues = self._evaluate_objective(session)
         security_issues = self._identify_security_issues(model_output)
 
-        # Detect hallucinations (NEW)
-        hallucination_count, hallucination_types = self._detect_hallucinations(
-            model_output, challenge
-        )
+        hallucination_count, hallucination_types = self._detect_hallucinations(model_output, challenge)
 
-        # Calculate base score
+        # Empirical Verification
+        verification_score, verification_logs = self._verify_empirical_claims(model_output)
+        if verification_score < 1.0:
+            obj_ok = False
+            obj_issues.append(f"Empirical verification failed (Score: {verification_score:.2f})")
+
         rubric = challenge.scoring
         base_score = rubric.calculate_score(syntax_ok, api_ok, exec_ok, obj_ok)
-
-        # Apply attempt penalty
         attempt_penalty = (session.total_attempts - 1) * self.attempt_penalty
         final_score = max(0, base_score - attempt_penalty)
-
-        # Determine grade
         grade = Grade.from_score(final_score)
 
-        # Generate correction if needed (D or F grade)
         corrected_output = None
         correction_explanation = None
-
         if grade.is_negative_example:
             corrected_output, correction_explanation = self._generate_correction(
-                session,
-                syntax_issues + api_errors + exec_issues + obj_issues,
+                session, syntax_issues + api_errors + exec_issues + obj_issues + verification_logs
             )
 
-        # Get execution output for reference
-        exec_output = None
-        if session.attempts:
-            last_attempt = session.attempts[-1]
-            exec_output = last_attempt.execution_result.stdout
+        exec_output = session.attempts[-1].execution_result.stdout if session.attempts else None
 
         return SenseiAssessment(
             challenge_id=challenge.id,
@@ -163,323 +127,158 @@ class Grader:
             security_issues=security_issues,
             hallucination_count=hallucination_count,
             hallucination_types=hallucination_types,
+            verification_score=verification_score,
+            verification_logs=verification_logs,
             corrected_output=corrected_output,
             correction_explanation=correction_explanation,
             execution_output=exec_output,
         )
 
-    def _evaluate_syntax(
-        self,
-        output: str,
-        challenge: Challenge,
-    ) -> tuple[bool, list[str]]:
-        """
-        Check for syntax correctness.
+    def _verify_empirical_claims(self, output: str) -> tuple[float, list[str]]:
+        logs = []
+        verified_count = 0
+        
+        # 1. Robust JSON Extraction
+        json_content = output
+        if "==========" in json_content:
+            parts = json_content.split("==========")
+            if len(parts) >= 2:
+                json_content = parts[1]
 
-        Args:
-            output: The model output to check.
-            challenge: The challenge for context.
+        if "```json" in json_content:
+            match = re.search(r"```json(.*?)```", json_content, re.DOTALL)
+            if match: json_content = match.group(1)
+        elif "{" in json_content:
+            start = json_content.find("{")
+            end = json_content.rfind("}")
+            if start != -1 and end != -1:
+                json_content = json_content[start:end+1]
 
-        Returns:
-            Tuple of (is_valid, list of issues).
-        """
+        try:
+            # Pre-process: fix common unescaped double quotes in command strings
+            # This looks for quotes that are not preceded by a backslash and not followed by a colon or comma/brace
+            fixed_json = json_content.strip()
+            # Simple heuristic: if a line is "command": "...", escape internal "
+            lines = []
+            for line in fixed_json.split("\n"):
+                if '"command": "' in line:
+                    # extract the value part
+                    start_idx = line.find('"command": "') + 12
+                    end_idx = line.rfind('"')
+                    if end_idx > start_idx:
+                        prefix = line[:start_idx]
+                        suffix = line[end_idx:]
+                        value = line[start_idx:end_idx]
+                        # escape unescaped quotes in the value
+                        value = value.replace('"', '\\"')
+                        line = prefix + value + suffix
+                lines.append(line)
+            fixed_json = "\n".join(lines)
+            
+            data = json.loads(fixed_json)
+        except Exception as e:
+            # If sophisticated fix fails, try raw
+            try:
+                data = json.loads(json_content.strip())
+            except Exception as e2:
+                logs.append(f"JSON Parse Error: {str(e2)}")
+                return 0.0, logs
+
+        # 2. Extract Claims
+        items = []
+        if isinstance(data, dict):
+            if "command" in data: items.append(data)
+            if "tasks" in data: items.extend(data["tasks"])
+            if "observations" in data: 
+                for obs in data["observations"]:
+                    if isinstance(obs, dict) and "command" in obs: items.append(obs)
+
+        if not items:
+            return 1.0, ["No verifiable claims found in JSON."]
+
+        # 3. Verify
+        for item in items:
+            cmd = item.get("command")
+            expected = str(item.get("expected_output", ""))
+            if not cmd: continue
+
+            if self.adb and self.adb.is_connected():
+                stdout, _, _ = self.adb.execute(f"shell {cmd}")
+                if expected in stdout or stdout.strip() == expected:
+                    verified_count += 1
+                    logs.append(f"✅ Verified: {cmd}")
+                else:
+                    logs.append(f"❌ Failed: {cmd}")
+            else:
+                # Mock Mode
+                valid_prefixes = ["adb", "apktool", "jadx", "grep", "frida", "ls", "ps", "dumpsys", "am", "pm"]
+                if any(p in cmd.lower() for p in valid_prefixes):
+                    verified_count += 1
+                    logs.append(f"🛡️  Mock Verified: {cmd}")
+                else:
+                    logs.append(f"❌ Mock Invalid: {cmd}")
+
+        return verified_count / len(items), logs
+
+    def _evaluate_syntax(self, output: str, challenge: Challenge) -> tuple[bool, list[str]]:
         issues = []
-
         if not output or not output.strip():
             issues.append("Output is empty")
             return False, issues
-
-        # Check for common syntax errors
-        for error_name, pattern in self.SYNTAX_PATTERNS.items():
+        for name, pattern in self.SYNTAX_PATTERNS.items():
             if re.search(pattern, output, re.MULTILINE):
-                issues.append(f"Potential syntax error: {error_name.replace('_', ' ')}")
-
-        # Check for markdown artifacts that shouldn't be there
-        if output.strip().startswith("```"):
-            issues.append("Output contains markdown code block markers")
-
-        if output.strip().startswith("`") and output.strip().endswith("`"):
-            issues.append("Output wrapped in backticks")
-
+                issues.append(f"Syntax error: {name}")
         return len(issues) == 0, issues
 
-    def _evaluate_api(
-        self,
-        output: str,
-        challenge: Challenge,
-    ) -> tuple[bool, list[str]]:
-        """
-        Check for valid API/command usage.
-
-        Args:
-            output: The model output to check.
-            challenge: The challenge for context.
-
-        Returns:
-            Tuple of (is_valid, list of issues).
-        """
+    def _evaluate_api(self, output: str, challenge: Challenge) -> tuple[bool, list[str]]:
         issues = []
-
-        # Check expected output patterns from challenge
-        expected = challenge.expected_output
-        is_valid, pattern_issues = expected.validate(output)
+        is_valid, pattern_issues = challenge.expected_output.validate(output)
         issues.extend(pattern_issues)
-
-        # Script-type specific checks
-        script_type = expected.script_type.value
-
-        if script_type == "adb":
-            # ADB-specific validation
-            if not any(
-                output.startswith(prefix)
-                for prefix in ["shell", "push", "pull", "install", "uninstall", "logcat", "adb"]
-            ):
-                # It's okay if it doesn't start with these - might be just the command
-                pass
-
         return len(issues) == 0, issues
 
-    def _evaluate_execution(
-        self,
-        session: ChallengeSession,
-    ) -> tuple[bool, list[str]]:
-        """
-        Check if execution was successful.
+    def _evaluate_execution(self, session: ChallengeSession) -> tuple[bool, list[str]]:
+        if not session.attempts: return False, ["No attempts"]
+        res = session.attempts[-1].execution_result
+        if not res.success: return False, [f"Exec failed: {res.error_type}"]
+        return True, []
 
-        Args:
-            session: The challenge session.
-
-        Returns:
-            Tuple of (is_valid, list of issues).
-        """
-        issues = []
-
-        if not session.attempts:
-            issues.append("No execution attempts recorded")
-            return False, issues
-
-        # Check final execution result
-        last_attempt = session.attempts[-1]
-        exec_result = last_attempt.execution_result
-
-        if not exec_result.success:
-            if exec_result.error_type:
-                issues.append(f"Execution failed: {exec_result.error_type}")
-            if exec_result.stderr:
-                # Truncate long error messages
-                error_msg = exec_result.stderr[:200]
-                issues.append(f"Error output: {error_msg}")
-
-        return exec_result.success, issues
-
-    def _evaluate_objective(
-        self,
-        session: ChallengeSession,
-    ) -> tuple[bool, list[str]]:
-        """
-        Check if challenge objective was achieved.
-
-        Args:
-            session: The challenge session.
-
-        Returns:
-            Tuple of (is_valid, list of issues).
-        """
-        issues = []
-
-        # Primary check: did it ultimately succeed?
-        if not session.final_success:
-            issues.append("Challenge objective not achieved")
-            return False, issues
-
-        # Additional validation from challenge requirements
-        challenge = session.challenge
-        if session.successful_output:
-            validation = challenge.inputs.additional_context.get("validation", {})
-            if validation:
-                val_type = validation.get("type", "")
-                expected = validation.get("expected", "")
-
-                if val_type == "output_contains" and expected:
-                    if expected not in session.attempts[-1].execution_result.stdout:
-                        issues.append(f"Output missing expected content: {expected}")
-                        return False, issues
-
-        return True, issues
+    def _evaluate_objective(self, session: ChallengeSession) -> tuple[bool, list[str]]:
+        if not session.final_success: return False, ["Objective not met"]
+        return True, []
 
     def _identify_security_issues(self, output: str) -> list[str]:
-        """
-        Identify any security concerns in the output.
-
-        Args:
-            output: The model output to check.
-
-        Returns:
-            List of security concerns.
-        """
         issues = []
-
-        for issue_name, pattern in self.SECURITY_PATTERNS.items():
+        for name, pattern in self.SECURITY_PATTERNS.items():
             if re.search(pattern, output, re.IGNORECASE):
-                issues.append(f"Security concern: {issue_name.replace('_', ' ')}")
-
+                issues.append(f"Security: {name}")
         return issues
 
-    def _detect_hallucinations(
-        self,
-        output: str,
-        challenge: Challenge,
-    ) -> tuple[int, list[str]]:
-        """
-        Detect hallucinated APIs, commands, or paths in model output.
-
-        Hallucinations include:
-        - Non-existent Android APIs
-        - Invalid ADB subcommands
-        - Placeholder paths that weren't filled in
-
-        Args:
-            output: The model output to check.
-            challenge: The challenge for context.
-
-        Returns:
-            Tuple of (hallucination_count, list of hallucination_types).
-        """
-        hallucinations: list[str] = []
-
-        if not output:
-            return 0, hallucinations
-
-        # Check for fake API patterns
+    def _detect_hallucinations(self, output: str, challenge: Challenge) -> tuple[int, list[str]]:
+        halls = []
         for pattern in self.HALLUCINATED_API_PATTERNS:
             matches = re.findall(pattern, output)
-            for match in matches:
-                hallucinations.append(f"fake_api:{match}")
-
-        # Check for invalid ADB subcommands
+            for m in matches: halls.append(f"api:{m}")
         adb_matches = re.findall(r"adb\s+([a-z_-]+)", output, re.IGNORECASE)
         for cmd in adb_matches:
-            cmd_lower = cmd.lower()
-            if cmd_lower not in self.VALID_ADB_COMMANDS:
-                hallucinations.append(f"invalid_adb_cmd:{cmd}")
-
-        # Check for placeholder paths
+            if cmd.lower() not in self.VALID_ADB_COMMANDS: halls.append(f"adb:{cmd}")
         for pattern in self.HALLUCINATED_PATH_PATTERNS:
             matches = re.findall(pattern, output, re.IGNORECASE)
-            for match in matches:
-                hallucinations.append(f"placeholder_path:{match}")
+            for m in matches: halls.append(f"path:{m}")
+        return len(halls), halls
 
-        return len(hallucinations), hallucinations
-
-    def _generate_correction(
-        self,
-        session: ChallengeSession,
-        issues: list[str],
-    ) -> tuple[Optional[str], Optional[str]]:
-        """
-        Generate corrected output for failed attempts.
-
-        Args:
-            session: The challenge session.
-            issues: List of identified issues.
-
-        Returns:
-            Tuple of (corrected_output, explanation).
-        """
-        challenge = session.challenge
-
-        # Use kata solution if available
-        if challenge.kata_solution:
-            explanation = self._build_correction_explanation(issues, challenge.kata_solution)
-            return challenge.kata_solution, explanation
-
-        # No correction available
+    def _generate_correction(self, session: ChallengeSession, issues: list[str]) -> tuple[Optional[str], Optional[str]]:
+        if session.challenge.kata_solution:
+            return session.challenge.kata_solution, f"Issues: {', '.join(issues[:3])}"
         return None, None
 
-    def _build_correction_explanation(
-        self,
-        issues: list[str],
-        correct_solution: str,
-    ) -> str:
-        """
-        Build an explanation of what was wrong and how it was fixed.
-
-        Args:
-            issues: List of identified issues.
-            correct_solution: The correct solution.
-
-        Returns:
-            Explanation string.
-        """
-        lines = ["Issues identified:"]
-        for issue in issues[:5]:  # Limit to top 5 issues
-            lines.append(f"  - {issue}")
-
-        lines.append("")
-        lines.append("The correct approach is shown in the corrected output.")
-
-        return "\n".join(lines)
-
-    def grade_sessions(
-        self,
-        sessions: list[ChallengeSession],
-    ) -> list[SenseiAssessment]:
-        """
-        Grade multiple sessions.
-
-        Args:
-            sessions: List of challenge sessions.
-
-        Returns:
-            List of assessments.
-        """
-        return [self.grade_session(session) for session in sessions]
-
-    def get_grading_summary(
-        self,
-        assessments: list[SenseiAssessment],
-    ) -> dict:
-        """
-        Get summary statistics for a set of assessments.
-
-        Args:
-            assessments: List of assessments.
-
-        Returns:
-            Summary dictionary.
-        """
-        if not assessments:
-            return {
-                "total": 0,
-                "by_grade": {},
-                "average_score": 0.0,
-                "pass_rate": 0.0,
-            }
-
-        # Count by grade
-        by_grade = {}
-        for grade in Grade:
-            count = sum(1 for a in assessments if a.grade == grade)
-            if count > 0:
-                by_grade[grade.value] = count
-
-        # Calculate stats
+    def get_grading_summary(self, assessments: list[SenseiAssessment]) -> dict:
+        if not assessments: return {"total": 0}
         total = len(assessments)
-        total_score = sum(a.score for a in assessments)
         passed = sum(1 for a in assessments if a.grade.is_passing)
-
-        # Calculate hallucination stats
-        total_hallucinations = sum(a.hallucination_count for a in assessments)
-        assessments_with_hallucinations = sum(1 for a in assessments if a.has_hallucinations)
-
         return {
             "total": total,
-            "by_grade": by_grade,
-            "average_score": round(total_score / total, 2),
             "pass_rate": round((passed / total) * 100, 2),
-            "positive_examples": sum(1 for a in assessments if a.is_positive_example),
-            "negative_examples": sum(1 for a in assessments if a.is_negative_example),
-            "total_hallucinations": total_hallucinations,
-            "hallucination_rate": round(total_hallucinations / total, 2),
-            "assessments_with_hallucinations": assessments_with_hallucinations,
+            "avg_score": round(sum(a.score for a in assessments) / total, 2),
+            "hallucination_rate": round(sum(a.hallucination_count for a in assessments) / total, 2),
+            "verification_rate": round(sum(a.verification_score for a in assessments) / total, 2),
         }

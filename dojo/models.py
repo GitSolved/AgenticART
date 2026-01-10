@@ -327,6 +327,10 @@ class SenseiAssessment:
     hallucination_count: int = 0
     hallucination_types: list[str] = field(default_factory=list)
 
+    # Empirical Verification (NEW - Sensei Upgrade)
+    verification_score: float = 0.0  # 0.0 to 1.0 (Percentage of verified claims)
+    verification_logs: list[str] = field(default_factory=list)
+
     # Correction (if grade is D or F)
     corrected_output: Optional[str] = None
     correction_explanation: Optional[str] = None
@@ -379,6 +383,8 @@ class SenseiAssessment:
             "security_issues": self.security_issues,
             "hallucination_count": self.hallucination_count,
             "hallucination_types": self.hallucination_types,
+            "verification_score": self.verification_score,
+            "verification_logs": self.verification_logs,
             "corrected_output": self.corrected_output,
             "correction_explanation": self.correction_explanation,
             "timestamp": self.timestamp.isoformat(),

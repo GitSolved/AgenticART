@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from core.reconnaissance.device_enum import ADBConnection
 from dojo.curriculum import ChallengeSession
 from dojo.models import Belt, Grade, ModelProgress, SenseiAssessment, TrainingExample
 from dojo.sensei.exporter import ExportFormat, TrainingDataExporter
@@ -65,6 +66,7 @@ class Sensei:
         exporter: Optional[TrainingDataExporter] = None,
         progress_tracker: Optional[ProgressTracker] = None,
         output_dir: Optional[Path] = None,
+        adb_connection: Optional[ADBConnection] = None,
     ):
         """
         Initialize the Sensei.
@@ -75,11 +77,12 @@ class Sensei:
             exporter: TrainingDataExporter instance (created if None).
             progress_tracker: ProgressTracker instance (created if None).
             output_dir: Base directory for outputs.
+            adb_connection: Optional ADB connection for active grading.
         """
         self.output_dir = output_dir or Path("./dojo_output")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.grader = grader or Grader()
+        self.grader = grader or Grader(adb_connection=adb_connection)
         self.extractor = extractor or TrainingExtractor()
         self.exporter = exporter or TrainingDataExporter(
             output_dir=self.output_dir / "training_data"

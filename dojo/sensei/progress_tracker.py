@@ -232,6 +232,7 @@ class ProgressTracker:
                 "grade": a.grade.value,
                 "score": a.score,
                 "hallucination_count": a.hallucination_count,
+                "verification_score": a.verification_score,
                 "timestamp": a.timestamp.isoformat(),
             }
             for a in assessments[-50:]  # Keep last 50

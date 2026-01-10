@@ -35,7 +35,7 @@ class ChallengeLoader:
 
     def _get_belt_dir(self, belt: Belt) -> Path:
         """Get the directory for a specific belt."""
-        return self.curriculum_dir / f"{belt.value}_belt"
+        return self.curriculum_dir / "v2" / "belts" / belt.value
 
     def _get_challenges_file(self, belt: Belt) -> Path:
         """Get the challenges.yaml file for a belt."""
