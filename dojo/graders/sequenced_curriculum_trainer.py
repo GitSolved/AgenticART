@@ -19,7 +19,6 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
-from dojo.models import Belt
 
 class Phase(Enum):
     """Learning phases in correct sequence."""

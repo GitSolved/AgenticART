@@ -75,19 +75,6 @@ COPY --from=builder /install /usr/local
 # Copy Research Tools
 COPY --from=tool_builder /opt/jadx /opt/jadx
 COPY --from=tool_builder /opt/ghidra /opt/ghidra
-# Copy Radare2 (it installs to /usr/local/bin and /usr/local/lib usually)
-# Since we built it in tool_builder, we need to copy it.
-# However, copying system installs is tricky.
-# BETTER STRATEGY for Radare2: Build it in the FINAL stage or Copy specific folders.
-# Let's try copying from /usr/local/bin and /usr/local/lib/radare2
-COPY --from=tool_builder /usr/bin/radare2 /usr/local/bin/radare2
-COPY --from=tool_builder /usr/bin/r2 /usr/local/bin/r2
-COPY --from=tool_builder /usr/bin/rabin2 /usr/local/bin/rabin2
-COPY --from=tool_builder /usr/bin/rasm2 /usr/local/bin/rasm2
-# (And libraries if needed, but r2 is mostly static or uses standard libs)
-# Actually, the simplest way for r2 in multi-stage is to install it in production layer
-# OR just run the install script in production layer since we have build-essential.
-# Let's install r2 in the final stage to be safe and simple.
 
 # Setup Environment Variables for Tools
 ENV PATH="/opt/jadx/bin:/opt/ghidra/support:${PATH}"
