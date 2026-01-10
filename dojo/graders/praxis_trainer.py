@@ -11,8 +11,7 @@ Each pair embeds critical reflection within authentic problem-solving context.
 
 import json
 import subprocess
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -112,7 +111,7 @@ class PraxisTrainer:
             if "Not accessible" not in result.stdout:
                 observations.append(f"App data directory:\n{result.stdout.strip()}")
 
-        except Exception as e:
+        except Exception:
             observations.append(f"[Simulated] APK {apk_name} analysis context")
 
         return PraxisContext(

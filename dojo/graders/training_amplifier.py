@@ -14,17 +14,14 @@ from __future__ import annotations
 import random
 import re
 from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
+from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator
 from dojo.models_v2 import (
     ChallengeV2,
     PhaseID,
     Pillar,
 )
-from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Response Variation Templates
@@ -476,7 +473,7 @@ class TrainingAmplifier:
         # Add metadata
         parts.append("")
         parts.append(f"**is_vulnerable**: {str(content['is_vulnerable']).lower()}")
-        parts.append(f"**confidence**: 0.9")
+        parts.append("**confidence**: 0.9")
         if content["is_vulnerable"] and content.get("cwe"):
             parts.append(f"**CWE**: {content['cwe']}")
 
@@ -581,7 +578,7 @@ The code {"is NOT vulnerable" if is_vuln else "IS vulnerable"} because:
 **confidence**: 0.90
 """
         elif error_type == "non_sequitur":
-            return f"""## Analysis
+            return """## Analysis
 
 The code uses string concatenation.
 

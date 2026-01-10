@@ -32,7 +32,7 @@ def main():
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from trl import DPOConfig, DPOTrainer
         print(f"   ✅ PyTorch: {torch.__version__}")
-        print(f"   ✅ TRL loaded")
+        print("   ✅ TRL loaded")
         print(f"   ✅ Device: {'mps' if torch.backends.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu'}")
     except ImportError as e:
         print(f"   ❌ Missing dependency: {e}")

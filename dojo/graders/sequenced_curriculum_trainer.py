@@ -14,11 +14,10 @@ This trainer generates training data in pedagogically correct order with:
 """
 
 import json
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Optional
-from pathlib import Path
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
 
 
 class Phase(Enum):

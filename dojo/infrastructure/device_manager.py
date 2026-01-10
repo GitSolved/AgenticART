@@ -6,7 +6,6 @@ Provides clean environments for empirical verification.
 """
 
 import logging
-import time
 from pathlib import Path
 from typing import Optional
 
@@ -42,7 +41,7 @@ class DeviceManager:
         if not apk_path.exists():
             logger.error(f"Target APK not found: {apk_path}")
             return False
-        
+
         logger.info(f"Deploying {apk_path.name} to device...")
         stdout, stderr, code = self.adb.execute(f"install -r {apk_path}")
         if code != 0:

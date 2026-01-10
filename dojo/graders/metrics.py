@@ -7,19 +7,18 @@ Tracks model performance, confidence calibration, and training progress.
 from __future__ import annotations
 
 import json
-import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
+from dojo.graders.reasoning_grader import GradingResult
 from dojo.models_v2 import (
     Belt,
     PhaseID,
     Pillar,
     ReasoningChain,
 )
-from dojo.graders.reasoning_grader import GradingResult
 
 
 @dataclass

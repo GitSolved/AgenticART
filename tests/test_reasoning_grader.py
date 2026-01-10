@@ -11,11 +11,19 @@ Tests cover:
 
 from __future__ import annotations
 
-import json
 import pytest
-from datetime import datetime
-from pathlib import Path
 
+from dojo.graders.dpo_generator import DPOPairGenerator
+from dojo.graders.metrics import CalibrationTracker, GradingMetrics, Prediction
+from dojo.graders.reasoning_grader import (
+    GradingResult,
+    HypothesisGrader,
+    NegativeKnowledgeGrader,
+    ObservationGrader,
+    ReasoningGrader,
+    RootCauseGrader,
+    VerificationGrader,
+)
 from dojo.models import Belt
 from dojo.models_v2 import (
     Artifact,
@@ -27,26 +35,10 @@ from dojo.models_v2 import (
     Phase,
     PhaseEvaluation,
     PhaseID,
-    PhaseOutput,
     Pillar,
-    ReasoningChain,
     ReasoningQuality,
     TrainingMetadata,
 )
-from dojo.graders.reasoning_grader import (
-    CriterionScore,
-    GradingResult,
-    HypothesisGrader,
-    NegativeKnowledgeGrader,
-    ObservationGrader,
-    PhaseGrader,
-    ReasoningGrader,
-    RootCauseGrader,
-    VerificationGrader,
-)
-from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator
-from dojo.graders.metrics import CalibrationTracker, GradingMetrics
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures
@@ -1196,9 +1188,8 @@ class TestCalibrationTracker:
         confidence: float,
         actual: bool,
         predicted: bool = None,
-    ) -> "Prediction":
+    ) -> Prediction:
         """Helper to create Prediction objects."""
-        from dojo.graders.metrics import Prediction
         if predicted is None:
             predicted = actual  # Default to correct prediction
         return Prediction(
@@ -1369,7 +1360,6 @@ class TestIntegration:
         # Initialize components
         grader = ReasoningGrader(vulnerable_challenge)
         metrics = GradingMetrics()
-        dpo_generator = DPOPairGenerator()
 
         # Grade all phases
         phase_responses = {

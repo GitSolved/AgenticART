@@ -6,20 +6,28 @@ Executes the exam using the GradingRunner to produce dashboard-compatible metric
 """
 
 import argparse
-import sys
 import logging
 import subprocess
-import re
+import sys
 from pathlib import Path
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from dojo.models_v2 import (
-    ChallengeV2, ChallengeType, Pillar, Belt, GroundTruth, TrainingMetadata,
-    Phase, PhaseID, Artifact, ArtifactType, EvaluationCriteria
-)
 from dojo.graders.runner import GradingRunner
+from dojo.models_v2 import (
+    Artifact,
+    ArtifactType,
+    Belt,
+    ChallengeType,
+    ChallengeV2,
+    EvaluationCriteria,
+    GroundTruth,
+    Phase,
+    PhaseID,
+    Pillar,
+    TrainingMetadata,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -34,7 +42,7 @@ class MLXClient:
         try:
             # Using basic generation for reliability
             result = subprocess.run(
-                ["python3", "-m", "mlx_lm.generate", "--model", self.model_path, 
+                ["python3", "-m", "mlx_lm.generate", "--model", self.model_path,
                  "--prompt", full_prompt, "--max-tokens", "2048", "--temp", "0.7"],
                 capture_output=True, text=True, timeout=300
             )
@@ -44,10 +52,10 @@ class MLXClient:
 
 def create_exam_challenges() -> list[ChallengeV2]:
     """Define the Yellow Belt exam challenges as V2 objects."""
-    
+
     # Common dummy metadata
     meta = TrainingMetadata()
-    
+
     # 1. Target Zeta
     ch1 = ChallengeV2(
         id="yellow_001",
@@ -163,23 +171,23 @@ def main():
     # 1. Init
     client = MLXClient(args.model)
     runner = GradingRunner(model_id="AgenticART-Yellow", generate_dpo=False)
-    
+
     challenges = create_exam_challenges()
     passed_count = 0
 
     # 2. RUN
     for challenge in challenges:
         print(f"\n[Task] {challenge.name}")
-        
+
         # Use V2 Prompt format
         prompt = challenge.to_prompt(phase_index=0)
-        
+
         # Inject System Prompt to enforce ReAct
         response = client.generate(prompt, system_prompt="You are a reflectively capable Security Analyst. Output JSON.")
-        
+
         print("\n--- Model Response ---")
         print(response[:300] + "...")
-        
+
         # Grade using V2 Runner
         # We map the single response to the TEST phase for this exam
         run_result = runner.grade_challenge(
@@ -187,12 +195,12 @@ def main():
             phase_responses={PhaseID.TEST: response},
             generate_synthetic_dpo=False
         )
-        
+
         print("\n--- Scorecard ---")
         print(f"Total Score: {run_result.total_score:.1%}")
         if run_result.phase_results:
             print(f"Feedback: {run_result.phase_results[0].feedback}")
-        
+
         if run_result.success:
             passed_count += 1
             print("✅ PASS")
@@ -201,13 +209,13 @@ def main():
 
     # 3. Finalize
     saved_paths = runner.save_results(prefix="yellow_exam")
-    
+
     print("\n" + "=" * 60)
     if passed_count == len(challenges):
         print("🏆 SUCCESS: YELLOW BELT CERTIFIED")
     else:
         print(f"❌ FAILURE: Score {passed_count}/{len(challenges)}")
-        
+
     print(f"\nMetrics saved to: {saved_paths.get('metrics', 'Unknown')}")
 
 if __name__ == "__main__":

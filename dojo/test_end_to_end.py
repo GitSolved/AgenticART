@@ -367,7 +367,7 @@ def run_end_to_end(
         llm_settings = settings.get("agent", {}).get("llm", {})
         if mode is None:
             mode = llm_settings.get("provider", "mlx")
-        
+
         if model is None:
             if mode == "mlx":
                 model = llm_settings.get("mlx", {}).get("model")

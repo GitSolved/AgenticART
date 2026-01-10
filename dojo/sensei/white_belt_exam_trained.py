@@ -7,22 +7,18 @@ what the model learns during the SFT phase.
 """
 
 import argparse
-import sys
 import logging
 import subprocess
-import json
+import sys
 from pathlib import Path
-from typing import List, Optional
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from core.reconnaissance.device_enum import ADBConnection
-from dojo.models import Challenge, ChallengeInput, ExpectedOutput, ScriptType, Belt
-from dojo.curriculum.challenger import ChallengeSession, AttemptRecord
+from dojo.curriculum.challenger import AttemptRecord, ChallengeSession
 from dojo.curriculum.executor import ExecutionResult
+from dojo.models import Belt, Challenge, ChallengeInput, ExpectedOutput, ScriptType
 from dojo.sensei.grader import Grader
-from dojo.sensei.sensei import Sensei
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -57,10 +53,10 @@ Answer: {
 class TrainedStudentInterface:
     def __init__(self, model_name: str):
         self.model_name = model_name
-        
+
     def solve(self, challenge: Challenge) -> str:
         logger.info(f"Asking (Trained) {self.model_name} to solve: {challenge.name}")
-        
+
         # Injected Training Knowledge
         prompt = FEW_SHOT_CONTEXT + "\n\nACTUAL TASK:\n" + challenge.description
         prompt += "\nProvide a verifiable ReAct trajectory and a final JSON answer with 'command' and 'expected_output'."
@@ -79,7 +75,7 @@ class TrainedStudentInterface:
 class WhiteBeltExam:
     def __init__(self, model_name: str):
         # Always mock for this demo to ensure speed
-        self.adb = None 
+        self.adb = None
         self.grader = Grader(adb_connection=self.adb)
         self.student = TrainedStudentInterface(model_name)
         self.exam_targets = ["dojo/targets/exam_target_alpha.apk"] # One target for speed
@@ -97,14 +93,14 @@ class WhiteBeltExam:
         )
 
         response = self.student.solve(challenge)
-        
+
         session = ChallengeSession(challenge=challenge)
         exec_result = ExecutionResult(success=True, exit_code=0, stdout="u0_a1000 1234 1 123456 12345 0 com.target", stderr="", duration=0.1, command="mock")
         attempt = AttemptRecord(attempt_number=1, prompt_used="", model_output=response, execution_result=exec_result)
         session.attempts.append(attempt)
 
         assessment = self.grader.grade_session(session)
-        
+
         print("\n" + "=" * 60)
         print("SIMULATED POST-TRAINING RESULT")
         print("=" * 60)
@@ -112,12 +108,12 @@ class WhiteBeltExam:
         print(f"Result: {'PASS' if assessment.verification_score > 0 else 'FAIL'}")
         print(f"Verification Score: {assessment.verification_score:.0%}")
         print(f"Hallucinations: {assessment.hallucination_count}")
-        
+
         if assessment.verification_logs:
             print("\nVerification Logs:")
             for log in assessment.verification_logs:
                 print(f"  {log}")
-        
+
         print("\nRaw Model Output (Snippet):")
         print(response[:300] + "...")
         return assessment.verification_score > 0

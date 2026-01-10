@@ -12,13 +12,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
 
 import yaml
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from dojo.graders.metrics import GradingMetrics
+from dojo.graders.reasoning_grader import GradingResult, ReasoningGrader
 from dojo.models import Belt
 from dojo.models_v2 import (
     Artifact,
@@ -32,9 +33,6 @@ from dojo.models_v2 import (
     Pillar,
     TrainingMetadata,
 )
-from dojo.graders.reasoning_grader import ReasoningGrader, GradingResult
-from dojo.graders.metrics import GradingMetrics
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Challenge Loader

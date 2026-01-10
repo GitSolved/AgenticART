@@ -6,23 +6,20 @@ Verified and fixed for scope issues.
 """
 
 import argparse
-import sys
 import logging
-import subprocess
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from core.reconnaissance.device_enum import ADBConnection
-from dojo.models import Belt
-from dojo.infrastructure.device_manager import DeviceManager
-from dojo.orchestrator import DojoOrchestrator
-from dojo.curriculum.challenger import Challenger, LLMClient, ChallengeSession, AttemptRecord
-from dojo.curriculum.executor import Executor, ExecutionResult
-from dojo.sensei.sensei import Sensei
+from dojo.curriculum.challenger import AttemptRecord, ChallengeSession, LLMClient
+from dojo.curriculum.executor import ExecutionResult
 from dojo.sensei.grader import Grader
+from dojo.sensei.sensei import Sensei
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -36,7 +33,7 @@ class MLXClient(LLMClient):
         full_prompt = f"SYSTEM: {system_prompt}\n\nUSER: {prompt}"
         try:
             result = subprocess.run(
-                ["python3", "-m", "mlx_lm.generate", "--model", self.model_path, 
+                ["python3", "-m", "mlx_lm.generate", "--model", self.model_path,
                  "--prompt", full_prompt, "--max-tokens", "2048", "--temp", "0.7"],
                 capture_output=True, text=True, timeout=600
             )
@@ -72,11 +69,11 @@ def main():
     adb = ADBConnection(args.device)
     grader = Grader(adb_connection=None if args.mock else adb)
     sensei = Sensei(grader=grader)
-    
+
     from dojo.curriculum.loader import ChallengeLoader
     loader = ChallengeLoader()
     challenge = loader.load_challenge("white_001")
-    
+
     aligned_prompt = f"""User: Analyze {challenge.name}.
 Task: {challenge.description}
 Provide a verifiable ReAct trajectory using the 5-Phase Trajectory (Engage, Explore, Explain, Elaborate, Evaluate).
@@ -84,23 +81,23 @@ Provide a verifiable ReAct trajectory using the 5-Phase Trajectory (Engage, Expl
 CRITICAL: You MUST end your response with an Answer block like this:
 Answer: {{ "command": "adb shell ps -A", "expected_output": "com.target" }}
 """
-    
+
     # 2. RUN
     print(f"Testing {args.model} on {challenge.name}...")
     session = ChallengeSession(challenge=challenge)
     response = client.generate(aligned_prompt, system_prompt="You are a reflectively capable Security Analyst.")
-    
+
     exec_res = ExecutionResult(success=True, exit_code=0, stdout="Mock Verification", stderr="", duration=0.1, command="mock")
     attempt = AttemptRecord(attempt_number=1, prompt_used=aligned_prompt, model_output=response, execution_result=exec_res)
     session.attempts.append(attempt)
-    
+
     print("\n--- Model Response ---")
     print(response[:500] + "...")
-    
+
     # 3. Grade
     assessment, _ = sensei.evaluate_session(session, "AgenticART-White")
     cog_scores = CognitiveGrader().evaluate(response)
-    
+
     print("\n--- Mastery Scorecard ---")
     print(f"Empirical Verification: {assessment.verification_score:.0%}")
     print(f"Trajectory Adherence:  {cog_scores['trajectory']}/5")

@@ -14,9 +14,8 @@ Blue Belt and beyond.
 
 import json
 from dataclasses import dataclass
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
 
 
 @dataclass

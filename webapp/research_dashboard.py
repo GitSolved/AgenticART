@@ -11,14 +11,12 @@ Features:
 - **Hallucination Tracking**
 """
 
-import json
 import glob
+import json
 import os
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
@@ -55,7 +53,7 @@ def load_metrics_data():
     """Load real metrics from JSON files."""
     files = glob.glob(str(METRICS_DIR / "metrics_*.json"))
     data = []
-    
+
     if not files:
         # Return empty structure if no files found
         return pd.DataFrame(), pd.DataFrame()
@@ -64,18 +62,17 @@ def load_metrics_data():
         try:
             with open(f, 'r') as fp:
                 content = json.load(fp)
-                
+
                 # Extract Summary Metrics
                 summary = content.get("summary", {})
-                scores = content.get("scores", {})
                 errors = content.get("errors", {})
                 reasoning = content.get("reasoning", {})
                 hallucination = content.get("hallucination", {})
                 calibration = content.get("calibration", {})
-                
+
                 # Timestamp from filename if not in content
                 timestamp = f.split("_")[-1].replace(".json", "")
-                
+
                 # Flatten for main dataframe
                 row = {
                     "File": os.path.basename(f),
@@ -93,9 +90,9 @@ def load_metrics_data():
                 data.append(row)
         except Exception as e:
             st.error(f"Error loading {f}: {e}")
-            
+
     df_main = pd.DataFrame(data)
-    
+
     # Load Reliability Data (Calibration Buckets) for the latest file
     # (Or allow selection later)
     latest_file = files[-1] if files else None
@@ -107,9 +104,9 @@ def load_metrics_data():
                 buckets = last_content.get("calibration", {}).get("reliability_diagram", [])
                 if buckets:
                     df_rel = pd.DataFrame(buckets)
-        except:
+        except Exception:
             pass
-            
+
     return df_main, df_rel
 
 # --- Sidebar ---
@@ -122,8 +119,8 @@ if df_metrics.empty:
 
 # Select Run to Visualize
 selected_run = st.sidebar.selectbox(
-    "Select Training Run", 
-    df_metrics["File"].unique(), 
+    "Select Training Run",
+    df_metrics["File"].unique(),
     index=len(df_metrics)-1
 )
 run_data = df_metrics[df_metrics["File"] == selected_run].iloc[0]
@@ -175,10 +172,10 @@ st.caption("Does the model know when it doesn't know? (Perfect calibration = Dia
 
 if not df_reliability.empty:
     fig_rel = go.Figure()
-    
+
     # Perfect calibration line
     fig_rel.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines', name='Perfect Calibration', line=dict(dash='dash', color='gray')))
-    
+
     # Model calibration
     fig_rel.add_trace(go.Scatter(
         x=df_reliability["confidence"],
@@ -188,7 +185,7 @@ if not df_reliability.empty:
         line=dict(color='#58a6ff', width=2),
         marker=dict(size=8)
     ))
-    
+
     # Histogram of confidence (bar chart on bottom or secondary y)
     fig_rel.add_trace(go.Bar(
         x=df_reliability["bin_center"],
@@ -238,7 +235,7 @@ def load_stress_test_data():
                 content = json.load(fp)
                 content['filename'] = os.path.basename(f)
                 data.append(content)
-        except:
+        except Exception:
             pass
     return data
 
@@ -249,7 +246,7 @@ if stress_tests:
     test_options = [f"{t['model_id']} - {t['challenge_id']} ({t['timestamp']})" for t in stress_tests]
     selected_test_idx = st.selectbox("Select Stress Test", range(len(test_options)), format_func=lambda x: test_options[x])
     test_data = stress_tests[selected_test_idx]
-    
+
     # Metrics
     s1, s2, s3, s4 = st.columns(4)
     with s1:
@@ -260,7 +257,7 @@ if stress_tests:
         st.metric("Std Dev (Score)", f"{test_data.get('std_dev_score', 0):.1f}")
     with s4:
         st.metric("Iterations", test_data.get('iterations', 0))
-        
+
     # Histogram of Scores
     runs = test_data.get('runs', [])
     if runs:

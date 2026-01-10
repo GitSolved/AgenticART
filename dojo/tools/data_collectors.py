@@ -19,10 +19,8 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
-from urllib.parse import urljoin, urlparse
 
 import requests
 

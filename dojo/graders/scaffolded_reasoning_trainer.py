@@ -16,10 +16,8 @@ This trainer:
 """
 
 import json
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass
@@ -549,7 +547,7 @@ I'm stuck. The framework isn't working for this app.
         """
         habit = BAD_HABITS.get(habit_name, {})
 
-        prompt = f"""You are analyzing an Android application for security vulnerabilities.
+        prompt = """You are analyzing an Android application for security vulnerabilities.
 
 During your analysis, you encounter a situation that might trigger a common analytical mistake.
 

@@ -12,10 +12,9 @@ Assessments elicit direct evidence through performance tasks.
 
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
 from enum import Enum
+from pathlib import Path
 
 
 class Competency(Enum):
@@ -812,7 +811,7 @@ The underlying principle is: [Transferable principle extracted]
 def generate_aligned_rejected(challenge: AlignedChallenge) -> tuple[str, str]:
     """Generate rejected response with competency failure."""
 
-    rejected = f"""## Analysis
+    rejected = """## Analysis
 
 I completed the task.
 
@@ -884,7 +883,7 @@ def generate_all_aligned_training_data(output_dir: Path) -> dict:
     }
 
     print(f"Generated {len(pairs)} aligned challenges")
-    print(f"\nCompetency Coverage:")
+    print("\nCompetency Coverage:")
     for comp, count in sorted(competency_coverage.items()):
         print(f"  {comp}: {count} challenges")
 

@@ -1,5 +1,4 @@
 import os
-import subprocess
 from pathlib import Path
 
 # Configuration
@@ -14,11 +13,11 @@ def build_apk(target_name):
     # 2. Convert Class files to DEX
     # 3. Package into APK
     # 4. Sign
-    
-    # Note: This is a simplified blueprint. 
+
+    # Note: This is a simplified blueprint.
     # In a real environment, we'd use 'gradlew' or 'aapt2'.
     # Since I cannot see your SDK paths, I am providing the command template.
-    
+
     print(f"Blueprint for {target_name}:")
     print(f"  javac -cp {SDK_PATH}/platforms/android-34/android.jar {SOURCE_DIR}/{target_name}.java")
     print(f"  d8 {SOURCE_DIR}/{target_name}.class --lib {SDK_PATH}/platforms/android-34/android.jar")
@@ -28,6 +27,6 @@ if __name__ == "__main__":
     targets = ["TargetAlpha", "TargetBeta", "TargetGamma"]
     for t in targets:
         build_apk(t)
-    
+
     print("\n[ACTION REQUIRED]: To make these live, use your Android Studio or Gradle to build the 'synthetic' targets in the source folder.")
 

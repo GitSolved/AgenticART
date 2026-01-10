@@ -11,16 +11,22 @@ This script:
 from __future__ import annotations
 
 import sys
-from pathlib import Path
-from typing import Any
-from dataclasses import dataclass
 from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
 
 import yaml
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from dojo.graders.dpo_generator import DPOPair, export_dpo_dataset
+from dojo.graders.reasoning_grader import ReasoningGrader
+from dojo.graders.training_amplifier import (
+    AmplificationConfig,
+    TrainingAmplifier,
+    calculate_amplification_stats,
+)
 from dojo.models import Belt
 from dojo.models_v2 import (
     Artifact,
@@ -34,15 +40,6 @@ from dojo.models_v2 import (
     Pillar,
     TrainingMetadata,
 )
-from dojo.graders.reasoning_grader import ReasoningGrader, GradingResult
-from dojo.graders.metrics import GradingMetrics
-from dojo.graders.training_amplifier import (
-    TrainingAmplifier,
-    AmplificationConfig,
-    calculate_amplification_stats,
-)
-from dojo.graders.dpo_generator import DPOPair, export_dpo_dataset
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Response Generator
@@ -142,7 +139,7 @@ This code is vulnerable to {vuln_type}. The identified patterns indicate securit
     else:
         # Secure code response - optimized for both ObservationGrader (key_observations)
         # and NegativeKnowledgeGrader (secure_properties, attack resistance)
-        response = f"""## Security Observation Analysis
+        response = """## Security Observation Analysis
 
 ### Classification
 **This code is NOT vulnerable. It is secure and safe.**
@@ -157,7 +154,7 @@ This code is properly implemented with correct security controls. No vulnerabili
         # Include ALL key_observations - critical for ObservationGrader completeness score
         for i, obs in enumerate(key_obs, 1):
             response += f"{i}. **{obs}**\n"
-            response += f"   - This observation demonstrates secure implementation.\n\n"
+            response += "   - This observation demonstrates secure implementation.\n\n"
 
         if not key_obs:
             response += """1. **Secure implementation pattern identified**
@@ -180,7 +177,7 @@ The following security properties make this code secure:
 """
             for i, prop in enumerate(secure_props, 1):
                 response += f"{i}. **{prop}**\n"
-                response += f"   - This property blocks attacks and prevents exploitation.\n\n"
+                response += "   - This property blocks attacks and prevents exploitation.\n\n"
 
         # Add attack resistance section - critical for scoring
         response += """### Attack Resistance Analysis

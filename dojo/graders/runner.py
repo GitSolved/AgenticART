@@ -11,19 +11,18 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
+from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator, export_dpo_dataset
+from dojo.graders.metrics import GradingMetrics, TrainingProgressTracker
+from dojo.graders.reasoning_grader import GradingResult, ReasoningGrader
 from dojo.models_v2 import (
     ChallengeV2,
-    PhaseEvaluation,
     PhaseID,
     PhaseOutput,
     ReasoningChain,
     ReasoningQuality,
 )
-from dojo.graders.reasoning_grader import GradingResult, ReasoningGrader
-from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator, export_dpo_dataset
-from dojo.graders.metrics import GradingMetrics, TrainingProgressTracker
 
 
 @dataclass

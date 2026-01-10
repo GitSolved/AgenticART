@@ -12,13 +12,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
+from dojo.graders.reasoning_grader import GradingResult
 from dojo.models_v2 import (
     ChallengeV2,
     PhaseID,
     Pillar,
-    TrainingExampleV2,
 )
-from dojo.graders.reasoning_grader import GradingResult
 
 
 @dataclass

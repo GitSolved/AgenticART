@@ -16,10 +16,9 @@ Key principles:
 """
 
 import json
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
+from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 
 class DrivingQuestion(Enum):
@@ -434,7 +433,7 @@ This matters because: {dq['real_world_issue']}
 
 ### Investigation Process
 
-{chr(10).join(f'**{i+1}. {p}**' + chr(10) + f'   Investigation findings here...' for i, p in enumerate(challenge.investigation_prompts))}
+{chr(10).join(f'**{i+1}. {p}**' + chr(10) + '   Investigation findings here...' for i, p in enumerate(challenge.investigation_prompts))}
 
 ---
 

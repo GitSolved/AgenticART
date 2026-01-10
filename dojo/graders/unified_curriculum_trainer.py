@@ -11,10 +11,10 @@ Features:
 import json
 import random
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
 
 # --- Randomization Pools ---
 
@@ -272,7 +272,7 @@ CHALLENGES = [
     # CH9: The Secret Messenger (Renamed from Race Condition per Yellow Belt MD order? No, MD has Ch9 as Secret Messenger)
     # Checking MD: Ch9 is Secret Messenger (Traffic). Ch10 is Stubborn Guard (Pinning). Ch11 is Native.
     # The V5 trainer had Ch9 as Race Condition. I must re-order to match MD.
-    
+
     ChallengeTemplate(
         id="ch9_secret_messenger",
         title="The Secret Messenger (Traffic Interception)",
@@ -406,7 +406,7 @@ class ReActGenerator:
             trajectory_lines.append(f"Action: {cmd}")
             trajectory_lines.append(f"Observation: {obs}")
         trajectory_text = "\n".join(trajectory_lines)
-        
+
         filled_schema = {}
         for k, v in challenge.output_schema.items():
             if isinstance(v, str):
@@ -414,7 +414,7 @@ class ReActGenerator:
             else:
                 filled_schema[k] = v
         final_json = json.dumps(filled_schema, indent=2)
-        
+
         return GeneratedInstance(challenge.id, vars, trajectory_text, final_json, vars)
 
     def create_rejected_instance(self, challenge: ChallengeTemplate, vars: Dict[str, Any]) -> str:
@@ -422,7 +422,7 @@ class ReActGenerator:
         # 1. Skip the trajectory headers (Lazy)
         # 2. Use vague commands (Blind Activism)
         # 3. Use wrong JSON format (Schema Drift)
-        
+
         lazy_thought = f"I need to check {vars['package']}."
         # Generate a vague/bad command based on the challenge type
         if "sql" in challenge.id:
@@ -433,7 +433,7 @@ class ReActGenerator:
             bad_cmd = "adb shell ls" # Generic
         else:
             bad_cmd = "run exploit"
-            
+
         bad_response = f"""Thought: {lazy_thought}
 Action: {bad_cmd}
 Observation: Command failed.
@@ -453,10 +453,10 @@ Answer: {{ "command": "...", "expected_output": "..." }}
 """
         # The Good Response (Chosen)
         chosen = f"{instance.trajectory}\n\nAnswer: {instance.final_output}"
-        
+
         # The Bad Response (Rejected)
         rejected = self.create_rejected_instance(challenge, instance.variables)
-        
+
         return {
             "prompt": f"SYSTEM: You are an Android Security Expert agent. You observe before acting. You verify every claim.\n\n{prompt}",
             "chosen": chosen,

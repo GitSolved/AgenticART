@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import re
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -137,7 +137,7 @@ class Grader:
     def _verify_empirical_claims(self, output: str) -> tuple[float, list[str]]:
         logs = []
         verified_count = 0
-        
+
         # 1. Robust JSON Extraction
         json_content = output
         if "==========" in json_content:
@@ -174,9 +174,9 @@ class Grader:
                         line = prefix + value + suffix
                 lines.append(line)
             fixed_json = "\n".join(lines)
-            
+
             data = json.loads(fixed_json)
-        except Exception as e:
+        except Exception:
             # If sophisticated fix fails, try raw
             try:
                 data = json.loads(json_content.strip())
@@ -189,7 +189,7 @@ class Grader:
         if isinstance(data, dict):
             if "command" in data: items.append(data)
             if "tasks" in data: items.extend(data["tasks"])
-            if "observations" in data: 
+            if "observations" in data:
                 for obs in data["observations"]:
                     if isinstance(obs, dict) and "command" in obs: items.append(obs)
 

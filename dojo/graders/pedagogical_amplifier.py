@@ -15,11 +15,11 @@ Key principle: Each variation must teach something the original didn't.
 Simple rephrasing is NOT pedagogically valuable.
 """
 
-import json
-from pathlib import Path
-from datetime import datetime
-from typing import Iterator
 import copy
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Iterator
 
 
 class PedagogicalAmplifier:
@@ -346,7 +346,7 @@ def combine_pedagogical_training_data(output_dir: Path) -> dict:
         for pair in all_pairs:
             f.write(json.dumps(pair) + "\n")
 
-    print(f"\n=== Combined Pedagogical Training Data ===")
+    print("\n=== Combined Pedagogical Training Data ===")
     print(f"Total pairs: {len(all_pairs)}")
     print(f"Sources: {len(sources)} files")
     print(f"Output: {combined_path}")

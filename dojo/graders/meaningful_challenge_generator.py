@@ -19,10 +19,9 @@ Develops the 4Cs:
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Optional
-from enum import Enum
 
 
 class Competency(Enum):

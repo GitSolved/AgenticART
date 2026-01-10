@@ -12,7 +12,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from typing import Any, Optional
+from typing import Optional
 
 from dojo.models_v2 import (
     ChallengeV2,
@@ -20,7 +20,6 @@ from dojo.models_v2 import (
     Phase,
     PhaseEvaluation,
     PhaseID,
-    PhaseOutput,
     ReasoningQuality,
 )
 
