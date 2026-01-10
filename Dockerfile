@@ -24,20 +24,57 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     # Git for potential package installs
     git \
+    # Unzip for tool installation
+    unzip \
+    # ─── RESEARCH TOOLING DEPS ────────────────────────────────────────────────
+    # Java 17 (Required for Ghidra and Jadx)
+    openjdk-17-jre-headless \
+    # Radare2 (Binary analysis)
+    radare2 \
+    # Apktool (Android Reversing)
+    apktool \
     && rm -rf /var/lib/apt/lists/*
+
+# ─── Research Tooling Stage ──────────────────────────────────────────────────
+FROM base as tool_builder
+
+WORKDIR /tmp
+
+# 1. Install JADX (Decompiler)
+RUN wget -q https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip \
+    && mkdir -p /opt/jadx \
+    && unzip -q jadx-1.4.7.zip -d /opt/jadx \
+    && rm jadx-1.4.7.zip
+
+# 2. Install GHIDRA (Advanced Static Analysis)
+# Using a fixed version for stability
+RUN wget -q https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.0.1_build/ghidra_11.0.1_PUBLIC_20240130.zip \
+    && unzip -q ghidra_11.0.1_PUBLIC_20240130.zip \
+    && mv ghidra_11.0.1_PUBLIC /opt/ghidra \
+    && rm ghidra_11.0.1_PUBLIC_20240130.zip
 
 # ─── Builder Stage ───────────────────────────────────────────────────────────
 FROM base as builder
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Add r2pipe for Radare2 Python interaction
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt && \
+    pip install --no-cache-dir --prefix=/install r2pipe
 
 # ─── Production Stage ────────────────────────────────────────────────────────
 FROM base as production
 
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
+
+# Copy Research Tools
+COPY --from=tool_builder /opt/jadx /opt/jadx
+COPY --from=tool_builder /opt/ghidra /opt/ghidra
+
+# Setup Environment Variables for Tools
+ENV PATH="/opt/jadx/bin:/opt/ghidra/support:${PATH}"
+ENV GHIDRA_INSTALL_DIR="/opt/ghidra"
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash pentester
