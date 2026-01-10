@@ -3,11 +3,13 @@
 
 site_name: AgenticART
 site_url: https://www.secureyourgear.com/AgenticART/
-site_description: Train LLMs to Generate Exploits That Actually Work
+site_description: Verifiable Security Research & Exploit Generation
 site_author: GitSolved
 
 repo_name: GitSolved/AgenticART
 repo_url: https://github.com/GitSolved/AgenticART
+
+docs_dir: docs
 
 theme:
   name: material
@@ -81,6 +83,8 @@ nav:
   - Training:
     - Dojo Framework: DOJO_FRAMEWORK.md
     - Research Insights: RESEARCH_INSIGHTS.md
+    - Grading Rubric: grading_rubric.md
+    - Grading Rubric (V2): grading_rubric.md
   - Reference:
     - Architecture: architecture.md
     - Docker Sandbox: DOCKER_SANDBOX.md
