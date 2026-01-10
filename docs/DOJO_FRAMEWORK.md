@@ -242,20 +242,26 @@ result = sensei.run_training_cycle(
 print(result.summary())
 ```
 
-### Grader
+### Grader (V2)
 
-Evaluates challenge sessions and produces assessments.
+The V2 Reasoning Grader goes beyond simple pass/fail checks. It evaluates the **quality of thought** using multiple metrics:
+
+| Metric | Description |
+|--------|-------------|
+| **Epistemic Calibration** | Does the model's confidence match its accuracy? (Brier Score, ECE) |
+| **Reasoning Quality** | Completeness, depth, and logical coherence of the analysis. |
+| **Hallucination Detection** | Identifies fabricated library calls, APIs, or CVEs using artifact cross-referencing. |
+| **Stability** | Consistency of results across multiple independent runs (Stability Score). |
 
 ```python
-from dojo.sensei import Grader, GradingResult
+from dojo.graders.reasoning_grader import ReasoningGrader, GradingResult
 
-grader = Grader()
-assessment: SenseiAssessment = grader.grade_session(session)
+grader = ReasoningGrader(challenge)
+result: GradingResult = grader.grade_phase(PhaseID.OBSERVE, response)
 
-print(f"Grade: {assessment.grade}")  # Grade.PERFECT, GOOD, ACCEPTABLE, POOR, FAIL
-print(f"Score: {assessment.score}")  # 0-100
-print(f"Syntax Issues: {assessment.syntax_issues}")
-print(f"API Errors: {assessment.api_errors}")
+print(f"Score: {result.total_score}")
+print(f"Hallucinations: {result.hallucinations}")
+print(f"Calibration Error: {result.calibration_error}")
 ```
 
 ### Grade Enum

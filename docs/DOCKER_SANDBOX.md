@@ -21,6 +21,19 @@ LLM-generated code is unpredictable. Even with prompt engineering, models can pr
 
 Docker mode contains these risks while still allowing full interaction with the Android emulator via ADB.
 
+## Research-Grade Tooling
+
+The sandbox is built on **Debian 12 (Bookworm)** and includes pre-installed, research-grade reverse engineering tools to support Black Belt curriculum tasks:
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| **Ghidra** | 11.x (Headless) | Advanced decompilation and binary analysis automation |
+| **Jadx** | Latest | DEX-to-Java decompilation with deobfuscation support |
+| **Radare2** | Latest (Source) | Lightweight, scriptable disassembler and debugger |
+| **Apktool** | Latest | Resource decoding and rebuilding |
+
+These tools are available in the system PATH for both interactive use and automated scripts.
+
 ## Security Features
 
 The Docker sandbox enforces multiple layers of isolation:

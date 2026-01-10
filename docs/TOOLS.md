@@ -237,15 +237,24 @@ sqlite3 app.db "SELECT * FROM users;"
 
 ---
 
-### 8. Exploit Development - OPTIONAL
+### 8. Exploit Development - OPTIONAL (Pre-installed in Docker)
+
+These tools are included in the standard `agentic-sandbox` Docker image.
 
 | Tool | Purpose | Install |
 |------|---------|---------|
 | `pwntools` | CTF/exploit development | pip install |
-| `radare2` | Reverse engineering | brew/apt |
-| `ghidra` | NSA reverse engineering tool | Download |
+| `radare2` | Reverse engineering | **Built-in** (Docker) / brew/apt |
+| `ghidra` | NSA reverse engineering tool | **Built-in** (Docker) / Download |
 | `ropper` | ROP gadget finder | pip install |
 
+```bash
+# In Docker Sandbox, just run:
+r2 -v
+ghidra-headless -h
+```
+
+For local installation:
 ```bash
 # pwntools
 pip install pwntools
