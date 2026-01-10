@@ -945,10 +945,11 @@ def generate_all_advanced_training_data(output_dir: Path) -> dict:
     }
 
     print(f"Generated {len(pairs)} advanced challenge pairs")
-    print(f"  System Analysis: {stats['by_type']['system_analysis']}")
-    print(f"  Statistical Inference: {stats['by_type']['statistical_inference']}")
-    print(f"  Novel Derivation: {stats['by_type']['novel_derivation']}")
-    print(f"  Contradiction Resolution: {stats['by_type']['contradiction']}")
+    by_type_stats: dict[str, int] = stats['by_type']  # type: ignore
+    print(f"  System Analysis: {by_type_stats['system_analysis']}")
+    print(f"  Statistical Inference: {by_type_stats['statistical_inference']}")
+    print(f"  Novel Derivation: {by_type_stats['novel_derivation']}")
+    print(f"  Contradiction Resolution: {by_type_stats['contradiction']}")
     print(f"  Saved to: {output_path}")
 
     return stats

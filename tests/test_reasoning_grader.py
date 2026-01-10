@@ -1183,23 +1183,20 @@ class TestDPOPairGenerator:
 class TestCalibrationTracker:
     """Tests for calibration tracking."""
 
-    def _make_prediction(
-        self,
-        confidence: float,
-        actual: bool,
-        predicted: bool = None,
-    ) -> Prediction:
-        """Helper to create Prediction objects."""
+    def _make_prediction(self, confidence: float, actual: bool, predicted: bool | None = None) -> Prediction:
         if predicted is None:
-            predicted = actual  # Default to correct prediction
+            predicted = actual
         return Prediction(
-            challenge_id="test-challenge",
-            phase_id=PhaseID.OBSERVE,
-            predicted_vulnerable=predicted,
-            actual_vulnerable=actual,
             confidence=confidence,
-            score=0.8,
+            actual_vulnerable=actual,
+            predicted_vulnerable=predicted,
+            challenge_id="test",
+            phase_id=PhaseID.OBSERVE,
+            score=0.0  # Default score
         )
+
+    def check_prediction(self, predicted: bool | None = None):
+        pass
 
     def test_add_predictions(self) -> None:
         """Test adding predictions to calibration tracker."""

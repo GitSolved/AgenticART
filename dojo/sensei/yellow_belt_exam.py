@@ -37,8 +37,12 @@ class MLXClient:
     def __init__(self, model_path: str):
         self.model_path = model_path
 
-    def generate(self, prompt: str, system_prompt: str = None) -> str:
-        full_prompt = f"SYSTEM: {system_prompt}\n\nUSER: {prompt}"
+    def evaluate_response(
+        self,
+        user_input: str,
+        system_prompt: str | None = None
+    ) -> str:
+        full_prompt = f"SYSTEM: {system_prompt}\n\nUSER: {user_input}"
         try:
             # Using basic generation for reliability
             result = subprocess.run(

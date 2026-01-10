@@ -20,7 +20,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import requests
 
@@ -289,7 +289,7 @@ class NVDCollector:
         Returns:
             List of CVERecord objects
         """
-        params = {
+        params: dict[str, str | int] = {
             "keywordSearch": "Android",
             "resultsPerPage": min(limit, 100),
         }
@@ -312,7 +312,9 @@ class NVDCollector:
             self._rate_limit_wait()
 
             try:
-                response = self.session.get(self.BASE_URL, params=params, timeout=30)
+                # cast params to satisfy mypy's strict checking of requests.get
+                request_params: Any = params
+                response = self.session.get(self.BASE_URL, params=request_params, timeout=30)
                 response.raise_for_status()
                 data = response.json()
             except requests.RequestException as e:
@@ -354,7 +356,9 @@ class NVDCollector:
         self._rate_limit_wait()
 
         try:
-            response = self.session.get(self.BASE_URL, params=params, timeout=30)
+            # cast params to satisfy mypy's strict checking of requests.get
+            request_params = cast(Any, params)
+            response = self.session.get(self.BASE_URL, params=request_params, timeout=30)
             response.raise_for_status()
             data = response.json()
         except requests.RequestException as e:
@@ -412,8 +416,8 @@ class AOSPPatchCollector:
 
         # Get diff (tree_diff contains file changes)
         files_changed = []
-        before_code = {}
-        after_code = {}
+        before_code: dict[str, str] = {}
+        after_code: dict[str, str] = {}
 
         tree_diff = commit_data.get("tree_diff", [])
         for diff_entry in tree_diff:
@@ -696,16 +700,16 @@ class CWETaxonomy:
             data = self.ANDROID_CWES[cwe_id]
             record = CWERecord(
                 cwe_id=cwe_id,
-                name=data["name"],
+                name=str(data["name"]),
                 description="",
                 extended_description="",
-                parent_ids=data.get("parents", []),
+                parent_ids=list(data.get("parents", [])),
                 child_ids=[],
                 related_ids=[],
                 detection_methods=[],
                 mitigations=[],
                 examples=[],
-                owasp_mappings=data.get("owasp", []),
+                owasp_mappings=list(data.get("owasp", [])),
             )
             self._cache[cwe_id] = record
             return record
@@ -865,7 +869,7 @@ class VulnerabilityDataCollector:
         Returns:
             Dictionary with CVE data, patches, and CWE info
         """
-        result = {
+        result: dict[str, Any] = {
             "cve": None,
             "patches": [],
             "cwe_info": [],
@@ -923,7 +927,7 @@ class VulnerabilityDataCollector:
             limit=count * 2,
         )
 
-        results = []
+        results: list[dict[str, Any]] = []
         for cve in cves:
             if len(results) >= count:
                 break

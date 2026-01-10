@@ -13,7 +13,8 @@ import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any, cast
+
 
 
 @dataclass
@@ -268,7 +269,7 @@ Keep trying different commands until something works.
         Each pair grounds critical reflection in authentic action.
         """
         pairs = []
-        stats = {
+        stats: dict[str, Any] = {
             "total_pairs": 0,
             "by_pillar": {},
             "rejection_types": {
@@ -305,24 +306,24 @@ Keep trying different commands until something works.
             )
 
             # Generate the pair
-            pair = self.create_praxis_pair(
+            training_pair = cast(PraxisTrainingPair, self.create_praxis_pair(
                 context=context,
                 reflection=reflection,
                 action=action,
                 pillar=challenge.get("pillar", "unknown"),
                 challenge_id=challenge.get("id", "unknown")
-            )
+            ))
 
             # Convert to DPO format
             prompt = self._build_prompt(context, challenge)
             dpo_pair = {
                 "prompt": prompt,
-                "chosen": pair.chosen_response,
-                "rejected": pair.rejected_response,
+                "chosen": training_pair.chosen_response,
+                "rejected": training_pair.rejected_response,
                 "metadata": {
-                    "pillar": pair.pillar,
-                    "challenge_id": pair.challenge_id,
-                    "rejection_reason": pair.rejection_reason,
+                    "pillar": training_pair.pillar,
+                    "challenge_id": training_pair.challenge_id,
+                    "rejection_reason": training_pair.rejection_reason,
                     "praxis_grounded": True
                 }
             }
@@ -330,12 +331,12 @@ Keep trying different commands until something works.
 
             # Update stats
             stats["total_pairs"] += 1
-            pillar = pair.pillar
+            pillar = training_pair.pillar
             if pillar not in stats["by_pillar"]:
                 stats["by_pillar"][pillar] = 0
             stats["by_pillar"][pillar] += 1
 
-            if "VERBALISM" in pair.rejection_reason:
+            if "VERBALISM" in training_pair.rejection_reason:
                 stats["rejection_types"]["abstract_verbalism"] += 1
             else:
                 stats["rejection_types"]["blind_activism"] += 1

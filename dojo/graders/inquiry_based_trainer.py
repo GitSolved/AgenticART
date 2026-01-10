@@ -550,7 +550,8 @@ Done.
         }
 
         print(f"\n✅ Generated {len(pairs)} inquiry-based training pairs")
-        print(f"   Driving questions: {len(stats['driving_questions_covered'])}")
+        questions = list(stats['driving_questions_covered'])  # type: ignore
+        print(f"   Driving questions: {len(questions)}")
         print(f"   Saved to {output_path}")
 
         return stats

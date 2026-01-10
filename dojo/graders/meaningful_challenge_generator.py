@@ -21,7 +21,8 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
+
 
 
 class Competency(Enum):
@@ -505,7 +506,7 @@ Done.
             for pair in pairs:
                 f.write(json.dumps(pair) + "\n")
 
-        stats = {
+        stats: dict[str, Any] = {
             "total_pairs": len(pairs),
             "by_belt": {},
             "competencies_covered": set(),

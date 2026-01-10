@@ -879,7 +879,7 @@ Affected challenges: {sum(1 for r in all_results if r.hallucinations)}
 
 
 def generate_amplified_training_data(
-    output_dir: Path = None,
+    output_dir: Path | None = None,
     target_pairs: int = 2000,
     verbose: bool = False,
 ) -> dict:

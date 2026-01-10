@@ -28,7 +28,7 @@ class NVDChallengeGenerator:
 
     BASE_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: str | None = None):
         self.api_key = api_key
         self.session = requests.Session()
         if self.api_key:
@@ -36,7 +36,7 @@ class NVDChallengeGenerator:
 
     def fetch_high_severity_android_cves(self, limit: int = 5) -> List[Dict[str, Any]]:
         """Fetches high severity Android CVEs."""
-        params = {
+        params: dict[str, str | int] = {
             "keywordSearch": "Android",
             "cvssV3Severity": "HIGH",
             "resultsPerPage": limit

@@ -760,6 +760,7 @@ def generate_phase_0_training_data() -> list[dict]:
     pairs = []
 
     for item in PHASE_0_EXPLICIT_INSTRUCTION:
+        phase_enum: Phase = item["phase"]  # type: ignore
         pair = {
             "prompt": item["prompt"],
             "chosen": item["chosen"],
@@ -767,8 +768,8 @@ def generate_phase_0_training_data() -> list[dict]:
             "metadata": {
                 "challenge_id": item["id"],
                 "title": item["title"],
-                "phase": item["phase"].value,
-                "phase_name": item["phase"].name,
+                "phase": phase_enum.value,
+                "phase_name": phase_enum.name,
                 "position_in_phase": item["position"],
                 "prerequisites": item["prerequisites"],
                 "enables": item["enables"],

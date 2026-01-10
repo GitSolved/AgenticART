@@ -682,7 +682,8 @@ Recommendation: Fix vulnerabilities in main app.
         }
 
         print(f"\n✅ Generated {len(pairs)} training pairs")
-        print(f"   Reasoning methods: {', '.join(stats['reasoning_methods_covered'])}")
+        methods = list(stats['reasoning_methods_covered'])  # type: ignore
+        print(f"   Reasoning methods: {', '.join(methods)}")
         print(f"   Saved to {output_path}")
 
         return stats

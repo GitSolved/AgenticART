@@ -635,10 +635,10 @@ class HypothesisGrader(PhaseGrader):
         if not expected_num:
             return 0.5, "Could not parse expected CWE"
 
-        expected_num = expected_num.group()
+        expected_num_str = expected_num.group()
 
         # Check for exact match
-        if expected_num in cwe_refs:
+        if expected_num_str in cwe_refs:
             return 1.0, f"Correct CWE: {expected_cwe}"
 
         # Check for related CWEs (simplified - would need CWE hierarchy data)
@@ -651,7 +651,7 @@ class HypothesisGrader(PhaseGrader):
             "502": ["913"],  # Deserialization
         }
 
-        related = cwe_families.get(expected_num, [])
+        related = cwe_families.get(expected_num_str, [])
         if any(r in cwe_refs for r in related):
             return 0.7, f"Related CWE (expected {expected_cwe})"
 

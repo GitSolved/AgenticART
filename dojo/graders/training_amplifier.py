@@ -14,7 +14,7 @@ from __future__ import annotations
 import random
 import re
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any, cast
 
 from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator
 from dojo.models_v2 import (
@@ -436,35 +436,38 @@ class TrainingAmplifier:
 
     def _apply_structure(
         self,
-        content: dict,
-        structure: dict,
+        content: Any,
+        structure: dict[str, str],
         challenge: ChallengeV2,
     ) -> str:
         """Apply a response structure template to content."""
         parts = []
 
+        # Apply structure template
+        content_dict: Any = content
+        
         # Intro
         intro = structure["intro"].format(
-            topic=content.get("topic", "the code"),
+            topic=content_dict.get("topic", "the code"),
         )
         parts.append(intro)
         parts.append("")
 
         # Findings
-        for i, obs in enumerate(content.get("observations", [])[:3], 1):
+        for i, obs in enumerate(content_dict.get("observations", [])[:3], 1):
             finding = structure["finding"].format(
                 n=i,
                 observation=obs,
-                evidence=content.get("evidence", "Analysis"),
-                impact=content.get("impact", "Security impact"),
-                severity=content.get("severity", "Medium"),
-                remediation=content.get("remediation", "Fix needed"),
+                evidence=content_dict.get("evidence", "Analysis"),
+                impact=content_dict.get("impact", "Security impact"),
+                severity=content_dict.get("severity", "Medium"),
+                remediation=content_dict.get("remediation", "Fix needed"),
             )
             parts.append(finding)
             parts.append("")
 
         # Conclusion
-        verdict_text = "code is vulnerable" if content["is_vulnerable"] else "code is secure"
+        verdict_text = "code is vulnerable" if content_dict["is_vulnerable"] else "code is secure"
         conclusion = structure["conclusion"].format(
             verdict=verdict_text,
         )
@@ -472,10 +475,10 @@ class TrainingAmplifier:
 
         # Add metadata
         parts.append("")
-        parts.append(f"**is_vulnerable**: {str(content['is_vulnerable']).lower()}")
+        parts.append(f"**is_vulnerable**: {str(content_dict['is_vulnerable']).lower()}")
         parts.append("**confidence**: 0.9")
-        if content["is_vulnerable"] and content.get("cwe"):
-            parts.append(f"**CWE**: {content['cwe']}")
+        if content_dict["is_vulnerable"] and content_dict.get("cwe"):
+            parts.append(f"**CWE**: {content_dict['cwe']}")
 
         return '\n'.join(parts)
 
@@ -943,13 +946,13 @@ def calculate_amplification_stats(pairs: list[DPOPair]) -> dict:
         }
 
     # Group by mistake type
-    by_rejection = {}
+    by_rejection: dict[str, int] = {}
     for pair in pairs:
         for reason in pair.rejection_reasons:
             by_rejection[reason] = by_rejection.get(reason, 0) + 1
 
     # Group by challenge
-    by_challenge = {}
+    by_challenge: dict[str, int] = {}
     for pair in pairs:
         by_challenge[pair.challenge_id] = by_challenge.get(pair.challenge_id, 0) + 1
 
@@ -959,8 +962,8 @@ def calculate_amplification_stats(pairs: list[DPOPair]) -> dict:
     return {
         "total_pairs": len(pairs),
         "unique_challenges": len(by_challenge),
-        "pairs_per_challenge": sum(by_challenge.values()) / len(by_challenge) if by_challenge else 0,
+        "pairs_per_challenge": sum(by_challenge.values()) / len(by_challenge) if by_challenge else 0.0,
         "rejection_type_distribution": by_rejection,
-        "average_margin": sum(margins) / len(margins) if margins else 0,
-        "margin_range": (min(margins), max(margins)) if margins else (0, 0),
+        "average_margin": sum(margins) / len(margins) if margins else 0.0,
+        "margin_range": (min(margins), max(margins)) if margins else (0.0, 0.0),
     }
