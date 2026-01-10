@@ -3,7 +3,7 @@
 # Multi-stage build for optimized image size
 # ═══════════════════════════════════════════════════════════════════════════════
 
-FROM python:3.11-slim-bookworm as base
+FROM python:3.11-slim-bookworm AS base
 
 # Prevent Python from writing pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -27,16 +27,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Unzip for tool installation
     unzip \
     # ─── RESEARCH TOOLING DEPS ────────────────────────────────────────────────
-    # Java 17 (Required for Ghidra and Jadx)
-    openjdk-17-jre-headless \
-    # Radare2 (Binary analysis)
-    radare2 \
+    # Java (Required for Ghidra and Jadx)
+    default-jre-headless \
     # Apktool (Android Reversing)
     apktool \
     && rm -rf /var/lib/apt/lists/*
 
 # ─── Research Tooling Stage ──────────────────────────────────────────────────
-FROM base as tool_builder
+FROM base AS tool_builder
 
 WORKDIR /tmp
 
@@ -53,8 +51,14 @@ RUN wget -q https://github.com/NationalSecurityAgency/ghidra/releases/download/G
     && mv ghidra_11.0.1_PUBLIC /opt/ghidra \
     && rm ghidra_11.0.1_PUBLIC_20240130.zip
 
+# 3. Install RADARE2 (Binary Analysis)
+# Building from source to ensure availability and recent version
+RUN git clone https://github.com/radareorg/radare2 \
+    && cd radare2 \
+    && sys/install.sh
+
 # ─── Builder Stage ───────────────────────────────────────────────────────────
-FROM base as builder
+FROM base AS builder
 
 # Install Python dependencies
 COPY requirements.txt .
@@ -63,7 +67,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt && \
     pip install --no-cache-dir --prefix=/install r2pipe
 
 # ─── Production Stage ────────────────────────────────────────────────────────
-FROM base as production
+FROM base AS production
 
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
@@ -71,6 +75,19 @@ COPY --from=builder /install /usr/local
 # Copy Research Tools
 COPY --from=tool_builder /opt/jadx /opt/jadx
 COPY --from=tool_builder /opt/ghidra /opt/ghidra
+# Copy Radare2 (it installs to /usr/local/bin and /usr/local/lib usually)
+# Since we built it in tool_builder, we need to copy it.
+# However, copying system installs is tricky.
+# BETTER STRATEGY for Radare2: Build it in the FINAL stage or Copy specific folders.
+# Let's try copying from /usr/local/bin and /usr/local/lib/radare2
+COPY --from=tool_builder /usr/bin/radare2 /usr/local/bin/radare2
+COPY --from=tool_builder /usr/bin/r2 /usr/local/bin/r2
+COPY --from=tool_builder /usr/bin/rabin2 /usr/local/bin/rabin2
+COPY --from=tool_builder /usr/bin/rasm2 /usr/local/bin/rasm2
+# (And libraries if needed, but r2 is mostly static or uses standard libs)
+# Actually, the simplest way for r2 in multi-stage is to install it in production layer
+# OR just run the install script in production layer since we have build-essential.
+# Let's install r2 in the final stage to be safe and simple.
 
 # Setup Environment Variables for Tools
 ENV PATH="/opt/jadx/bin:/opt/ghidra/support:${PATH}"
@@ -79,6 +96,12 @@ ENV GHIDRA_INSTALL_DIR="/opt/ghidra"
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash pentester
 WORKDIR /app
+
+# Install Radare2 in Production (Cleaner)
+RUN git clone https://github.com/radareorg/radare2 \
+    && cd radare2 \
+    && sys/install.sh \
+    && cd .. && rm -rf radare2
 
 # Copy application code
 COPY --chown=pentester:pentester . .
@@ -102,7 +125,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 CMD ["streamlit", "run", "webapp/app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
 
 # ─── Development Stage ───────────────────────────────────────────────────────
-FROM production as development
+FROM production AS development
 
 USER root
 
