@@ -94,7 +94,6 @@ class AlignedChallenge:
 
     # Competency alignment (required)
     primary_competency: Competency
-    secondary_competencies: list[Competency] = field(default_factory=list)
 
     # Challenge content
     scenario: str
@@ -107,6 +106,9 @@ class AlignedChallenge:
 
     # Instruction design
     instruction_elements: list[str]  # Why each prompt element exists
+
+    secondary_competencies: list[Competency] = field(default_factory=list)
+
 
 
 # ============================================================================

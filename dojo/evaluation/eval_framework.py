@@ -81,7 +81,7 @@ class TrainingEffectivenessEvaluator:
         baseline_model: str,
         finetuned_model: str,
         emulator_device: str = "127.0.0.1:6555",
-        challenges_dir: Path = None
+        challenges_dir: Optional[Path] = None
     ):
         self.baseline_model = baseline_model
         self.finetuned_model = finetuned_model
@@ -213,7 +213,7 @@ class TrainingEffectivenessEvaluator:
 
         return comparison
 
-    def save_results(self, comparison: ModelComparison, filename: str = None):
+    def save_results(self, comparison: ModelComparison, filename: Optional[str] = None):
         """Save evaluation results to JSON."""
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

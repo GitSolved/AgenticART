@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -29,7 +30,7 @@ class MLXClient(LLMClient):
     def __init__(self, model_path: str):
         self.model_path = model_path
 
-    def generate(self, prompt: str, system_prompt: str = None) -> str:
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         full_prompt = f"SYSTEM: {system_prompt}\n\nUSER: {prompt}"
         try:
             result = subprocess.run(
