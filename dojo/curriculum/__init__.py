@@ -2,6 +2,10 @@
 Dojo Curriculum Module
 
 Handles challenge loading, execution, error extraction, and the feedback loop.
+
+Architecture:
+    - UnifiedCurriculum: Primary curriculum loader (Praxis Architecture)
+    - ChallengeLoader: Legacy compatibility wrapper
 """
 
 from dojo.curriculum.challenger import AttemptRecord, Challenger, ChallengeSession
@@ -13,11 +17,11 @@ from dojo.curriculum.executor import (
     Executor,
     OnDeviceToolExecutor,
 )
-from dojo.curriculum.loader import ChallengeLoader
+from dojo.curriculum.loader import UnifiedCurriculum
 
 __all__ = [
-    # Loader
-    "ChallengeLoader",
+    # Curriculum Loader (Primary)
+    "UnifiedCurriculum",
     # Executor
     "Executor",
     "ExecutionResult",

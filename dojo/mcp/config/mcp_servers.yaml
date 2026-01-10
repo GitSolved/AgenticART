@@ -1,0 +1,390 @@
+# MCP Server Configuration for AgenticART Praxis Architecture
+#
+# This configuration defines how MCP servers are deployed and integrated
+# with the Praxis Runner for Android security challenge verification.
+#
+# Architecture Tiers:
+#   - local: Direct process execution (JADX, Apktool)
+#   - docker: Containerized services (MobSF, Ghidra)
+#   - device: Physical/emulator bound (Frida, Objection)
+
+version: "1.0"
+name: "AgenticART MCP Server Configuration"
+
+# Global settings
+global:
+  # Base directory for all MCP server workspaces
+  workspace_dir: "${AGENTICART_WORKSPACE:-/tmp/agenticart}"
+
+  # Default timeout for tool operations (seconds)
+  default_timeout: 300
+
+  # Maximum concurrent server instances
+  max_instances: 4
+
+  # Logging configuration
+  logging:
+    level: "INFO"
+    format: "[%(asctime)s] %(name)s - %(levelname)s - %(message)s"
+    file: "${AGENTICART_LOG_DIR:-logs}/mcp_servers.log"
+
+# Server definitions
+servers:
+  # ============================================================================
+  # Phase 1: Static Analysis (Local)
+  # ============================================================================
+
+  jadx:
+    name: "JADX Decompiler Server"
+    description: "Java/Kotlin decompilation and source code analysis"
+    tier: "local"
+    module: "dojo.mcp.servers.jadx_server"
+    factory: "create_jadx_server"
+
+    # Network configuration
+    transport: "stdio"  # stdio | sse | websocket
+    port: null  # Not needed for stdio
+
+    # Tool requirements
+    requirements:
+      binary: "jadx"
+      install_hint: "brew install jadx (macOS) or apt install jadx (Linux)"
+      min_version: "1.4.0"
+
+    # Resource limits
+    resources:
+      memory_mb: 2048
+      timeout_seconds: 600
+      max_file_size_mb: 500
+
+    # Available tools
+    tools:
+      - name: "decompile"
+        description: "Decompile APK to Java source"
+        security_relevant: true
+
+      - name: "search_code"
+        description: "Search decompiled code for patterns"
+        security_relevant: true
+
+      - name: "get_class"
+        description: "Get source code for specific class"
+        security_relevant: false
+
+      - name: "list_classes"
+        description: "List all classes in package"
+        security_relevant: false
+
+      - name: "get_method"
+        description: "Get method source code"
+        security_relevant: false
+
+      - name: "find_security_patterns"
+        description: "Scan for common security issues"
+        security_relevant: true
+
+    # Challenge type mappings (which V2 challenge types use this server)
+    challenge_types:
+      - "static_basic"
+      - "static_inter"
+      - "static_crypto"
+      - "static_data"
+      - "reasoning_decompile"
+
+  apktool:
+    name: "Apktool Server"
+    description: "APK decoding, manifest analysis, and smali inspection"
+    tier: "local"
+    module: "dojo.mcp.servers.apktool_server"
+    factory: "create_apktool_server"
+
+    transport: "stdio"
+    port: null
+
+    requirements:
+      binary: "apktool"
+      install_hint: "brew install apktool (macOS) or apt install apktool (Linux)"
+      min_version: "2.7.0"
+
+    resources:
+      memory_mb: 1024
+      timeout_seconds: 300
+      max_file_size_mb: 500
+
+    tools:
+      - name: "decode"
+        description: "Decode APK to smali and resources"
+        security_relevant: true
+
+      - name: "get_manifest"
+        description: "Parse AndroidManifest.xml"
+        security_relevant: true
+
+      - name: "get_smali"
+        description: "Get smali bytecode for class"
+        security_relevant: false
+
+      - name: "search_smali"
+        description: "Search smali for patterns"
+        security_relevant: true
+
+      - name: "get_strings"
+        description: "Extract strings.xml resources"
+        security_relevant: true
+
+      - name: "list_resources"
+        description: "List decoded resources"
+        security_relevant: false
+
+      - name: "build"
+        description: "Rebuild APK from decoded sources"
+        security_relevant: false
+
+      - name: "find_security_issues"
+        description: "Analyze manifest for security issues"
+        security_relevant: true
+
+    challenge_types:
+      - "static_basic"
+      - "method_observe"
+      - "reasoning_manifest"
+      - "reasoning_permissions"
+
+  # ============================================================================
+  # Phase 2: Dynamic Analysis (Docker) - Planned
+  # ============================================================================
+
+  mobsf:
+    name: "MobSF Server"
+    description: "Automated mobile security framework"
+    tier: "docker"
+    enabled: false  # Not yet implemented
+
+    docker:
+      image: "opensecurity/mobile-security-framework-mobsf:latest"
+      ports:
+        - "8000:8000"
+      volumes:
+        - "${AGENTICART_WORKSPACE}/mobsf:/home/mobsf/.MobSF"
+      environment:
+        MOBSF_API_KEY: "${MOBSF_API_KEY}"
+
+    transport: "http"
+    port: 8000
+    base_url: "http://localhost:8000/api/v1"
+
+    resources:
+      memory_mb: 4096
+      timeout_seconds: 900
+      max_file_size_mb: 1000
+
+    tools:
+      - name: "upload"
+        description: "Upload APK for analysis"
+      - name: "scan"
+        description: "Run automated security scan"
+      - name: "get_report"
+        description: "Get scan results"
+      - name: "get_source"
+        description: "Get decompiled source from scan"
+
+    challenge_types:
+      - "static_inter"
+      - "static_data"
+      - "vuln_analysis"
+
+  objection:
+    name: "Objection Runtime Toolkit"
+    description: "Runtime mobile security testing via Frida"
+    tier: "docker"
+    enabled: false  # Not yet implemented
+
+    docker:
+      image: "agenticart/objection:latest"  # Custom image needed
+      privileged: true  # Needed for USB device access
+      devices:
+        - "/dev/bus/usb"
+
+    transport: "stdio"
+
+    requirements:
+      frida_server: true
+      device_required: true
+
+    tools:
+      - name: "explore"
+        description: "Start objection exploration session"
+      - name: "dump_keychain"
+        description: "Dump keychain/keystore contents"
+      - name: "bypass_ssl"
+        description: "Bypass SSL pinning"
+      - name: "hook_method"
+        description: "Hook specific method"
+      - name: "list_activities"
+        description: "List app activities"
+
+    challenge_types:
+      - "dynamic_basic"
+      - "dynamic_hook"
+      - "runtime_security"
+
+  # ============================================================================
+  # Phase 3: Advanced Analysis (VM/Device) - Planned
+  # ============================================================================
+
+  ghidra:
+    name: "Ghidra Headless Server"
+    description: "NSA reverse engineering framework"
+    tier: "docker"
+    enabled: false
+
+    docker:
+      image: "blacktop/ghidra:latest"
+      ports:
+        - "18001:18001"
+      volumes:
+        - "${AGENTICART_WORKSPACE}/ghidra:/ghidra/projects"
+
+    transport: "http"
+    port: 18001
+
+    resources:
+      memory_mb: 8192
+      timeout_seconds: 1800
+      max_file_size_mb: 500
+
+    tools:
+      - name: "analyze"
+        description: "Run Ghidra analysis on binary"
+      - name: "decompile"
+        description: "Decompile native library"
+      - name: "find_functions"
+        description: "Find and list functions"
+      - name: "get_xrefs"
+        description: "Get cross-references"
+
+    challenge_types:
+      - "native_analysis"
+      - "arm_reversing"
+
+  frida:
+    name: "Frida Instrumentation Server"
+    description: "Dynamic instrumentation toolkit"
+    tier: "device"
+    enabled: false
+
+    requirements:
+      frida_server: true
+      device_required: true
+      adb_connection: true
+
+    transport: "stdio"
+
+    tools:
+      - name: "attach"
+        description: "Attach to running process"
+      - name: "spawn"
+        description: "Spawn and instrument app"
+      - name: "inject_script"
+        description: "Inject Frida script"
+      - name: "trace"
+        description: "Trace function calls"
+
+    challenge_types:
+      - "dynamic_hook"
+      - "dynamic_inter"
+      - "runtime_bypass"
+
+  drozer:
+    name: "Drozer Security Framework"
+    description: "Android security assessment framework"
+    tier: "device"
+    enabled: false
+
+    requirements:
+      drozer_agent: true
+      device_required: true
+      adb_connection: true
+
+    transport: "stdio"
+
+    tools:
+      - name: "run_module"
+        description: "Run drozer module"
+      - name: "list_packages"
+        description: "List installed packages"
+      - name: "attack_surface"
+        description: "Analyze attack surface"
+      - name: "exploit_content_provider"
+        description: "Test content provider vulnerabilities"
+
+    challenge_types:
+      - "dynamic_inter"
+      - "exploit_development"
+
+# Server groups for different challenge categories
+server_groups:
+  static_analysis:
+    description: "Servers for static code analysis"
+    servers:
+      - jadx
+      - apktool
+      - mobsf
+      - ghidra
+
+  dynamic_analysis:
+    description: "Servers for runtime analysis"
+    servers:
+      - frida
+      - objection
+      - drozer
+
+  full_analysis:
+    description: "All analysis capabilities"
+    servers:
+      - jadx
+      - apktool
+      - mobsf
+      - ghidra
+      - frida
+      - objection
+      - drozer
+
+# Verification task to server mappings
+# Maps V1 verification task prefixes to required servers
+verification_requirements:
+  # White-box tasks (source analysis)
+  white:
+    required: ["jadx", "apktool"]
+    optional: ["mobsf"]
+
+  # Grey-box tasks (partial info)
+  grey:
+    required: ["jadx", "apktool"]
+    optional: ["frida", "objection"]
+
+  # Black-box tasks (no source)
+  black:
+    required: ["apktool"]
+    optional: ["frida", "objection", "drozer"]
+
+  # Dynamic tasks
+  dynamic:
+    required: ["frida"]
+    optional: ["objection", "drozer"]
+
+# Health check configuration
+health_checks:
+  enabled: true
+  interval_seconds: 60
+  timeout_seconds: 10
+
+  checks:
+    - type: "binary_exists"
+      servers: ["jadx", "apktool"]
+
+    - type: "docker_running"
+      servers: ["mobsf", "ghidra", "objection"]
+
+    - type: "device_connected"
+      servers: ["frida", "drozer"]

@@ -105,27 +105,28 @@ class TestRunner:
 class MockLLMClient:
     """Mock LLM that returns expected answers for testing."""
 
-    # Expected answers for white belt challenges
+    # Expected answers for V2 reasoning challenges (with embedded verification)
+    # These are now pillar-based challenges that require reasoning before execution
     ANSWERS = {
-        "white_001": "shell getprop ro.build.version.release",
-        "white_002": "shell pm list packages",
-        "white_003": "shell getprop ro.product.model",
-        "white_004": "shell ps",
-        "white_005": "shell cat /data/system/packages.xml",  # Will fail, then retry
+        "method_observe_white_001": "shell getprop ro.build.version.release",
+        "static_basic_white_001": "shell pm list packages",
+        "neg_secure_white_001": "shell getprop ro.product.model",
+        "neg_secure_white_002": "shell ps",
+        "taxonomy_basic_white_001": "shell cat /data/system/packages.xml",  # Will fail, then retry
     }
 
     # Retry answers (after seeing error context)
     RETRY_ANSWERS = {
-        "white_005": "shell su -c 'cat /data/system/packages.xml'",
+        "taxonomy_basic_white_001": "shell su -c 'cat /data/system/packages.xml'",
     }
 
     # Unique identifiers for each challenge (checked in order of specificity)
     CHALLENGE_IDENTIFIERS = [
-        ("white_005", ["packages.xml", "/data/system", "protected file"]),
-        ("white_004", ["running processes", "process enumeration", "process id"]),
-        ("white_003", ["device model", "model name", "marketing name"]),
-        ("white_002", ["installed packages", "package manager", "pm list"]),
-        ("white_001", ["android version", "version number", "version of"]),
+        ("taxonomy_basic_white_001", ["packages.xml", "/data/system", "protected file"]),
+        ("neg_secure_white_002", ["running processes", "process enumeration", "process id"]),
+        ("neg_secure_white_001", ["device model", "model name", "marketing name"]),
+        ("static_basic_white_001", ["installed packages", "package manager", "pm list"]),
+        ("method_observe_white_001", ["android version", "version number", "version of"]),
     ]
 
     def __init__(self):
@@ -477,14 +478,20 @@ def run_tests(mode: str = "mock", device_id: str = "emulator-5554") -> int:
 
     sessions = []
 
-    # Challenges that should pass on first try
-    for cid in ["white_001", "white_002", "white_003", "white_004"]:
+    # V2 reasoning challenges that should pass on first try
+    v2_challenges = [
+        "method_observe_white_001",
+        "static_basic_white_001",
+        "neg_secure_white_001",
+        "neg_secure_white_002",
+    ]
+    for cid in v2_challenges:
         session = test_single_challenge(runner, challenger, loader, cid, expect_retry=False)
         if session:
             sessions.append(session)
 
     # Challenge designed to test retry loop
-    session = test_single_challenge(runner, challenger, loader, "white_005", expect_retry=True)
+    session = test_single_challenge(runner, challenger, loader, "taxonomy_basic_white_001", expect_retry=True)
     if session:
         sessions.append(session)
 

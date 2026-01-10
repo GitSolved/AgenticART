@@ -75,7 +75,8 @@ def main():
 
     from dojo.curriculum.loader import ChallengeLoader
     loader = ChallengeLoader()
-    challenge = loader.load_challenge("white_001")
+    # Use V2 reasoning challenge (every command preceded by reason)
+    challenge = loader.load_challenge("method_observe_white_001")
 
     aligned_prompt = f"""User: Analyze {challenge.name}.
 Task: {challenge.description}

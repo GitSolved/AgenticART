@@ -39,6 +39,7 @@ from dojo.models_v2 import (
     PhaseID,
     Pillar,
     TrainingMetadata,
+    VerificationTask,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -603,6 +604,15 @@ def load_challenge_from_yaml(yaml_data: dict) -> ChallengeV2:
     }
     challenge_type = type_map.get(yaml_data.get("type", "observation"), ChallengeType.OBSERVATION)
 
+    # Parse verification_tasks from embedded YAML (Step 1 consolidation)
+    verification_tasks = []
+    for vt_data in yaml_data.get("verification_tasks", []):
+        verification_tasks.append(VerificationTask(
+            instruction=vt_data.get("instruction", ""),
+            mcp_tool_call=vt_data.get("mcp_tool_call", {}),
+            validation_rule=vt_data.get("validation_rule", {}),
+        ))
+
     return ChallengeV2(
         id=yaml_data.get("id", "unknown"),
         name=yaml_data.get("name", "Unknown Challenge"),
@@ -615,7 +625,7 @@ def load_challenge_from_yaml(yaml_data: dict) -> ChallengeV2:
         phases=phases,
         ground_truth=ground_truth,
         training_metadata=TrainingMetadata(),
-        verification_tasks=[],  # Empty by default for pillar files
+        verification_tasks=verification_tasks,  # Now parsed from YAML
         cwe_tags=yaml_data.get("cwe_tags", []),
         tags=yaml_data.get("tags", []),
     )

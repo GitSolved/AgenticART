@@ -160,6 +160,7 @@ class TrainingMetadata:
 
     reasoning_chain_required: bool = True
     dpo_pairs_available: bool = True
+    requires_thinking_trace: bool = True  # Force <thinking> tags before tool calls
     negative_examples: list[str] = field(default_factory=list)  # What NOT to conclude
     common_mistakes: list[str] = field(default_factory=list)  # Frequent errors
     pattern_family: Optional[str] = None  # For transfer learning grouping
@@ -169,6 +170,7 @@ class TrainingMetadata:
         return {
             "reasoning_chain_required": self.reasoning_chain_required,
             "dpo_pairs_available": self.dpo_pairs_available,
+            "requires_thinking_trace": self.requires_thinking_trace,
             "negative_examples": self.negative_examples,
             "common_mistakes": self.common_mistakes,
             "pattern_family": self.pattern_family,
@@ -265,6 +267,37 @@ class ChallengeV2:
             json.dumps(phase.expected_output_schema, indent=2),
             "```",
         ])
+
+        # Append thinking trace requirement if enabled
+        if self.training_metadata.requires_thinking_trace:
+            prompt_parts.extend([
+                "",
+                "## CRITICAL: Reasoning Trace Required",
+                "",
+                "You MUST wrap your internal reasoning in `<thinking>` tags BEFORE providing the final JSON output.",
+                "",
+                "Your thinking trace MUST include:",
+                "1. **Source identification**: What untrusted input sources exist?",
+                "2. **Sink identification**: What sensitive operations consume this data?",
+                "3. **Data flow analysis**: How does data flow from source to sink?",
+                "4. **Hypothesis formation**: What vulnerability pattern might exist?",
+                "5. **Verification plan**: How will you confirm or refute this hypothesis?",
+                "",
+                "Example structure:",
+                "```",
+                "<thinking>",
+                "Source: User input from getIntent().getStringExtra(\"url\")",
+                "Sink: WebView.loadUrl() at line 42",
+                "Flow: Input -> validate() [no sanitization] -> loadUrl()",
+                "Hypothesis: JavaScript injection via malicious URL scheme",
+                "Verification: Check if javascript: URLs are blocked",
+                "</thinking>",
+                "",
+                "{",
+                '  "your": "json_output"',
+                "}",
+                "```",
+            ])
 
         return "\n".join(prompt_parts)
 
@@ -391,6 +424,9 @@ class ReasoningChain:
     novel_finding: bool = False
     vulnerability_correctly_identified: bool = False
 
+    # Praxis Loop metadata (for calibration tagging)
+    metadata: dict = field(default_factory=dict)
+
     @property
     def total_score(self) -> float:
         """Calculate total score across all phases."""
@@ -436,6 +472,7 @@ class ReasoningChain:
             "discovery_made": self.discovery_made,
             "novel_finding": self.novel_finding,
             "vulnerability_correctly_identified": self.vulnerability_correctly_identified,
+            "metadata": self.metadata,
         }
 
 

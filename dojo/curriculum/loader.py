@@ -1,222 +1,287 @@
-"""Challenge loader - loads challenges from YAML files."""
+"""
+Unified Curriculum Loader: Sequential V1 → V2 progression.
+
+This module loads the unified curriculum configuration and provides
+methods to run challenges in the correct pedagogical order.
+"""
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
 
-import yaml  # type: ignore
+import yaml
 
-from dojo.exceptions import ChallengeNotFoundError, CurriculumError
-from dojo.models import (
-    Belt,
-    Challenge,
-    ChallengeInput,
-    ExpectedOutput,
-    ScoringRubric,
-    ScriptType,
+from dojo.models import Belt
+from dojo.models_v2 import (
+    ChallengeV2,
 )
 
 
-class ChallengeLoader:
-    """Load challenge definitions from YAML files."""
+class CurriculumPhase(Enum):
+    """Curriculum phase."""
+    TOOL_MASTERY = "tool_mastery"
+    SECURITY_REASONING = "security_reasoning"
 
-    def __init__(self, curriculum_dir: Optional[Path] = None):
+
+@dataclass
+class Stage:
+    """A curriculum stage containing related challenges."""
+
+    number: int
+    name: str
+    phase: CurriculumPhase
+    belt: Belt
+    source: str  # "v1" or "v2"
+    description: str
+    skills_gained: list[str]
+    challenge_ids: list[str]
+    prerequisites: list[int]
+    unlocks: list[int]
+
+    @property
+    def is_v1(self) -> bool:
+        return self.source == "v1"
+
+    @property
+    def is_v2(self) -> bool:
+        return self.source == "v2"
+
+
+@dataclass
+class EvaluationCheckpoint:
+    """Checkpoint for evaluating progress."""
+
+    after_stage: int
+    name: str
+    test_type: str
+    pass_threshold: float
+    description: str
+
+
+@dataclass
+class UnifiedCurriculum:
+    """
+    Unified curriculum combining V1 (tool mastery) and V2 (security reasoning).
+
+    Provides sequential progression through all challenges in pedagogically
+    correct order.
+    """
+
+    version: str
+    name: str
+    stages: list[Stage]
+    checkpoints: list[EvaluationCheckpoint]
+    metadata: dict
+
+    # Cached mappings
+    _challenge_to_stage: dict[str, int] = field(default_factory=dict, repr=False)
+    _stage_map: dict[int, Stage] = field(default_factory=dict, repr=False)
+    _challenge_cache: dict[str, ChallengeV2] = field(default_factory=dict, repr=False)
+
+    def __post_init__(self):
+        """Build lookup caches."""
+        for stage in self.stages:
+            self._stage_map[stage.number] = stage
+            for cid in stage.challenge_ids:
+                self._challenge_to_stage[cid] = stage.number
+
+    @classmethod
+    def load(cls, config_path: Optional[Path] = None) -> "UnifiedCurriculum":
         """
-        Initialize the challenge loader.
+        Load unified curriculum from YAML config.
 
         Args:
-            curriculum_dir: Path to curriculum directory. If None, uses default.
+            config_path: Path to unified_curriculum.yaml.
+                        Defaults to curriculum directory.
+
+        Returns:
+            Loaded UnifiedCurriculum instance.
         """
-        if curriculum_dir is None:
-            curriculum_dir = Path(__file__).parent
-        self.curriculum_dir = Path(curriculum_dir)
-        self._cache: dict[str, Challenge] = {}
+        if config_path is None:
+            config_path = Path(__file__).parent / "unified_curriculum.yaml"
 
-    def _get_belt_dir(self, belt: Belt) -> Path:
-        """Get the directory for a specific belt."""
-        return self.curriculum_dir / "v2" / "belts" / belt.value
+        with open(config_path) as f:
+            data = yaml.safe_load(f)
 
-    def _get_challenges_file(self, belt: Belt) -> Path:
-        """Get the challenges.yaml file for a belt."""
-        return self._get_belt_dir(belt) / "challenges.yaml"
-
-    def _parse_challenge(self, data: dict, belt: Belt) -> Challenge:
-        """Parse a challenge dictionary into a Challenge object."""
-        try:
-            # Parse script type
-            script_type_str = data.get("script_type", "adb")
+        # Parse stages
+        stages = []
+        for stage_data in data.get("stages", []):
             try:
-                script_type = ScriptType(script_type_str.lower())
+                belt_val = stage_data["belt"]
+                # Handle belt strings that might not match enum exactly (e.g. capitalized)
+                if isinstance(belt_val, str):
+                    belt_val = belt_val.lower()
+                belt = Belt(belt_val)
             except ValueError:
-                script_type = ScriptType.ADB
+                # Default or error handling
+                belt = Belt.WHITE
 
-            # Parse inputs
-            inputs_data = data.get("inputs", {})
-            inputs = ChallengeInput(
-                device_context=inputs_data.get("device_context", {}),
-                target_class=inputs_data.get("target_class"),
-                target_method=inputs_data.get("target_method"),
-                cve_id=inputs_data.get("cve_id"),
-                additional_context=inputs_data.get("additional_context", {}),
-            )
-
-            # Add device_id to device_context if specified at top level
-            if "device_id" in inputs_data:
-                inputs.device_context["device_id"] = inputs_data["device_id"]
-
-            # Parse expected output
-            expected_data = data.get("expected_output", {})
-            validation_data = data.get("validation", {})
-
-            expected_output = ExpectedOutput(
-                script_type=script_type,
-                must_contain=expected_data.get("must_contain", []),
-                must_not_contain=expected_data.get("must_not_contain", []),
-                expected_patterns=expected_data.get("expected_patterns", []),
-            )
-
-            # Store validation rules in additional_context for executor to use
-            if validation_data:
-                inputs.additional_context["validation"] = validation_data
-
-            # Parse scoring rubric
-            scoring_data = data.get("scoring", {})
-            scoring = ScoringRubric(
-                syntax_correct=scoring_data.get("syntax_correct", 25),
-                api_valid=scoring_data.get("api_valid", 25),
-                executes_successfully=scoring_data.get("executes_successfully", 30),
-                achieves_objective=scoring_data.get("achieves_objective", 20),
-            )
-
-            return Challenge(
-                id=data["id"],
-                name=data["name"],
-                description=data["description"],
+            stage = Stage(
+                number=stage_data["stage"],
+                name=stage_data["name"],
+                phase=CurriculumPhase(stage_data["phase"]),
                 belt=belt,
-                difficulty=data.get("difficulty", 1),
-                inputs=inputs,
-                expected_output=expected_output,
-                scoring=scoring,
-                kata_solution=data.get("kata_solution"),
-                hints=data.get("hints", []),
-                tags=data.get("tags", []),
+                source=stage_data["source"],
+                description=stage_data["description"].strip(),
+                skills_gained=stage_data.get("skills_gained", []),
+                challenge_ids=stage_data.get("challenges", []),
+                prerequisites=stage_data.get("prerequisites", []),
+                unlocks=stage_data.get("unlocks", []),
+            )
+            stages.append(stage)
+
+        # Parse checkpoints
+        checkpoints = []
+        eval_data = data.get("evaluation", {})
+        for cp_data in eval_data.get("checkpoints", []):
+            checkpoint = EvaluationCheckpoint(
+                after_stage=cp_data["after_stage"],
+                name=cp_data["name"],
+                test_type=cp_data["test_type"],
+                pass_threshold=cp_data["pass_threshold"],
+                description=cp_data["description"],
+            )
+            checkpoints.append(checkpoint)
+
+        return cls(
+            version=data.get("version", "3.0"),
+            name=data.get("name", "AgenticART Unified Curriculum"),
+            stages=stages,
+            checkpoints=checkpoints,
+            metadata=data.get("metadata", {}),
+        )
+
+    # -------------------------------------------------------------------------
+    # Unified Challenge Loading (Praxis Loop)
+    # -------------------------------------------------------------------------
+
+    def load_challenge(self, challenge_id: str) -> ChallengeV2:
+        """
+        Load any challenge (V1 or V2) as a standardized ChallengeV2 object.
+        Ensures a single sequential list of challenges in the curriculum.
+        """
+        if challenge_id in self._challenge_cache:
+            return self._challenge_cache[challenge_id]
+
+        stage = self.get_stage_for_challenge(challenge_id)
+        if not stage:
+            raise ValueError(f"Challenge {challenge_id} not found in curriculum")
+
+        # Now all challenges should be in V2 YAMLs.
+        # If it's a V1 ID, it should be present in the verification_tasks of a V2 challenge,
+        # OR it has been converted to a V2 YAML entry.
+
+        challenge = self._load_v2(challenge_id)
+
+        self._challenge_cache[challenge_id] = challenge
+        return challenge
+
+    def _load_v2(self, challenge_id: str) -> ChallengeV2:
+        """Load a V2 challenge directly."""
+        from dojo.graders.run_all_challenges import load_all_challenges
+
+        curriculum_dir = Path(__file__).parent
+        all_v2 = load_all_challenges(curriculum_dir.parent / "curriculum")
+
+        target_ch = None
+        for pillar_challenges in all_v2.values():
+            for ch in pillar_challenges:
+                if ch.id == challenge_id:
+                    target_ch = ch
+                    break
+            if target_ch:
+                break
+
+        if not target_ch:
+            raise ValueError(f"Challenge {challenge_id} not found in pillar files")
+
+        return target_ch
+
+    # -------------------------------------------------------------------------
+    # Stage Access
+    # -------------------------------------------------------------------------
+
+    def get_stage(self, stage_number: int) -> Stage:
+        """Get stage by number."""
+        if stage_number not in self._stage_map:
+            raise ValueError(f"Stage {stage_number} not found")
+        return self._stage_map[stage_number]
+
+    def get_stage_for_challenge(self, challenge_id: str) -> Optional[Stage]:
+        """Get the stage containing a challenge."""
+        stage_num = self._challenge_to_stage.get(challenge_id)
+        if stage_num is None:
+            return None
+        return self._stage_map[stage_num]
+
+    def stages_in_order(self) -> Iterator[Stage]:
+        """Iterate stages in curriculum order."""
+        for stage in sorted(self.stages, key=lambda s: s.number):
+            yield stage
+
+    def v1_stages(self) -> Iterator[Stage]:
+        """Iterate V1 (tool mastery) stages only."""
+        for stage in self.stages_in_order():
+            if stage.is_v1:
+                yield stage
+
+    def v2_stages(self) -> Iterator[Stage]:
+        """Iterate V2 (security reasoning) stages only."""
+        for stage in self.stages_in_order():
+            if stage.is_v2:
+                yield stage
+
+    # -------------------------------------------------------------------------
+    # Challenge Access
+    # -------------------------------------------------------------------------
+
+    def all_challenge_ids(self) -> list[str]:
+        """Get all challenge IDs in curriculum order."""
+        ids = []
+        for stage in self.stages_in_order():
+            ids.extend(stage.challenge_ids)
+        return ids
+
+    def challenges_up_to_stage(self, stage_number: int) -> list[str]:
+        """Get all challenge IDs up to and including a stage."""
+        ids = []
+        for stage in self.stages_in_order():
+            if stage.number > stage_number:
+                break
+            ids.extend(stage.challenge_ids)
+        return ids
+
+    def prerequisites_met(self, stage_number: int, completed_stages: set[int]) -> bool:
+        """Check if prerequisites are met for a stage."""
+        stage = self.get_stage(stage_number)
+        return all(prereq in completed_stages for prereq in stage.prerequisites)
+
+    # -------------------------------------------------------------------------
+    # Summary
+    # -------------------------------------------------------------------------
+
+    def summary(self) -> str:
+        """Generate curriculum summary."""
+        lines = [
+            f"# {self.name} (v{self.version})",
+            "",
+            f"Total Challenges: {self.metadata.get('total_challenges', len(self.all_challenge_ids()))}",
+            f"V1 Challenges: {self.metadata.get('v1_challenges', sum(len(s.challenge_ids) for s in self.v1_stages()))}",
+            f"V2 Challenges: {self.metadata.get('v2_challenges', sum(len(s.challenge_ids) for s in self.v2_stages()))}",
+            f"Stages: {len(self.stages)}",
+            "",
+            "## Stage Progression",
+            "",
+        ]
+
+        for stage in self.stages_in_order():
+            prereq_str = f" (requires: {stage.prerequisites})" if stage.prerequisites else ""
+            lines.append(
+                f"  {stage.number}. [{stage.belt.value.upper()}] {stage.name} "
+                f"- {len(stage.challenge_ids)} challenges{prereq_str}"
             )
 
-        except KeyError as e:
-            raise CurriculumError(
-                f"Missing required field in challenge: {e}",
-                file_path=str(self._get_challenges_file(belt)),
-            )
-
-    def load_belt(self, belt: Belt) -> list[Challenge]:
-        """
-        Load all challenges for a specific belt.
-
-        Args:
-            belt: The belt level to load challenges for.
-
-        Returns:
-            List of Challenge objects.
-
-        Raises:
-            CurriculumError: If the challenges file cannot be loaded.
-        """
-        challenges_file = self._get_challenges_file(belt)
-
-        if not challenges_file.exists():
-            return []
-
-        try:
-            with open(challenges_file, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            raise CurriculumError(
-                f"Invalid YAML in challenges file: {e}",
-                file_path=str(challenges_file),
-                cause=e,
-            )
-
-        if not data or "challenges" not in data:
-            return []
-
-        challenges = []
-        for challenge_data in data["challenges"]:
-            challenge = self._parse_challenge(challenge_data, belt)
-            challenges.append(challenge)
-            self._cache[challenge.id] = challenge
-
-        return challenges
-
-    def load_challenge(self, challenge_id: str) -> Challenge:
-        """
-        Load a specific challenge by ID.
-
-        Args:
-            challenge_id: The unique challenge identifier.
-
-        Returns:
-            The Challenge object.
-
-        Raises:
-            ChallengeNotFoundError: If the challenge doesn't exist.
-        """
-        # Check cache first
-        if challenge_id in self._cache:
-            return self._cache[challenge_id]
-
-        # Try to find the challenge by loading all belts
-        for belt in Belt:
-            challenges = self.load_belt(belt)
-            for challenge in challenges:
-                if challenge.id == challenge_id:
-                    return challenge
-
-        raise ChallengeNotFoundError(challenge_id)
-
-    def list_challenges(self, belt: Optional[Belt] = None) -> list[str]:
-        """
-        List available challenge IDs.
-
-        Args:
-            belt: If specified, only list challenges for this belt.
-
-        Returns:
-            List of challenge IDs.
-        """
-        if belt is not None:
-            challenges = self.load_belt(belt)
-            return [c.id for c in challenges]
-
-        # Load all belts
-        all_ids: list[str] = []
-        for b in Belt:
-            challenges = self.load_belt(b)
-            all_ids.extend(c.id for c in challenges)
-        return all_ids
-
-    def get_belt_from_challenge_id(self, challenge_id: str) -> Belt:
-        """
-        Determine the belt from a challenge ID.
-
-        Args:
-            challenge_id: The challenge ID (e.g., "white_001").
-
-        Returns:
-            The Belt enum value.
-
-        Raises:
-            InvalidBeltError: If the belt cannot be determined.
-        """
-        # Try to parse belt from ID prefix
-        for belt in Belt:
-            if challenge_id.startswith(belt.value):
-                return belt
-
-        # Fall back to loading and checking
-        challenge = self.load_challenge(challenge_id)
-        return challenge.belt
-
-    def clear_cache(self) -> None:
-        """Clear the challenge cache."""
-        self._cache.clear()
+        return "\n".join(lines)

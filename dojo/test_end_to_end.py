@@ -122,82 +122,53 @@ def set_engine_state(status: str):
 class MockLLMClient:
     """Mock LLM that returns expected answers for testing."""
 
+    # V2 pillar-based challenges (reasoning before execution)
     ANSWERS = {
-        # White belt
-        "white_001": "shell getprop ro.build.version.release",
-        "white_002": "shell pm list packages",
-        "white_003": "shell getprop ro.product.model",
-        "white_004": "shell ps",
-        "white_005": "shell cat /data/system/packages.xml",
-        # Yellow belt
-        "yellow_001": "shell dumpsys package com.android.settings | grep permission",
-        "yellow_002": "shell am start -n com.android.settings/.Settings",
-        "yellow_003": "shell ip addr",
-        "yellow_004": "shell logcat -d ActivityManager:E *:S",
-        "yellow_005": "shell dumpsys activity services",
-        "yellow_006": "shell pm path com.android.calculator2",
-        "yellow_007": "shell am broadcast -a android.net.conn.CONNECTIVITY_CHANGE",
-        "yellow_008": "shell screencap -p /sdcard/screenshot.png",
-        "yellow_009": "shell input text hello",
-        "yellow_010": "shell cat /proc/cpuinfo",
-        # Orange belt
-        "orange_001": "shell run-as com.android.settings ls /data/data/com.android.settings/",
-        "orange_002": "shell sqlite3 /data/data/com.android.providers.contacts/databases/contacts2.db '.tables'",
-        "orange_003": "shell netstat -an",
-        "orange_004": "shell content query --uri content://settings/system",
-        "orange_005": "shell cat /proc/$(pidof system_server)/maps",
-        "orange_006": "shell dumpsys package com.android.browser | grep -A 100 'Activity Resolver Table'",
-        "orange_007": "shell getprop | grep -iE 'security|selinux'",
-        "orange_008": "shell am force-stop com.android.calculator2",
-        "orange_009": "shell input keyevent 3",
-        "orange_010": "forward tcp:8080 tcp:8080",
-        "orange_011": "backup -f settings_backup.ab com.android.settings",
-        "orange_012": "shell uiautomator dump /sdcard/window_dump.xml",
-        "orange_013": "shell df -h /data",
-        "orange_014": "shell settings put global adb_enabled 1",
-        "orange_015": "shell printenv",
+        # White belt - methodology pillar
+        "method_observe_white_001": "shell getprop ro.build.version.release",
+        "static_basic_white_001": "shell pm list packages",
+        "neg_secure_white_001": "shell getprop ro.product.model",
+        "neg_secure_white_002": "shell ps",
+        "taxonomy_basic_white_001": "shell cat /data/system/packages.xml",
+        # Yellow belt - hypothesis formation
+        "method_hypothesis_yellow_001": "shell dumpsys package com.android.settings | grep permission",
+        "static_dataflow_yellow_001": "shell am start -n com.android.settings/.Settings",
+        "neg_compare_yellow_001": "shell ip addr",
+        "taxonomy_owasp_yellow_001": "shell logcat -d ActivityManager:E *:S",
+        "transfer_api_yellow_001": "shell dumpsys activity services",
+        # Orange belt - verification design
+        "method_test_orange_001": "shell run-as com.android.settings ls /data/data/com.android.settings/",
+        "static_crossfunc_orange_001": "shell sqlite3 /data/data/com.android.providers.contacts/databases/contacts2.db '.tables'",
+        "neg_subtle_orange_001": "shell netstat -an",
+        "taxonomy_ambiguous_orange_001": "shell content query --uri content://settings/system",
+        "transfer_domain_orange_001": "shell cat /proc/$(pidof system_server)/maps",
     }
 
     RETRY_ANSWERS = {
-        "white_005": "shell su -c 'cat /data/system/packages.xml'",
-        "orange_001": "shell ls /data/data/com.android.settings/",
-        "orange_002": "shell cat /data/data/com.android.providers.contacts/databases/contacts2.db",
+        "taxonomy_basic_white_001": "shell su -c 'cat /data/system/packages.xml'",
+        "method_test_orange_001": "shell ls /data/data/com.android.settings/",
+        "static_crossfunc_orange_001": "shell cat /data/data/com.android.providers.contacts/databases/contacts2.db",
     }
 
     CHALLENGE_IDENTIFIERS = [
-        # White belt
-        ("white_005", ["packages.xml", "/data/system", "protected file"]),
-        ("white_004", ["running processes", "process enumeration", "process id"]),
-        ("white_003", ["device model", "model name", "marketing name"]),
-        ("white_002", ["installed packages", "package manager", "pm list"]),
-        ("white_001", ["android version", "version number", "version of"]),
-        # Yellow belt
-        ("yellow_001", ["app permission", "permissions requested", "com.android.settings"]),
-        ("yellow_002", ["launch activity", "start activity", "settings app"]),
-        ("yellow_003", ["network interface", "network configuration", "ip address"]),
-        ("yellow_004", ["logcat", "error level", "activitymanager"]),
-        ("yellow_005", ["running services", "active service", "dumpsys activity"]),
-        ("yellow_006", ["apk path", "apk file path", "calculator"]),
-        ("yellow_007", ["broadcast intent", "connectivity_change", "send broadcast"]),
-        ("yellow_008", ["screenshot", "screen capture", "screencap"]),
-        ("yellow_009", ["simulate text", "text input", "input text"]),
-        ("yellow_010", ["cpu architecture", "processor info", "cpuinfo"]),
-        # Orange belt
-        ("orange_001", ["app data directory", "data/data", "run-as"]),
-        ("orange_002", ["sqlite", "database", "contacts2.db"]),
-        ("orange_003", ["network connections", "netstat", "listening ports"]),
-        ("orange_004", ["content provider", "content query", "settings/system"]),
-        ("orange_005", ["memory map", "proc/", "/maps"]),
-        ("orange_006", ["package component", "activity resolver", "browser"]),
-        ("orange_007", ["security properties", "selinux", "crypto"]),
-        ("orange_008", ["force stop", "force-stop", "terminate"]),
-        ("orange_009", ["keyevent", "home button", "keycode"]),
-        ("orange_010", ["port forward", "tcp:8080", "localhost"]),
-        ("orange_011", ["backup", "application data", ".ab"]),
-        ("orange_012", ["window hierarchy", "ui hierarchy", "uiautomator"]),
-        ("orange_013", ["disk usage", "storage space", "df -h"]),
-        ("orange_014", ["modify setting", "settings put", "adb_enabled"]),
-        ("orange_015", ["environment variable", "printenv", "shell environment"]),
+        # White belt - methodology pillar
+        ("taxonomy_basic_white_001", ["packages.xml", "/data/system", "protected file"]),
+        ("neg_secure_white_002", ["running processes", "process enumeration", "process id"]),
+        ("neg_secure_white_001", ["device model", "model name", "marketing name"]),
+        ("static_basic_white_001", ["installed packages", "package manager", "pm list"]),
+        ("method_observe_white_001", ["android version", "version number", "version of"]),
+        # Yellow belt - hypothesis formation
+        ("method_hypothesis_yellow_001", ["app permission", "permissions requested", "com.android.settings"]),
+        ("static_dataflow_yellow_001", ["launch activity", "start activity", "settings app"]),
+        ("neg_compare_yellow_001", ["network interface", "network configuration", "ip address"]),
+        ("taxonomy_owasp_yellow_001", ["logcat", "error level", "activitymanager"]),
+        ("transfer_api_yellow_001", ["running services", "active service", "dumpsys activity"]),
+        # Orange belt - verification design
+        ("method_test_orange_001", ["app data directory", "data/data", "run-as"]),
+        ("static_crossfunc_orange_001", ["sqlite", "database", "contacts2.db"]),
+        ("neg_subtle_orange_001", ["network connections", "netstat", "listening ports"]),
+        ("taxonomy_ambiguous_orange_001", ["content provider", "content query", "settings/system"]),
+        ("transfer_domain_orange_001", ["memory map", "proc/", "/maps"]),
     ]
 
     def __init__(self):

@@ -1,553 +1,486 @@
-# Patch Analysis Pillar - Challenges
-# Purpose: Learn vulnerability patterns from real CVE fixes
-# Focus: What changed, why it was vulnerable, how it was fixed
-
 challenges:
+- id: patch_basic_green_001
+  name: Path Traversal Patch Analysis
+  version: 2
+  type: root_cause
+  pillar: patch_analysis
+  belt: green
+  difficulty: 5
+  description: 'A path traversal vulnerability was patched in an Android file provider.
+
+    Analyze the patch to understand what was vulnerable and how it was fixed.
+
+    '
+  artifacts:
+  - type: patch_diff
+    context: Security patch for CVE-XXXX-XXXX
+    content: "diff --git a/FileProvider.java b/FileProvider.java\n--- a/FileProvider.java\n+++ b/FileProvider.java\n@@ -45,8\
+      \ +45,15 @@ public class SecureFileProvider extends ContentProvider {\n     @Override\n     public ParcelFileDescriptor\
+      \ openFile(Uri uri, String mode) {\n         String path = uri.getPath();\n-        File file = new File(getContext().getFilesDir(),\
+      \ path);\n-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);\n+\n+        // Canonicalize\
+      \ and validate path\n+        File baseDir = getContext().getFilesDir();\n+        File file = new File(baseDir, path).getCanonicalFile();\n\
+      +\n+        if (!file.getPath().startsWith(baseDir.getCanonicalPath())) {\n+            throw new SecurityException(\"\
+      Path traversal attempt blocked\");\n+        }\n+\n+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);\n\
+      \     }\n }\n"
+  - type: cve_description
+    context: CVE Details
+    content: 'CVE-XXXX-XXXX: Path Traversal in FileProvider
+
+      CVSS: 7.5 (High)
+
+      CWE: CWE-22 (Path Traversal)
+
+
+      A malicious app could access arbitrary files by sending a content:// URI
+
+      with path traversal sequences (../) to the vulnerable FileProvider.
+
+      '
+  phases:
+  - phase_id: observe
+    instruction: 'Examine the patch diff and identify:
+
+      1. What code was added?
+
+      2. What code was removed/changed?
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # GREEN BELT - Basic Patch Understanding
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: patch_basic_green_001
-    name: "Path Traversal Patch Analysis"
-    version: 2
-
-    type: root_cause
-    pillar: patch_analysis
-    belt: green
-    difficulty: 5
-
-    description: |
-      A path traversal vulnerability was patched in an Android file provider.
-      Analyze the patch to understand what was vulnerable and how it was fixed.
-
-    artifacts:
-      - type: patch_diff
-        context: "Security patch for CVE-XXXX-XXXX"
-        content: |
-          diff --git a/FileProvider.java b/FileProvider.java
-          --- a/FileProvider.java
-          +++ b/FileProvider.java
-          @@ -45,8 +45,15 @@ public class SecureFileProvider extends ContentProvider {
-               @Override
-               public ParcelFileDescriptor openFile(Uri uri, String mode) {
-                   String path = uri.getPath();
-          -        File file = new File(getContext().getFilesDir(), path);
-          -        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
-          +
-          +        // Canonicalize and validate path
-          +        File baseDir = getContext().getFilesDir();
-          +        File file = new File(baseDir, path).getCanonicalFile();
-          +
-          +        if (!file.getPath().startsWith(baseDir.getCanonicalPath())) {
-          +            throw new SecurityException("Path traversal attempt blocked");
-          +        }
-          +
-          +        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
-               }
-           }
-
-      - type: cve_description
-        context: "CVE Details"
-        content: |
-          CVE-XXXX-XXXX: Path Traversal in FileProvider
-          CVSS: 7.5 (High)
-          CWE: CWE-22 (Path Traversal)
-
-          A malicious app could access arbitrary files by sending a content:// URI
-          with path traversal sequences (../) to the vulnerable FileProvider.
-
-    phases:
-      - phase_id: observe
-        instruction: |
-          Examine the patch diff and identify:
-          1. What code was added?
-          2. What code was removed/changed?
-          3. What new security checks are present?
-
-        expected_output_schema:
-          type: object
-          properties:
-            additions:
-              type: array
-              items: string
-            removals:
-              type: array
-              items: string
-            new_checks:
-              type: array
-              items: string
-
-        evaluation_criteria:
-          - name: completeness
-            weight: 0.40
-            description: "Identifies all changes"
-          - name: accuracy
-            weight: 0.40
-            description: "Correctly describes what changed"
-          - name: security_focus
-            weight: 0.20
-            description: "Identifies security-relevant changes"
-
-        max_tokens: 1000
-
-      - phase_id: analyze
-        instruction: |
-          Based on the patch:
-          1. What was the vulnerability in the original code?
-          2. How does the patch fix it?
-          3. Why is canonicalization important here?
-          4. Could the patch be bypassed? How robust is it?
-
-        expected_output_schema:
-          type: object
-          properties:
-            original_vulnerability: string
-            fix_mechanism: string
-            canonicalization_purpose: string
-            patch_robustness: string
-            potential_bypasses: array
-
-        evaluation_criteria:
-          - name: vulnerability_understanding
-            weight: 0.30
-            description: "Correctly identifies the vuln"
-          - name: fix_understanding
-            weight: 0.30
-            description: "Explains how patch works"
-          - name: depth
-            weight: 0.25
-            description: "Understands canonicalization"
-          - name: critical_thinking
-            weight: 0.15
-            description: "Considers bypass scenarios"
-
-        max_tokens: 1500
-
-    ground_truth:
-      vulnerability_present: true
-      vulnerability_type: "Path Traversal"
-      cwe_id: "CWE-22"
-
-      root_cause: |
-        ORIGINAL VULNERABILITY:
-        The original code directly concatenated user-controlled path to base directory
-        without any validation. Paths like "/../../../etc/passwd" would resolve to
-        files outside the intended directory.
-
-        FIX MECHANISM:
-        1. getCanonicalFile() - Resolves symbolic links and removes ../ sequences
-        2. startsWith() check - Verifies resolved path is still under base directory
-        3. SecurityException - Explicit rejection of traversal attempts
-
-        WHY CANONICALIZATION:
-        Without canonicalization, "../" sequences remain in the path string even
-        after File object creation. The attacker's path might look valid as a string
-        but resolve to an unintended location. Canonicalization normalizes the path
-        to its true filesystem location.
-
-        PATCH ROBUSTNESS:
-        This is a robust fix because:
-        - Canonicalization handles all path manipulation tricks
-        - Check happens AFTER canonicalization, not before
-        - Both paths are canonicalized for consistent comparison
-
-      key_observations:
-        - "Original code had no path validation"
-        - "Patch adds canonicalization before comparison"
-        - "Comparison uses canonicalized base path too"
-
-    training:
-      pattern_family: "path_traversal"
-      common_mistakes:
-        - "Missing that BOTH paths must be canonicalized"
-        - "Not understanding why order matters"
-
-    tags: [path_traversal, patch_analysis, file_provider]
-    cwe_tags: [CWE-22, CWE-73]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # BLUE BELT - Complex Patch Analysis
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: patch_complex_blue_001
-    name: "Intent Spoofing Patch Analysis"
-    version: 2
-
-    type: root_cause
-    pillar: patch_analysis
-    belt: blue
-    difficulty: 6
-
-    description: |
-      An intent spoofing vulnerability was patched. The patch touches multiple
-      components. Analyze how the defense-in-depth approach was implemented.
-
-    artifacts:
-      - type: patch_diff
-        context: "Multi-file security patch"
-        content: |
-          diff --git a/DeepLinkHandler.java b/DeepLinkHandler.java
-          --- a/DeepLinkHandler.java
-          +++ b/DeepLinkHandler.java
-          @@ -23,10 +23,25 @@ public class DeepLinkHandler extends Activity {
-               protected void onCreate(Bundle savedInstanceState) {
-                   super.onCreate(savedInstanceState);
-
-          -        Uri deepLink = getIntent().getData();
-          -        if (deepLink != null) {
-          -            handleDeepLink(deepLink);
-          +        Intent intent = getIntent();
-          +
-          +        // Check 1: Verify intent source
-          +        if (!isIntentFromTrustedSource(intent)) {
-          +            Log.w(TAG, "Rejected intent from untrusted source");
-          +            finish();
-          +            return;
-          +        }
-          +
-          +        Uri deepLink = intent.getData();
-          +        if (deepLink != null && isValidDeepLinkScheme(deepLink)) {
-          +            handleDeepLink(deepLink, intent.getCallingPackage());
-                   }
-               }
-          +
-          +    private boolean isIntentFromTrustedSource(Intent intent) {
-          +        String caller = getCallingPackage();
-          +        return caller == null || TRUSTED_PACKAGES.contains(caller);
-          +    }
-          +
-          +    private boolean isValidDeepLinkScheme(Uri uri) {
-          +        String scheme = uri.getScheme();
-          +        return "https".equals(scheme) || "myapp".equals(scheme);
-          +    }
-
-          diff --git a/DeepLinkProcessor.java b/DeepLinkProcessor.java
-          --- a/DeepLinkProcessor.java
-          +++ b/DeepLinkProcessor.java
-          @@ -15,8 +15,15 @@ public class DeepLinkProcessor {
-          -    public void handleDeepLink(Uri uri) {
-          +    public void handleDeepLink(Uri uri, String callerPackage) {
-                   String action = uri.getQueryParameter("action");
-                   String target = uri.getQueryParameter("target");
-
-          +        // Additional validation at processing layer
-          +        if (!isActionAllowed(action, callerPackage)) {
-          +            throw new SecurityException("Action not allowed for caller");
-          +        }
-          +
-                   switch (action) {
-                       case "open_profile":
-          -                openProfile(target);
-          +                openProfile(sanitizeUserId(target));
-                           break;
-                       case "transfer_funds":
-          -                transferFunds(target);
-          +                if (callerPackage == null) {  // Only allow from launcher
-          +                    transferFunds(sanitizeAmount(target));
-          +                }
-                           break;
-
-    phases:
-      - phase_id: observe
-        instruction: |
-          This is a multi-file patch. For each file:
-          1. What security checks were added?
-          2. What's the purpose of each check?
-          3. How do the files work together?
-
-        expected_output_schema:
-          type: object
-          properties:
-            file_changes:
-              type: array
-              items:
-                file: string
-                checks_added: array
-                purpose: string
-            interaction_model: string
-
-        evaluation_criteria:
-          - name: per_file_analysis
-            weight: 0.35
-            description: "Analyzes each file separately"
-          - name: check_identification
-            weight: 0.35
-            description: "Identifies all security checks"
-          - name: integration_understanding
-            weight: 0.30
-            description: "Understands how files interact"
-
-        max_tokens: 1500
-
-      - phase_id: analyze
-        instruction: |
-          Analyze the defense-in-depth strategy:
-          1. What layers of defense exist?
-          2. Why are multiple layers needed?
-          3. What attack would bypass just one layer?
-          4. Is the patch complete or are there gaps?
-
-        expected_output_schema:
-          type: object
-          properties:
-            defense_layers:
-              type: array
-              items:
-                layer: string
-                what_it_blocks: string
-            why_multiple_layers: string
-            single_layer_bypass: string
-            remaining_gaps: array
-
-        evaluation_criteria:
-          - name: layer_identification
-            weight: 0.30
-            description: "Identifies all defense layers"
-          - name: depth_reasoning
-            weight: 0.30
-            description: "Explains why depth matters"
-          - name: bypass_analysis
-            weight: 0.25
-            description: "Considers partial bypasses"
-          - name: gap_analysis
-            weight: 0.15
-            description: "Identifies remaining issues"
-
-        max_tokens: 2000
-
-    ground_truth:
-      vulnerability_present: true
-      vulnerability_type: "Intent Spoofing"
-      cwe_id: "CWE-927"
-
-      root_cause: |
-        DEFENSE LAYERS ADDED:
-
-        Layer 1 - Source Verification (DeepLinkHandler):
-        - Checks getCallingPackage()
-        - Rejects intents from untrusted apps
-        - First line of defense
-
-        Layer 2 - Scheme Validation (DeepLinkHandler):
-        - Only allows https:// and myapp:// schemes
-        - Prevents javascript: and other dangerous schemes
-
-        Layer 3 - Action Authorization (DeepLinkProcessor):
-        - Per-action permission checks
-        - Caller-specific restrictions (transfer_funds only from launcher)
-
-        Layer 4 - Input Sanitization (DeepLinkProcessor):
-        - sanitizeUserId(), sanitizeAmount()
-        - Prevents injection even if other checks bypassed
-
-        WHY MULTIPLE LAYERS:
-        - Single check bypass: If TRUSTED_PACKAGES is misconfigured, Layer 1 fails
-          but Layer 3's per-action check still blocks sensitive operations
-        - If a trusted app is compromised, sanitization prevents injection
-
-        REMAINING GAPS:
-        - getCallingPackage() returns null for activities started without
-          FLAG_ACTIVITY_NEW_TASK - code allows this but may be unintended
-        - No rate limiting on actions
-
-      key_observations:
-        - "Four distinct defense layers"
-        - "Each layer catches different attack vectors"
-        - "Sensitive actions have extra restrictions"
-
-    training:
-      pattern_family: "intent_security"
-      common_mistakes:
-        - "Missing that null caller is allowed (intentional design)"
-        - "Not seeing the layer interaction"
-
-    tags: [intent_spoofing, defense_in_depth, patch_analysis]
-    cwe_tags: [CWE-927, CWE-926]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # BROWN BELT - Incomplete Patch Analysis
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: patch_incomplete_brown_001
-    name: "Incomplete Patch Detection"
-    version: 2
-
-    type: root_cause
-    pillar: patch_analysis
-    belt: brown
-    difficulty: 8
-
-    description: |
-      This patch was released to fix a SQL injection vulnerability.
-      However, security researchers found it was INCOMPLETE.
-      Your task: Find what the patch missed.
-
-    artifacts:
-      - type: patch_diff
-        context: "Patch that was released (but incomplete)"
-        content: |
-          diff --git a/UserRepository.java b/UserRepository.java
-          --- a/UserRepository.java
-          +++ b/UserRepository.java
-          @@ -34,10 +34,15 @@ public class UserRepository {
-
-               public User findUserByEmail(String email) {
-          -        String query = "SELECT * FROM users WHERE email = '" + email + "'";
-          -        return db.rawQuery(query, null);
-          +        // Fixed: Use parameterized query
-          +        String query = "SELECT * FROM users WHERE email = ?";
-          +        return db.rawQuery(query, new String[]{email});
-               }
-
-               public List<User> searchUsers(String searchTerm, String sortColumn) {
-          -        String query = "SELECT * FROM users WHERE name LIKE '%" + searchTerm + "%'";
-          -        return db.rawQuery(query, null);
-          +        // Fixed: Use parameterized query for search term
-          +        String query = "SELECT * FROM users WHERE name LIKE ? ORDER BY " + sortColumn;
-          +        return db.rawQuery(query, new String[]{"%" + searchTerm + "%"});
-               }
-
-               public List<User> getUsersByRole(String role) {
-          -        String query = "SELECT * FROM users WHERE role = '" + role + "'";
-          -        return db.rawQuery(query, null);
-          +        // Fixed: Use parameterized query
-          +        String query = "SELECT * FROM users WHERE role = ?";
-          +        return db.rawQuery(query, new String[]{role});
-               }
-
-      - type: cve_description
-        context: "Original CVE"
-        content: |
-          CVE-XXXX-XXXX: SQL Injection in UserRepository
-          CVSS: 9.8 (Critical)
-          CWE: CWE-89
-
-          Multiple SQL injection vulnerabilities in UserRepository allow
-          attackers to execute arbitrary SQL commands.
-
-    phases:
-      - phase_id: observe
-        instruction: |
-          Carefully examine each fix in the patch:
-          1. What was fixed in each method?
-          2. Is the fix complete for each method?
-          3. Look for any remaining injection points
-
-        expected_output_schema:
-          type: object
-          properties:
-            fixes_applied:
-              type: array
-              items:
-                method: string
-                fix_type: string
-                is_complete: boolean
-                remaining_issue: string
-
-        evaluation_criteria:
-          - name: method_analysis
-            weight: 0.40
-            description: "Analyzes each method"
-          - name: completeness_check
-            weight: 0.40
-            description: "Identifies incomplete fix"
-          - name: specificity
-            weight: 0.20
-            description: "Pinpoints exact issue"
-
-        max_tokens: 1500
-
-      - phase_id: analyze
-        instruction: |
-          For the incomplete fix you found:
-          1. Craft a proof-of-concept that bypasses the patch
-          2. Explain why parameterized queries don't help here
-          3. What's the correct fix?
-          4. Why did the developer miss this?
-
-        expected_output_schema:
-          type: object
-          properties:
-            incomplete_fix_location: string
-            proof_of_concept: string
-            why_parameterized_fails: string
-            correct_fix: string
-            developer_mistake_analysis: string
-
-        evaluation_criteria:
-          - name: bypass_identification
-            weight: 0.35
-            description: "Finds the bypass"
-          - name: poc_validity
-            weight: 0.25
-            description: "PoC would work"
-          - name: root_cause
-            weight: 0.25
-            description: "Explains fundamental issue"
-          - name: fix_proposal
-            weight: 0.15
-            description: "Proposes correct fix"
-
-        max_tokens: 2000
-
-    ground_truth:
-      vulnerability_present: true
-      vulnerability_type: "SQL Injection (ORDER BY)"
-      cwe_id: "CWE-89"
-
-      root_cause: |
-        INCOMPLETE FIX LOCATION: searchUsers() method
-
-        THE MISSED VULNERABILITY:
-        While searchTerm is now parameterized, sortColumn is STILL concatenated:
-        "SELECT * FROM users WHERE name LIKE ? ORDER BY " + sortColumn
-
-        ORDER BY columns CANNOT be parameterized in standard SQL.
-        Prepared statements only work for VALUES, not identifiers (table/column names).
-
-        PROOF OF CONCEPT:
-        sortColumn = "name; DROP TABLE users; --"
-        or
-        sortColumn = "(CASE WHEN (SELECT password FROM users WHERE email='admin') LIKE 'a%' THEN name ELSE email END)"
-        (Blind SQL injection via ORDER BY)
-
-        WHY PARAMETERIZED QUERIES DON'T HELP:
-        Parameterized queries escape VALUES. Column names and table names are
-        IDENTIFIERS which go through different SQL parsing. You cannot do:
-        "ORDER BY ?" with the column name as parameter.
-
-        CORRECT FIX:
-        Whitelist validation for sortColumn:
-        ```
-        private static final Set<String> ALLOWED_SORT_COLUMNS =
-            Set.of("name", "email", "created_at");
-
-        if (!ALLOWED_SORT_COLUMNS.contains(sortColumn)) {
-            sortColumn = "name";  // Default to safe value
-        }
-        ```
-
-        WHY DEVELOPER MISSED IT:
-        - Pattern-based fix: "replace concatenation with ?"
-        - Didn't understand WHY parameterization works
-        - ORDER BY injection is less known than WHERE injection
-
-      key_observations:
-        - "Three methods fixed, one incompletely"
-        - "ORDER BY cannot use parameterized queries"
-        - "Whitelist validation required for identifiers"
-
-    training:
-      negative_examples:
-        - "Saying all fixes are complete"
-        - "Not understanding identifier vs value"
-      common_mistakes:
-        - "Assuming parameterized queries fix everything"
-        - "Missing ORDER BY injection vector"
-      pattern_family: "sql_injection"
-
-    tags: [sql_injection, incomplete_patch, order_by_injection]
-    cwe_tags: [CWE-89, CWE-943]
+      3. What new security checks are present?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        additions:
+          type: array
+          items: string
+        removals:
+          type: array
+          items: string
+        new_checks:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: completeness
+      weight: 0.4
+      description: Identifies all changes
+    - name: accuracy
+      weight: 0.4
+      description: Correctly describes what changed
+    - name: security_focus
+      weight: 0.2
+      description: Identifies security-relevant changes
+    max_tokens: 1000
+  - phase_id: analyze
+    instruction: 'Based on the patch:
+
+      1. What was the vulnerability in the original code?
+
+      2. How does the patch fix it?
+
+      3. Why is canonicalization important here?
+
+      4. Could the patch be bypassed? How robust is it?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        original_vulnerability: string
+        fix_mechanism: string
+        canonicalization_purpose: string
+        patch_robustness: string
+        potential_bypasses: array
+    evaluation_criteria:
+    - name: vulnerability_understanding
+      weight: 0.3
+      description: Correctly identifies the vuln
+    - name: fix_understanding
+      weight: 0.3
+      description: Explains how patch works
+    - name: depth
+      weight: 0.25
+      description: Understands canonicalization
+    - name: critical_thinking
+      weight: 0.15
+      description: Considers bypass scenarios
+    max_tokens: 1500
+  ground_truth:
+    vulnerability_present: true
+    vulnerability_type: Path Traversal
+    cwe_id: CWE-22
+    root_cause: 'ORIGINAL VULNERABILITY:
+
+      The original code directly concatenated user-controlled path to base directory
+
+      without any validation. Paths like "/../../../etc/passwd" would resolve to
+
+      files outside the intended directory.
+
+
+      FIX MECHANISM:
+
+      1. getCanonicalFile() - Resolves symbolic links and removes ../ sequences
+
+      2. startsWith() check - Verifies resolved path is still under base directory
+
+      3. SecurityException - Explicit rejection of traversal attempts
+
+
+      WHY CANONICALIZATION:
+
+      Without canonicalization, "../" sequences remain in the path string even
+
+      after File object creation. The attacker''s path might look valid as a string
+
+      but resolve to an unintended location. Canonicalization normalizes the path
+
+      to its true filesystem location.
+
+
+      PATCH ROBUSTNESS:
+
+      This is a robust fix because:
+
+      - Canonicalization handles all path manipulation tricks
+
+      - Check happens AFTER canonicalization, not before
+
+      - Both paths are canonicalized for consistent comparison
+
+      '
+    key_observations:
+    - Original code had no path validation
+    - Patch adds canonicalization before comparison
+    - Comparison uses canonicalized base path too
+  training:
+    pattern_family: path_traversal
+    common_mistakes:
+    - Missing that BOTH paths must be canonicalized
+    - Not understanding why order matters
+  tags:
+  - path_traversal
+  - patch_analysis
+  - file_provider
+  cwe_tags:
+  - CWE-22
+  - CWE-73
+  verification_tasks:
+  - instruction: Write an ADB command that displays all environment variables
+    mcp_tool_call:
+      tool: adb_shell
+      command: printenv
+    validation_rule:
+      type: output_contains
+      expected: PATH
+- id: patch_complex_blue_001
+  name: Intent Spoofing Patch Analysis
+  version: 2
+  type: root_cause
+  pillar: patch_analysis
+  belt: blue
+  difficulty: 6
+  description: 'An intent spoofing vulnerability was patched. The patch touches multiple
+
+    components. Analyze how the defense-in-depth approach was implemented.
+
+    '
+  artifacts:
+  - type: patch_diff
+    context: Multi-file security patch
+    content: "diff --git a/DeepLinkHandler.java b/DeepLinkHandler.java\n--- a/DeepLinkHandler.java\n+++ b/DeepLinkHandler.java\n\
+      @@ -23,10 +23,25 @@ public class DeepLinkHandler extends Activity {\n     protected void onCreate(Bundle savedInstanceState)\
+      \ {\n         super.onCreate(savedInstanceState);\n\n-        Uri deepLink = getIntent().getData();\n-        if (deepLink\
+      \ != null) {\n-            handleDeepLink(deepLink);\n+        Intent intent = getIntent();\n+\n+        // Check 1:\
+      \ Verify intent source\n+        if (!isIntentFromTrustedSource(intent)) {\n+            Log.w(TAG, \"Rejected intent\
+      \ from untrusted source\");\n+            finish();\n+            return;\n+        }\n+\n+        Uri deepLink = intent.getData();\n\
+      +        if (deepLink != null && isValidDeepLinkScheme(deepLink)) {\n+            handleDeepLink(deepLink, intent.getCallingPackage());\n\
+      \         }\n     }\n+\n+    private boolean isIntentFromTrustedSource(Intent intent) {\n+        String caller = getCallingPackage();\n\
+      +        return caller == null || TRUSTED_PACKAGES.contains(caller);\n+    }\n+\n+    private boolean isValidDeepLinkScheme(Uri\
+      \ uri) {\n+        String scheme = uri.getScheme();\n+        return \"https\".equals(scheme) || \"myapp\".equals(scheme);\n\
+      +    }\n\ndiff --git a/DeepLinkProcessor.java b/DeepLinkProcessor.java\n--- a/DeepLinkProcessor.java\n+++ b/DeepLinkProcessor.java\n\
+      @@ -15,8 +15,15 @@ public class DeepLinkProcessor {\n-    public void handleDeepLink(Uri uri) {\n+    public void handleDeepLink(Uri\
+      \ uri, String callerPackage) {\n         String action = uri.getQueryParameter(\"action\");\n         String target\
+      \ = uri.getQueryParameter(\"target\");\n\n+        // Additional validation at processing layer\n+        if (!isActionAllowed(action,\
+      \ callerPackage)) {\n+            throw new SecurityException(\"Action not allowed for caller\");\n+        }\n+\n \
+      \        switch (action) {\n             case \"open_profile\":\n-                openProfile(target);\n+          \
+      \      openProfile(sanitizeUserId(target));\n                 break;\n             case \"transfer_funds\":\n-     \
+      \           transferFunds(target);\n+                if (callerPackage == null) {  // Only allow from launcher\n+  \
+      \                  transferFunds(sanitizeAmount(target));\n+                }\n                 break;\n"
+  phases:
+  - phase_id: observe
+    instruction: 'This is a multi-file patch. For each file:
+
+      1. What security checks were added?
+
+      2. What''s the purpose of each check?
+
+      3. How do the files work together?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        file_changes:
+          type: array
+          items:
+            file: string
+            checks_added: array
+            purpose: string
+        interaction_model: string
+    evaluation_criteria:
+    - name: per_file_analysis
+      weight: 0.35
+      description: Analyzes each file separately
+    - name: check_identification
+      weight: 0.35
+      description: Identifies all security checks
+    - name: integration_understanding
+      weight: 0.3
+      description: Understands how files interact
+    max_tokens: 1500
+  - phase_id: analyze
+    instruction: 'Analyze the defense-in-depth strategy:
+
+      1. What layers of defense exist?
+
+      2. Why are multiple layers needed?
+
+      3. What attack would bypass just one layer?
+
+      4. Is the patch complete or are there gaps?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        defense_layers:
+          type: array
+          items:
+            layer: string
+            what_it_blocks: string
+        why_multiple_layers: string
+        single_layer_bypass: string
+        remaining_gaps: array
+    evaluation_criteria:
+    - name: layer_identification
+      weight: 0.3
+      description: Identifies all defense layers
+    - name: depth_reasoning
+      weight: 0.3
+      description: Explains why depth matters
+    - name: bypass_analysis
+      weight: 0.25
+      description: Considers partial bypasses
+    - name: gap_analysis
+      weight: 0.15
+      description: Identifies remaining issues
+    max_tokens: 2000
+  ground_truth:
+    vulnerability_present: true
+    vulnerability_type: Intent Spoofing
+    cwe_id: CWE-927
+    root_cause: "DEFENSE LAYERS ADDED:\n\nLayer 1 - Source Verification (DeepLinkHandler):\n- Checks getCallingPackage()\n\
+      - Rejects intents from untrusted apps\n- First line of defense\n\nLayer 2 - Scheme Validation (DeepLinkHandler):\n-\
+      \ Only allows https:// and myapp:// schemes\n- Prevents javascript: and other dangerous schemes\n\nLayer 3 - Action\
+      \ Authorization (DeepLinkProcessor):\n- Per-action permission checks\n- Caller-specific restrictions (transfer_funds\
+      \ only from launcher)\n\nLayer 4 - Input Sanitization (DeepLinkProcessor):\n- sanitizeUserId(), sanitizeAmount()\n-\
+      \ Prevents injection even if other checks bypassed\n\nWHY MULTIPLE LAYERS:\n- Single check bypass: If TRUSTED_PACKAGES\
+      \ is misconfigured, Layer 1 fails\n  but Layer 3's per-action check still blocks sensitive operations\n- If a trusted\
+      \ app is compromised, sanitization prevents injection\n\nREMAINING GAPS:\n- getCallingPackage() returns null for activities\
+      \ started without\n  FLAG_ACTIVITY_NEW_TASK - code allows this but may be unintended\n- No rate limiting on actions\n"
+    key_observations:
+    - Four distinct defense layers
+    - Each layer catches different attack vectors
+    - Sensitive actions have extra restrictions
+  training:
+    pattern_family: intent_security
+    common_mistakes:
+    - Missing that null caller is allowed (intentional design)
+    - Not seeing the layer interaction
+  tags:
+  - intent_spoofing
+  - defense_in_depth
+  - patch_analysis
+  cwe_tags:
+  - CWE-927
+  - CWE-926
+  verification_tasks:
+  - instruction: Write an ADB command that displays the memory map of the
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /proc/$(pidof system_server)/maps
+    validation_rule:
+      type: output_contains
+      expected: .so
+  - instruction: Write an ADB command that extracts all security-related system
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop | grep -iE 'security|selinux'
+    validation_rule:
+      type: output_contains
+      expected: selinux
+- id: patch_incomplete_brown_001
+  name: Incomplete Patch Detection
+  version: 2
+  type: root_cause
+  pillar: patch_analysis
+  belt: brown
+  difficulty: 8
+  description: 'This patch was released to fix a SQL injection vulnerability.
+
+    However, security researchers found it was INCOMPLETE.
+
+    Your task: Find what the patch missed.
+
+    '
+  artifacts:
+  - type: patch_diff
+    context: Patch that was released (but incomplete)
+    content: "diff --git a/UserRepository.java b/UserRepository.java\n--- a/UserRepository.java\n+++ b/UserRepository.java\n\
+      @@ -34,10 +34,15 @@ public class UserRepository {\n\n     public User findUserByEmail(String email) {\n-        String\
+      \ query = \"SELECT * FROM users WHERE email = '\" + email + \"'\";\n-        return db.rawQuery(query, null);\n+   \
+      \     // Fixed: Use parameterized query\n+        String query = \"SELECT * FROM users WHERE email = ?\";\n+       \
+      \ return db.rawQuery(query, new String[]{email});\n     }\n\n     public List<User> searchUsers(String searchTerm, String\
+      \ sortColumn) {\n-        String query = \"SELECT * FROM users WHERE name LIKE '%\" + searchTerm + \"%'\";\n-      \
+      \  return db.rawQuery(query, null);\n+        // Fixed: Use parameterized query for search term\n+        String query\
+      \ = \"SELECT * FROM users WHERE name LIKE ? ORDER BY \" + sortColumn;\n+        return db.rawQuery(query, new String[]{\"\
+      %\" + searchTerm + \"%\"});\n     }\n\n     public List<User> getUsersByRole(String role) {\n-        String query =\
+      \ \"SELECT * FROM users WHERE role = '\" + role + \"'\";\n-        return db.rawQuery(query, null);\n+        // Fixed:\
+      \ Use parameterized query\n+        String query = \"SELECT * FROM users WHERE role = ?\";\n+        return db.rawQuery(query,\
+      \ new String[]{role});\n     }\n"
+  - type: cve_description
+    context: Original CVE
+    content: 'CVE-XXXX-XXXX: SQL Injection in UserRepository
+
+      CVSS: 9.8 (Critical)
+
+      CWE: CWE-89
+
+
+      Multiple SQL injection vulnerabilities in UserRepository allow
+
+      attackers to execute arbitrary SQL commands.
+
+      '
+  phases:
+  - phase_id: observe
+    instruction: 'Carefully examine each fix in the patch:
+
+      1. What was fixed in each method?
+
+      2. Is the fix complete for each method?
+
+      3. Look for any remaining injection points
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        fixes_applied:
+          type: array
+          items:
+            method: string
+            fix_type: string
+            is_complete: boolean
+            remaining_issue: string
+    evaluation_criteria:
+    - name: method_analysis
+      weight: 0.4
+      description: Analyzes each method
+    - name: completeness_check
+      weight: 0.4
+      description: Identifies incomplete fix
+    - name: specificity
+      weight: 0.2
+      description: Pinpoints exact issue
+    max_tokens: 1500
+  - phase_id: analyze
+    instruction: 'For the incomplete fix you found:
+
+      1. Craft a proof-of-concept that bypasses the patch
+
+      2. Explain why parameterized queries don''t help here
+
+      3. What''s the correct fix?
+
+      4. Why did the developer miss this?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        incomplete_fix_location: string
+        proof_of_concept: string
+        why_parameterized_fails: string
+        correct_fix: string
+        developer_mistake_analysis: string
+    evaluation_criteria:
+    - name: bypass_identification
+      weight: 0.35
+      description: Finds the bypass
+    - name: poc_validity
+      weight: 0.25
+      description: PoC would work
+    - name: root_cause
+      weight: 0.25
+      description: Explains fundamental issue
+    - name: fix_proposal
+      weight: 0.15
+      description: Proposes correct fix
+    max_tokens: 2000
+  ground_truth:
+    vulnerability_present: true
+    vulnerability_type: SQL Injection (ORDER BY)
+    cwe_id: CWE-89
+    root_cause: "INCOMPLETE FIX LOCATION: searchUsers() method\n\nTHE MISSED VULNERABILITY:\nWhile searchTerm is now parameterized,\
+      \ sortColumn is STILL concatenated:\n\"SELECT * FROM users WHERE name LIKE ? ORDER BY \" + sortColumn\n\nORDER BY columns\
+      \ CANNOT be parameterized in standard SQL.\nPrepared statements only work for VALUES, not identifiers (table/column\
+      \ names).\n\nPROOF OF CONCEPT:\nsortColumn = \"name; DROP TABLE users; --\"\nor\nsortColumn = \"(CASE WHEN (SELECT password\
+      \ FROM users WHERE email='admin') LIKE 'a%' THEN name ELSE email END)\"\n(Blind SQL injection via ORDER BY)\n\nWHY PARAMETERIZED\
+      \ QUERIES DON'T HELP:\nParameterized queries escape VALUES. Column names and table names are\nIDENTIFIERS which go through\
+      \ different SQL parsing. You cannot do:\n\"ORDER BY ?\" with the column name as parameter.\n\nCORRECT FIX:\nWhitelist\
+      \ validation for sortColumn:\n```\nprivate static final Set<String> ALLOWED_SORT_COLUMNS =\n    Set.of(\"name\", \"\
+      email\", \"created_at\");\n\nif (!ALLOWED_SORT_COLUMNS.contains(sortColumn)) {\n    sortColumn = \"name\";  // Default\
+      \ to safe value\n}\n```\n\nWHY DEVELOPER MISSED IT:\n- Pattern-based fix: \"replace concatenation with ?\"\n- Didn't\
+      \ understand WHY parameterization works\n- ORDER BY injection is less known than WHERE injection\n"
+    key_observations:
+    - Three methods fixed, one incompletely
+    - ORDER BY cannot use parameterized queries
+    - Whitelist validation required for identifiers
+  training:
+    negative_examples:
+    - Saying all fixes are complete
+    - Not understanding identifier vs value
+    common_mistakes:
+    - Assuming parameterized queries fix everything
+    - Missing ORDER BY injection vector
+    pattern_family: sql_injection
+  tags:
+  - sql_injection
+  - incomplete_patch
+  - order_by_injection
+  cwe_tags:
+  - CWE-89
+  - CWE-943
+  verification_tasks:
+  - instruction: Write an ADB command that queries the Settings content provider
+    mcp_tool_call:
+      tool: adb_shell
+      command: content query --uri content://settings/system
+    validation_rule:
+      type: output_contains
+      expected: 'Row:'
+  - instruction: Write an ADB command that displays the memory map of the
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /proc/$(pidof system_server)/maps
+    validation_rule:
+      type: output_contains
+      expected: .so
+  - instruction: Write an ADB command that lists all activities, services, and
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.android.browser | grep -A 100 'Activity Resolver Table'
+    validation_rule:
+      type: output_contains
+      expected: Activity

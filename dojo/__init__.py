@@ -18,6 +18,7 @@ from dojo.curriculum import (
     ErrorExtractor,
     ExecutionResult,
     Executor,
+    UnifiedCurriculum,
 )
 from dojo.exceptions import (
     ChallengeNotFoundError,
@@ -90,6 +91,7 @@ __all__ = [
     "ValidationError",
     "CurriculumError",
     # Curriculum (Phase 2)
+    "UnifiedCurriculum",
     "ChallengeLoader",
     "Executor",
     "ExecutionResult",

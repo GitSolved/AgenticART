@@ -1,683 +1,704 @@
-# Methodology Pillar - Challenges
-# Purpose: Train systematic hypothesis-driven security analysis
-# Focus: The PROCESS of discovery, not just the findings
-
 challenges:
+- id: method_observe_white_001
+  name: Structured Observation Practice
+  version: 2
+  type: observation
+  pillar: methodology
+  belt: white
+  difficulty: 2
+  description: 'Before forming hypotheses, you must observe systematically.
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # WHITE BELT - Observation Discipline
-  # ═══════════════════════════════════════════════════════════════════════════
+    This challenge trains disciplined observation without jumping to conclusions.
 
-  - id: method_observe_white_001
-    name: "Structured Observation Practice"
-    version: 2
+    '
+  artifacts:
+  - type: manifest
+    context: AndroidManifest.xml from target app
+    content: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\
+      \n    package=\"com.example.messenger\">\n\n    <uses-permission android:name=\"android.permission.INTERNET\" />\n \
+      \   <uses-permission android:name=\"android.permission.READ_CONTACTS\" />\n    <uses-permission android:name=\"android.permission.CAMERA\"\
+      \ />\n    <uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\n    <uses-permission android:name=\"\
+      android.permission.ACCESS_FINE_LOCATION\" />\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"\
+      \ />\n\n    <application\n        android:name=\".MessengerApp\"\n        android:allowBackup=\"true\"\n        android:debuggable=\"\
+      false\"\n        android:usesCleartextTraffic=\"true\">\n\n        <activity\n            android:name=\".MainActivity\"\
+      \n            android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\"\
+      \ />\n                <category android:name=\"android.intent.category.LAUNCHER\" />\n            </intent-filter>\n\
+      \        </activity>\n\n        <activity\n            android:name=\".DeepLinkActivity\"\n            android:exported=\"\
+      true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.VIEW\" />\n     \
+      \           <category android:name=\"android.intent.category.DEFAULT\" />\n                <category android:name=\"\
+      android.intent.category.BROWSABLE\" />\n                <data android:scheme=\"messenger\" android:host=\"open\" />\n\
+      \            </intent-filter>\n        </activity>\n\n        <service\n            android:name=\".MessageService\"\
+      \n            android:exported=\"false\" />\n\n        <receiver\n            android:name=\".PushReceiver\"\n     \
+      \       android:exported=\"true\"\n            android:permission=\"com.google.android.c2dm.permission.SEND\">\n   \
+      \         <intent-filter>\n                <action android:name=\"com.google.android.c2dm.intent.RECEIVE\" />\n    \
+      \        </intent-filter>\n        </receiver>\n\n        <provider\n            android:name=\".ContactsProvider\"\n\
+      \            android:authorities=\"com.example.messenger.contacts\"\n            android:exported=\"true\"\n       \
+      \     android:grantUriPermissions=\"true\" />\n\n    </application>\n</manifest>\n"
+  phases:
+  - phase_id: observe
+    instruction: 'OBSERVE ONLY - Do not hypothesize or conclude yet.
 
-    type: observation
-    pillar: methodology
-    belt: white
-    difficulty: 2
 
-    description: |
-      Before forming hypotheses, you must observe systematically.
-      This challenge trains disciplined observation without jumping to conclusions.
+      List everything security-relevant you can find:
 
-    artifacts:
-      - type: manifest
-        context: "AndroidManifest.xml from target app"
-        content: |
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.example.messenger">
+      1. Permissions requested
 
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.READ_CONTACTS" />
-              <uses-permission android:name="android.permission.CAMERA" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+      2. Exported components
 
-              <application
-                  android:name=".MessengerApp"
-                  android:allowBackup="true"
-                  android:debuggable="false"
-                  android:usesCleartextTraffic="true">
+      3. Configuration settings
 
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
+      4. Data handling indicators
 
-                  <activity
-                      android:name=".DeepLinkActivity"
-                      android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.VIEW" />
-                          <category android:name="android.intent.category.DEFAULT" />
-                          <category android:name="android.intent.category.BROWSABLE" />
-                          <data android:scheme="messenger" android:host="open" />
-                      </intent-filter>
-                  </activity>
 
-                  <service
-                      android:name=".MessageService"
-                      android:exported="false" />
+      For each observation, note:
 
-                  <receiver
-                      android:name=".PushReceiver"
-                      android:exported="true"
-                      android:permission="com.google.android.c2dm.permission.SEND">
-                      <intent-filter>
-                          <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                      </intent-filter>
-                  </receiver>
+      - What it IS (fact)
 
-                  <provider
-                      android:name=".ContactsProvider"
-                      android:authorities="com.example.messenger.contacts"
-                      android:exported="true"
-                      android:grantUriPermissions="true" />
+      - Why it MIGHT be relevant (not conclusion, just relevance)
 
-              </application>
-          </manifest>
 
-    phases:
-      - phase_id: observe
-        instruction: |
-          OBSERVE ONLY - Do not hypothesize or conclude yet.
+      DO NOT: Say "this is vulnerable" or "this could be exploited"
 
-          List everything security-relevant you can find:
-          1. Permissions requested
-          2. Exported components
-          3. Configuration settings
-          4. Data handling indicators
+      DO: Say "this component is exported" or "this permission is requested"
 
-          For each observation, note:
-          - What it IS (fact)
-          - Why it MIGHT be relevant (not conclusion, just relevance)
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        permissions:
+          type: array
+          items:
+            permission: string
+            relevance: string
+        exported_components:
+          type: array
+          items:
+            component_type: string
+            component_name: string
+            additional_config: string
+        configuration_flags:
+          type: array
+          items:
+            flag: string
+            value: string
+            relevance: string
+        observation_count: integer
+    evaluation_criteria:
+    - name: completeness
+      weight: 0.35
+      description: Found all security-relevant items
+    - name: discipline
+      weight: 0.35
+      description: Observations without conclusions
+    - name: organization
+      weight: 0.2
+      description: Well-organized output
+    - name: no_jumping
+      weight: 0.1
+      description: Didn't jump to exploit scenarios
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - 6 permissions requested including location, contacts, camera
+    - allowBackup=true
+    - usesCleartextTraffic=true
+    - '4 exported components: MainActivity, DeepLinkActivity, PushReceiver, ContactsProvider'
+    - ContentProvider exported with grantUriPermissions=true
+    - 'Deep link scheme: messenger://open'
+    - debuggable=false (good)
+  training:
+    common_mistakes:
+    - Immediately saying 'vulnerable to X'
+    - Missing non-obvious items like grantUriPermissions
+    - Not organizing observations systematically
+    pattern_family: methodology
+  tags:
+  - observation
+  - methodology
+  - manifest_analysis
+  verification_tasks:
+  - instruction: Write an ADB shell command that outputs the Android version of the connected device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop ro.build.version.release
+    validation_rule:
+      type: regex
+      pattern: ^\d+(\.\d+)*
+  - instruction: Write an ADB command that retrieves the device model name.
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop ro.product.model
+    validation_rule:
+      type: regex
+      pattern: .+
+- id: method_hypothesis_yellow_001
+  name: From Observation to Hypothesis
+  version: 2
+  type: hypothesis
+  pillar: methodology
+  belt: yellow
+  difficulty: 4
+  description: 'Given observations from a previous analysis, form TESTABLE hypotheses.
 
-          DO NOT: Say "this is vulnerable" or "this could be exploited"
-          DO: Say "this component is exported" or "this permission is requested"
+    A good hypothesis is specific, testable, and falsifiable.
 
-        expected_output_schema:
+    '
+  artifacts:
+  - type: previous_output
+    context: Observations from code review
+    content: 'OBSERVATIONS:
+
+      1. WebView component found in ProfileActivity
+
+      2. setJavaScriptEnabled(true) called
+
+      3. addJavascriptInterface() used with object named "AppBridge"
+
+      4. URL loaded from intent extra: getIntent().getStringExtra("profile_url")
+
+      5. No setAllowFileAccess() call found (defaults to true on older API)
+
+      6. targetSdkVersion is 28
+
+      7. ProfileActivity is exported=true
+
+      8. WebViewClient.shouldOverrideUrlLoading() not implemented
+
+      9. AppBridge has methods: getUserToken(), getDeviceId()
+
+      '
+  phases:
+  - phase_id: hypothesize
+    instruction: 'Based on these observations, form 3-5 TESTABLE hypotheses.
+
+
+      For each hypothesis:
+
+      1. State it clearly and specifically
+
+      2. Reference which observations support it
+
+      3. Define what would CONFIRM it
+
+      4. Define what would REFUTE it
+
+      5. Assign a confidence level (0.0-1.0)
+
+      6. Suggest the CWE if confirmed
+
+
+      A hypothesis must be TESTABLE - vague statements like
+
+      "the app might be insecure" are NOT hypotheses.
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        hypotheses:
+          type: array
+          items:
+            statement: string
+            supporting_observations: array
+            confirmation_criteria: string
+            refutation_criteria: string
+            confidence: float
+            cwe_if_confirmed: string
+            test_method: string
+    evaluation_criteria:
+    - name: testability
+      weight: 0.3
+      description: Hypotheses are testable
+    - name: specificity
+      weight: 0.25
+      description: Precise, not vague
+    - name: evidence_linkage
+      weight: 0.25
+      description: Connected to observations
+    - name: falsifiability
+      weight: 0.2
+      description: Can be proven wrong
+    max_tokens: 2000
+  ground_truth:
+    valid_hypotheses:
+    - statement: An attacker can inject JavaScript via the profile_url parameter to call AppBridge.getUserToken() and steal
+        the user's authentication token
+      confidence_range:
+      - 0.7
+      - 0.9
+      required_elements:
+      - profile_url
+      - JavaScript
+      - getUserToken
+    - statement: Because setAllowFileAccess defaults to true on API 28, an attacker can use file:// URLs to read local files
+        through the WebView
+      confidence_range:
+      - 0.5
+      - 0.7
+      required_elements:
+      - file://
+      - allowFileAccess
+      - local files
+    - statement: The WebView can be redirected to arbitrary URLs since shouldOverrideUrlLoading is not implemented, allowing
+        phishing attacks
+      confidence_range:
+      - 0.6
+      - 0.8
+      required_elements:
+      - redirect
+      - shouldOverrideUrlLoading
+  training:
+    negative_examples:
+    - The app is vulnerable to WebView attacks
+    - JavaScript interface might be dangerous
+    common_mistakes:
+    - Too vague to test
+    - Not specifying what confirms/refutes
+    - Missing CWE mapping
+  tags:
+  - hypothesis
+  - webview
+  - methodology
+  cwe_tags:
+  - CWE-749
+  - CWE-79
+  - CWE-200
+  verification_tasks:
+  - instruction: Write an ADB command that extracts and displays all permissions
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.android.settings | grep permission
+    validation_rule:
+      type: output_contains
+      expected: permission
+  - instruction: Write an ADB command that launches the Android Settings app's
+    mcp_tool_call:
+      tool: adb_shell
+      command: am start -n com.android.settings/.Settings
+    validation_rule:
+      type: output_contains
+      expected: Starting
+- id: method_test_orange_001
+  name: Verification Test Design
+  version: 2
+  type: verification
+  pillar: methodology
+  belt: orange
+  difficulty: 5
+  description: 'Given a hypothesis, design a test that will DEFINITIVELY confirm or refute it.
+
+    A good test produces clear, unambiguous results.
+
+    '
+  artifacts:
+  - type: previous_output
+    context: Hypothesis to test
+    content: 'HYPOTHESIS:
+
+      "The exported BroadcastReceiver ''DataSyncReceiver'' processes the
+
+      ''sync_url'' extra without validation, allowing an attacker to trigger
+
+      requests to arbitrary URLs (SSRF)."
+
+
+      Supporting observations:
+
+      - DataSyncReceiver is exported with no permission protection
+
+      - Code shows: String url = intent.getStringExtra("sync_url");
+
+      - URL is passed to HttpClient.get(url)
+
+      - No URL validation or allowlist found
+
+
+      Confidence: 0.75
+
+      CWE if confirmed: CWE-918 (SSRF)
+
+      '
+  - type: decompiled_code
+    context: DataSyncReceiver implementation
+    content: "public class DataSyncReceiver extends BroadcastReceiver {\n    @Override\n    public void onReceive(Context\
+      \ context, Intent intent) {\n        if (\"com.example.app.SYNC_DATA\".equals(intent.getAction())) {\n            String\
+      \ syncUrl = intent.getStringExtra(\"sync_url\");\n            if (syncUrl != null) {\n                new SyncTask(context).execute(syncUrl);\n\
+      \            }\n        }\n    }\n}\n\nclass SyncTask extends AsyncTask<String, Void, String> {\n    protected String\
+      \ doInBackground(String... urls) {\n        return HttpClient.get(urls[0]);\n    }\n}\n"
+  phases:
+  - phase_id: test
+    instruction: 'Design a test that will DEFINITIVELY prove or disprove this hypothesis.
+
+
+      Your test design must include:
+
+      1. Exact commands/steps to execute
+
+      2. What output would CONFIRM the hypothesis
+
+      3. What output would REFUTE the hypothesis
+
+      4. How to capture evidence (logs, network, etc.)
+
+      5. Edge cases to consider
+
+
+      The test should be reproducible by another researcher.
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        test_name: string
+        test_steps:
+          type: array
+          items:
+            step_number: integer
+            action: string
+            command: string
+        confirmation_indicators:
+          type: array
+          items: string
+        refutation_indicators:
+          type: array
+          items: string
+        evidence_collection:
+          type: array
+          items:
+            what: string
+            how: string
+        edge_cases:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: reproducibility
+      weight: 0.3
+      description: Another researcher could run this
+    - name: definitiveness
+      weight: 0.3
+      description: Results are unambiguous
+    - name: completeness
+      weight: 0.25
+      description: Covers confirmation and refutation
+    - name: evidence_quality
+      weight: 0.15
+      description: Proper evidence collection
+    max_tokens: 2000
+  ground_truth:
+    valid_tests:
+    - approach: Send broadcast with attacker-controlled URL pointing to attacker server
+      tools_allowed:
+      - adb
+      - netcat
+      - burp
+      expected_result: HTTP request received at attacker server from target device
+    key_observations:
+    - Test must use controlled endpoint (Burp Collaborator, requestbin, or own server)
+    - Must verify request actually originates from device, not just accepted by receiver
+    - Should test with various URL schemes (http, https, file, content)
+  training:
+    common_mistakes:
+    - Test doesn't actually prove the HTTP request happens
+    - No evidence collection mechanism
+    - Not considering refutation scenarios
+  tags:
+  - test_design
+  - ssrf
+  - methodology
+  cwe_tags:
+  - CWE-918
+  verification_tasks:
+  - instruction: Write an ADB command that lists the contents of the data directory
+    mcp_tool_call:
+      tool: adb_shell
+      command: run-as com.android.settings ls /data/data/com.android.settings/
+    validation_rule:
+      type: output_contains
+      expected: shared_prefs
+  - instruction: Write an ADB command that force stops the Calculator application
+    mcp_tool_call:
+      tool: adb_shell
+      command: am force-stop com.android.calculator2
+    validation_rule:
+      type: regex
+      pattern: .+
+- id: method_prioritize_green_001
+  name: Hypothesis Prioritization
+  version: 2
+  type: hypothesis
+  pillar: methodology
+  belt: green
+  difficulty: 6
+  description: 'When you have multiple hypotheses, you must prioritize efficiently.
+
+    Test order matters: high-impact, high-confidence hypotheses first.
+
+    '
+  artifacts:
+  - type: previous_output
+    context: Multiple hypotheses from analysis
+    content: 'HYPOTHESES FROM CODE REVIEW:
+
+
+      H1: SQL Injection in search function
+
+      - Confidence: 0.85
+
+      - Impact if confirmed: Critical (full database access)
+
+      - Test complexity: Low (send crafted search query)
+
+
+      H2: Insecure WebView JavaScript interface
+
+      - Confidence: 0.70
+
+      - Impact if confirmed: High (token theft)
+
+      - Test complexity: Medium (craft malicious page, get victim to load)
+
+
+      H3: Hardcoded API key in BuildConfig
+
+      - Confidence: 0.95
+
+      - Impact if confirmed: Medium (API abuse, depends on key scope)
+
+      - Test complexity: Very Low (just decompile and read)
+
+
+      H4: Path traversal in file download
+
+      - Confidence: 0.50
+
+      - Impact if confirmed: High (arbitrary file read)
+
+      - Test complexity: Medium (need to find accessible endpoint)
+
+
+      H5: Timing attack on password comparison
+
+      - Confidence: 0.40
+
+      - Impact if confirmed: High (credential theft)
+
+      - Test complexity: High (requires many samples, statistical analysis)
+
+
+      H6: Exported activity allows config modification
+
+      - Confidence: 0.90
+
+      - Impact if confirmed: Medium (change app settings)
+
+      - Test complexity: Low (send intent with extras)
+
+      '
+  phases:
+  - phase_id: analyze
+    instruction: 'Prioritize these hypotheses for testing. Consider:
+
+
+      1. Expected Value = Confidence × Impact
+
+      2. Cost = Test Complexity
+
+      3. ROI = Expected Value / Cost
+
+      4. Dependencies (does one unlock others?)
+
+
+      Produce a prioritized testing plan with justification.
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        prioritized_order:
+          type: array
+          items:
+            rank: integer
+            hypothesis_id: string
+            expected_value: string
+            cost: string
+            roi_reasoning: string
+        testing_strategy: string
+        dependencies_noted: array
+        estimated_coverage: string
+    evaluation_criteria:
+    - name: prioritization_logic
+      weight: 0.35
+      description: Sound prioritization reasoning
+    - name: roi_consideration
+      weight: 0.3
+      description: Considers effort vs value
+    - name: practicality
+      weight: 0.2
+      description: Realistic assessment
+    - name: strategy_coherence
+      weight: 0.15
+      description: Overall strategy makes sense
+    max_tokens: 2000
+  ground_truth:
+    root_cause: "OPTIMAL PRIORITIZATION:\n\n1. H3 (Hardcoded API key) - ROI: Highest\n   - 95% confidence, very low cost\n\
+      \   - Even medium impact is worth it for 5-minute check\n   - Quick win, builds momentum\n\n2. H1 (SQL Injection) -\
+      \ ROI: Very High\n   - 85% confidence, critical impact, low cost\n   - Classic high-value target\n\n3. H6 (Exported\
+      \ activity) - ROI: High\n   - 90% confidence, low cost\n   - Medium impact but almost certain to work\n\n4. H2 (WebView)\
+      \ - ROI: Medium-High\n   - 70% confidence, high impact, medium cost\n   - Worth the effort for potential token theft\n\
+      \n5. H4 (Path traversal) - ROI: Medium\n   - Only 50% confidence, but high impact\n   - Explore if time permits\n\n\
+      6. H5 (Timing attack) - ROI: Lowest\n   - Low confidence (40%), high cost\n   - Only if everything else is done\n\n\
+      STRATEGY:\nStart with \"free\" checks (H3), then high-confidence/high-impact (H1),\nthen diminishing ROI. Stop when\
+      \ time budget exhausted.\n"
+  training:
+    common_mistakes:
+    - Always testing highest impact first regardless of confidence
+    - Not considering test complexity
+    - Missing the 'quick wins'
+  tags:
+  - prioritization
+  - methodology
+  - efficiency
+  verification_tasks:
+  - instruction: Write an ADB command that finds the APK file path for the
+    mcp_tool_call:
+      tool: adb_shell
+      command: pm path com.android.calculator2
+    validation_rule:
+      type: output_contains
+      expected: .apk
+  - instruction: Write an ADB command that displays the memory map of the
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /proc/$(pidof system_server)/maps
+    validation_rule:
+      type: output_contains
+      expected: .so
+- id: method_negative_blue_001
+  name: Handling Refuted Hypotheses
+  version: 2
+  type: hypothesis
+  pillar: methodology
+  belt: blue
+  difficulty: 6
+  description: 'A test REFUTED your hypothesis. This is valuable information, not failure.
+
+    Practice extracting value from negative results.
+
+    '
+  artifacts:
+  - type: previous_output
+    context: Original hypothesis
+    content: 'HYPOTHESIS:
+
+      "The ContentProvider ''UserDataProvider'' at authority
+
+      ''com.example.app.userdata'' is vulnerable to SQL injection through
+
+      the selection parameter, allowing extraction of all user data."
+
+
+      Confidence: 0.80
+
+      Supporting evidence:
+
+      - ContentProvider is exported
+
+      - Uses SQLiteDatabase internally
+
+      - selection parameter passed to query()
+
+      '
+  - type: previous_output
+    context: Test results
+    content: "TEST EXECUTED:\nadb shell content query \\\n  --uri content://com.example.app.userdata/users \\\n  --where \"\
+      1=1) OR (1=1\"\n\nRESULT: SecurityException thrown\n\"Selection contains forbidden characters\"\n\nADDITIONAL TEST:\n\
+      adb shell content query \\\n  --uri content://com.example.app.userdata/users \\\n  --where \"name LIKE '%'\"\n\nRESULT:\
+      \ SecurityException thrown\n\"Invalid selection pattern\"\n\nCONCLUSION: Hypothesis REFUTED - input validation present\n"
+  phases:
+  - phase_id: analyze
+    instruction: 'Your hypothesis was refuted. Extract maximum value:
+
+
+      1. What did we LEARN from the negative result?
+
+      2. What does the defense tell us about the developers?
+
+      3. Are there BYPASS opportunities for this defense?
+
+      4. What NEW hypotheses does this suggest?
+
+      5. Should we update our model of the target?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        lessons_learned:
+          type: array
+          items: string
+        defense_analysis:
           type: object
           properties:
-            permissions:
-              type: array
-              items:
-                permission: string
-                relevance: string
-            exported_components:
-              type: array
-              items:
-                component_type: string
-                component_name: string
-                additional_config: string
-            configuration_flags:
-              type: array
-              items:
-                flag: string
-                value: string
-                relevance: string
-            observation_count: integer
-
-        evaluation_criteria:
-          - name: completeness
-            weight: 0.35
-            description: "Found all security-relevant items"
-          - name: discipline
-            weight: 0.35
-            description: "Observations without conclusions"
-          - name: organization
-            weight: 0.20
-            description: "Well-organized output"
-          - name: no_jumping
-            weight: 0.10
-            description: "Didn't jump to exploit scenarios"
-
-        max_tokens: 2000
-
-    ground_truth:
-      key_observations:
-        - "6 permissions requested including location, contacts, camera"
-        - "allowBackup=true"
-        - "usesCleartextTraffic=true"
-        - "4 exported components: MainActivity, DeepLinkActivity, PushReceiver, ContactsProvider"
-        - "ContentProvider exported with grantUriPermissions=true"
-        - "Deep link scheme: messenger://open"
-        - "debuggable=false (good)"
-
-    training:
-      common_mistakes:
-        - "Immediately saying 'vulnerable to X'"
-        - "Missing non-obvious items like grantUriPermissions"
-        - "Not organizing observations systematically"
-      pattern_family: "methodology"
-
-    tags: [observation, methodology, manifest_analysis]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # YELLOW BELT - Hypothesis Formation
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: method_hypothesis_yellow_001
-    name: "From Observation to Hypothesis"
-    version: 2
-
-    type: hypothesis
-    pillar: methodology
-    belt: yellow
-    difficulty: 4
-
-    description: |
-      Given observations from a previous analysis, form TESTABLE hypotheses.
-      A good hypothesis is specific, testable, and falsifiable.
-
-    artifacts:
-      - type: previous_output
-        context: "Observations from code review"
-        content: |
-          OBSERVATIONS:
-          1. WebView component found in ProfileActivity
-          2. setJavaScriptEnabled(true) called
-          3. addJavascriptInterface() used with object named "AppBridge"
-          4. URL loaded from intent extra: getIntent().getStringExtra("profile_url")
-          5. No setAllowFileAccess() call found (defaults to true on older API)
-          6. targetSdkVersion is 28
-          7. ProfileActivity is exported=true
-          8. WebViewClient.shouldOverrideUrlLoading() not implemented
-          9. AppBridge has methods: getUserToken(), getDeviceId()
-
-    phases:
-      - phase_id: hypothesize
-        instruction: |
-          Based on these observations, form 3-5 TESTABLE hypotheses.
-
-          For each hypothesis:
-          1. State it clearly and specifically
-          2. Reference which observations support it
-          3. Define what would CONFIRM it
-          4. Define what would REFUTE it
-          5. Assign a confidence level (0.0-1.0)
-          6. Suggest the CWE if confirmed
-
-          A hypothesis must be TESTABLE - vague statements like
-          "the app might be insecure" are NOT hypotheses.
-
-        expected_output_schema:
-          type: object
-          properties:
-            hypotheses:
-              type: array
-              items:
-                statement: string
-                supporting_observations: array
-                confirmation_criteria: string
-                refutation_criteria: string
-                confidence: float
-                cwe_if_confirmed: string
-                test_method: string
-
-        evaluation_criteria:
-          - name: testability
-            weight: 0.30
-            description: "Hypotheses are testable"
-          - name: specificity
-            weight: 0.25
-            description: "Precise, not vague"
-          - name: evidence_linkage
-            weight: 0.25
-            description: "Connected to observations"
-          - name: falsifiability
-            weight: 0.20
-            description: "Can be proven wrong"
-
-        max_tokens: 2000
-
-    ground_truth:
-      valid_hypotheses:
-        - statement: "An attacker can inject JavaScript via the profile_url parameter to call AppBridge.getUserToken() and steal the user's authentication token"
-          confidence_range: [0.7, 0.9]
-          required_elements: ["profile_url", "JavaScript", "getUserToken"]
-
-        - statement: "Because setAllowFileAccess defaults to true on API 28, an attacker can use file:// URLs to read local files through the WebView"
-          confidence_range: [0.5, 0.7]
-          required_elements: ["file://", "allowFileAccess", "local files"]
-
-        - statement: "The WebView can be redirected to arbitrary URLs since shouldOverrideUrlLoading is not implemented, allowing phishing attacks"
-          confidence_range: [0.6, 0.8]
-          required_elements: ["redirect", "shouldOverrideUrlLoading"]
-
-    training:
-      negative_examples:
-        - "The app is vulnerable to WebView attacks"
-        - "JavaScript interface might be dangerous"
-      common_mistakes:
-        - "Too vague to test"
-        - "Not specifying what confirms/refutes"
-        - "Missing CWE mapping"
-
-    tags: [hypothesis, webview, methodology]
-    cwe_tags: [CWE-749, CWE-79, CWE-200]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # ORANGE BELT - Test Design
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: method_test_orange_001
-    name: "Verification Test Design"
-    version: 2
-
-    type: verification
-    pillar: methodology
-    belt: orange
-    difficulty: 5
-
-    description: |
-      Given a hypothesis, design a test that will DEFINITIVELY confirm or refute it.
-      A good test produces clear, unambiguous results.
-
-    artifacts:
-      - type: previous_output
-        context: "Hypothesis to test"
-        content: |
-          HYPOTHESIS:
-          "The exported BroadcastReceiver 'DataSyncReceiver' processes the
-          'sync_url' extra without validation, allowing an attacker to trigger
-          requests to arbitrary URLs (SSRF)."
-
-          Supporting observations:
-          - DataSyncReceiver is exported with no permission protection
-          - Code shows: String url = intent.getStringExtra("sync_url");
-          - URL is passed to HttpClient.get(url)
-          - No URL validation or allowlist found
-
-          Confidence: 0.75
-          CWE if confirmed: CWE-918 (SSRF)
-
-      - type: decompiled_code
-        context: "DataSyncReceiver implementation"
-        content: |
-          public class DataSyncReceiver extends BroadcastReceiver {
-              @Override
-              public void onReceive(Context context, Intent intent) {
-                  if ("com.example.app.SYNC_DATA".equals(intent.getAction())) {
-                      String syncUrl = intent.getStringExtra("sync_url");
-                      if (syncUrl != null) {
-                          new SyncTask(context).execute(syncUrl);
-                      }
-                  }
-              }
-          }
-
-          class SyncTask extends AsyncTask<String, Void, String> {
-              protected String doInBackground(String... urls) {
-                  return HttpClient.get(urls[0]);
-              }
-          }
-
-    phases:
-      - phase_id: test
-        instruction: |
-          Design a test that will DEFINITIVELY prove or disprove this hypothesis.
-
-          Your test design must include:
-          1. Exact commands/steps to execute
-          2. What output would CONFIRM the hypothesis
-          3. What output would REFUTE the hypothesis
-          4. How to capture evidence (logs, network, etc.)
-          5. Edge cases to consider
-
-          The test should be reproducible by another researcher.
-
-        expected_output_schema:
-          type: object
-          properties:
-            test_name: string
-            test_steps:
-              type: array
-              items:
-                step_number: integer
-                action: string
-                command: string
-            confirmation_indicators:
-              type: array
-              items: string
-            refutation_indicators:
-              type: array
-              items: string
-            evidence_collection:
-              type: array
-              items:
-                what: string
-                how: string
-            edge_cases:
-              type: array
-              items: string
-
-        evaluation_criteria:
-          - name: reproducibility
-            weight: 0.30
-            description: "Another researcher could run this"
-          - name: definitiveness
-            weight: 0.30
-            description: "Results are unambiguous"
-          - name: completeness
-            weight: 0.25
-            description: "Covers confirmation and refutation"
-          - name: evidence_quality
-            weight: 0.15
-            description: "Proper evidence collection"
-
-        max_tokens: 2000
-
-    ground_truth:
-      valid_tests:
-        - approach: "Send broadcast with attacker-controlled URL pointing to attacker server"
-          tools_allowed: ["adb", "netcat", "burp"]
-          expected_result: "HTTP request received at attacker server from target device"
-
-      key_observations:
-        - "Test must use controlled endpoint (Burp Collaborator, requestbin, or own server)"
-        - "Must verify request actually originates from device, not just accepted by receiver"
-        - "Should test with various URL schemes (http, https, file, content)"
-
-    training:
-      common_mistakes:
-        - "Test doesn't actually prove the HTTP request happens"
-        - "No evidence collection mechanism"
-        - "Not considering refutation scenarios"
-
-    tags: [test_design, ssrf, methodology]
-    cwe_tags: [CWE-918]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # GREEN BELT - Multi-Hypothesis Prioritization
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: method_prioritize_green_001
-    name: "Hypothesis Prioritization"
-    version: 2
-
-    type: hypothesis
-    pillar: methodology
-    belt: green
-    difficulty: 6
-
-    description: |
-      When you have multiple hypotheses, you must prioritize efficiently.
-      Test order matters: high-impact, high-confidence hypotheses first.
-
-    artifacts:
-      - type: previous_output
-        context: "Multiple hypotheses from analysis"
-        content: |
-          HYPOTHESES FROM CODE REVIEW:
-
-          H1: SQL Injection in search function
-          - Confidence: 0.85
-          - Impact if confirmed: Critical (full database access)
-          - Test complexity: Low (send crafted search query)
-
-          H2: Insecure WebView JavaScript interface
-          - Confidence: 0.70
-          - Impact if confirmed: High (token theft)
-          - Test complexity: Medium (craft malicious page, get victim to load)
-
-          H3: Hardcoded API key in BuildConfig
-          - Confidence: 0.95
-          - Impact if confirmed: Medium (API abuse, depends on key scope)
-          - Test complexity: Very Low (just decompile and read)
-
-          H4: Path traversal in file download
-          - Confidence: 0.50
-          - Impact if confirmed: High (arbitrary file read)
-          - Test complexity: Medium (need to find accessible endpoint)
-
-          H5: Timing attack on password comparison
-          - Confidence: 0.40
-          - Impact if confirmed: High (credential theft)
-          - Test complexity: High (requires many samples, statistical analysis)
-
-          H6: Exported activity allows config modification
-          - Confidence: 0.90
-          - Impact if confirmed: Medium (change app settings)
-          - Test complexity: Low (send intent with extras)
-
-    phases:
-      - phase_id: analyze
-        instruction: |
-          Prioritize these hypotheses for testing. Consider:
-
-          1. Expected Value = Confidence × Impact
-          2. Cost = Test Complexity
-          3. ROI = Expected Value / Cost
-          4. Dependencies (does one unlock others?)
-
-          Produce a prioritized testing plan with justification.
-
-        expected_output_schema:
-          type: object
-          properties:
-            prioritized_order:
-              type: array
-              items:
-                rank: integer
-                hypothesis_id: string
-                expected_value: string
-                cost: string
-                roi_reasoning: string
-            testing_strategy: string
-            dependencies_noted: array
-            estimated_coverage: string
-
-        evaluation_criteria:
-          - name: prioritization_logic
-            weight: 0.35
-            description: "Sound prioritization reasoning"
-          - name: roi_consideration
-            weight: 0.30
-            description: "Considers effort vs value"
-          - name: practicality
-            weight: 0.20
-            description: "Realistic assessment"
-          - name: strategy_coherence
-            weight: 0.15
-            description: "Overall strategy makes sense"
-
-        max_tokens: 2000
-
-    ground_truth:
-      root_cause: |
-        OPTIMAL PRIORITIZATION:
-
-        1. H3 (Hardcoded API key) - ROI: Highest
-           - 95% confidence, very low cost
-           - Even medium impact is worth it for 5-minute check
-           - Quick win, builds momentum
-
-        2. H1 (SQL Injection) - ROI: Very High
-           - 85% confidence, critical impact, low cost
-           - Classic high-value target
-
-        3. H6 (Exported activity) - ROI: High
-           - 90% confidence, low cost
-           - Medium impact but almost certain to work
-
-        4. H2 (WebView) - ROI: Medium-High
-           - 70% confidence, high impact, medium cost
-           - Worth the effort for potential token theft
-
-        5. H4 (Path traversal) - ROI: Medium
-           - Only 50% confidence, but high impact
-           - Explore if time permits
-
-        6. H5 (Timing attack) - ROI: Lowest
-           - Low confidence (40%), high cost
-           - Only if everything else is done
-
-        STRATEGY:
-        Start with "free" checks (H3), then high-confidence/high-impact (H1),
-        then diminishing ROI. Stop when time budget exhausted.
-
-    training:
-      common_mistakes:
-        - "Always testing highest impact first regardless of confidence"
-        - "Not considering test complexity"
-        - "Missing the 'quick wins'"
-
-    tags: [prioritization, methodology, efficiency]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # BLUE BELT - Negative Result Handling
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: method_negative_blue_001
-    name: "Handling Refuted Hypotheses"
-    version: 2
-
-    type: hypothesis
-    pillar: methodology
-    belt: blue
-    difficulty: 6
-
-    description: |
-      A test REFUTED your hypothesis. This is valuable information, not failure.
-      Practice extracting value from negative results.
-
-    artifacts:
-      - type: previous_output
-        context: "Original hypothesis"
-        content: |
-          HYPOTHESIS:
-          "The ContentProvider 'UserDataProvider' at authority
-          'com.example.app.userdata' is vulnerable to SQL injection through
-          the selection parameter, allowing extraction of all user data."
-
-          Confidence: 0.80
-          Supporting evidence:
-          - ContentProvider is exported
-          - Uses SQLiteDatabase internally
-          - selection parameter passed to query()
-
-      - type: previous_output
-        context: "Test results"
-        content: |
-          TEST EXECUTED:
-          adb shell content query \
-            --uri content://com.example.app.userdata/users \
-            --where "1=1) OR (1=1"
-
-          RESULT: SecurityException thrown
-          "Selection contains forbidden characters"
-
-          ADDITIONAL TEST:
-          adb shell content query \
-            --uri content://com.example.app.userdata/users \
-            --where "name LIKE '%'"
-
-          RESULT: SecurityException thrown
-          "Invalid selection pattern"
-
-          CONCLUSION: Hypothesis REFUTED - input validation present
-
-    phases:
-      - phase_id: analyze
-        instruction: |
-          Your hypothesis was refuted. Extract maximum value:
-
-          1. What did we LEARN from the negative result?
-          2. What does the defense tell us about the developers?
-          3. Are there BYPASS opportunities for this defense?
-          4. What NEW hypotheses does this suggest?
-          5. Should we update our model of the target?
-
-        expected_output_schema:
-          type: object
-          properties:
-            lessons_learned:
-              type: array
-              items: string
-            defense_analysis:
-              type: object
-              properties:
-                what_defense: string
-                implementation_quality: string
-                potential_weaknesses: string
-            new_hypotheses:
-              type: array
-              items:
-                statement: string
-                reasoning: string
-                confidence: float
-            model_updates:
-              type: array
-              items: string
-
-        evaluation_criteria:
-          - name: learning_extraction
-            weight: 0.30
-            description: "Extracts meaningful lessons"
-          - name: bypass_thinking
-            weight: 0.30
-            description: "Considers bypass opportunities"
-          - name: new_hypotheses
-            weight: 0.25
-            description: "Generates new directions"
-          - name: model_update
-            weight: 0.15
-            description: "Updates understanding"
-
-        max_tokens: 2000
-
-    ground_truth:
-      root_cause: |
-        LESSONS FROM REFUTATION:
-
-        1. WHAT WE LEARNED:
-           - App has explicit input validation on SQL parameters
-           - Defense is proactive (blocks before execution)
-           - Developers are security-aware for this component
-
-        2. DEFENSE ANALYSIS:
-           - Uses pattern-based blocking (forbids certain characters/patterns)
-           - Likely a custom validation layer, not just parameterized queries
-           - "Forbidden characters" suggests deny-list approach
-           - Deny-lists are often bypassable with encoding or edge cases
-
-        3. BYPASS HYPOTHESES:
-           H-NEW-1: Unicode normalization bypass
-           - Try: selection with Unicode characters that normalize to SQL
-           - Confidence: 0.40
-           - Reasoning: Many deny-lists don't handle Unicode properly
-
-           H-NEW-2: Double encoding bypass
-           - Try: URL-encoded or double-encoded payloads
-           - Confidence: 0.35
-           - Reasoning: Validation might happen before decoding
-
-           H-NEW-3: Alternative injection points
-           - Try: projection parameter, sortOrder, URI path
-           - Confidence: 0.60
-           - Reasoning: Validation might only apply to selection
-
-        4. MODEL UPDATES:
-           - This app has some security maturity
-           - Other components may also be hardened
-           - Increase confidence requirements for future hypotheses
-           - Look for inconsistent protection (some components secured, others not)
-
-    training:
-      common_mistakes:
-        - "Treating refutation as failure instead of information"
-        - "Not considering bypass opportunities"
-        - "Not updating mental model of target"
-
-    tags: [negative_results, methodology, bypass]
+            what_defense: string
+            implementation_quality: string
+            potential_weaknesses: string
+        new_hypotheses:
+          type: array
+          items:
+            statement: string
+            reasoning: string
+            confidence: float
+        model_updates:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: learning_extraction
+      weight: 0.3
+      description: Extracts meaningful lessons
+    - name: bypass_thinking
+      weight: 0.3
+      description: Considers bypass opportunities
+    - name: new_hypotheses
+      weight: 0.25
+      description: Generates new directions
+    - name: model_update
+      weight: 0.15
+      description: Updates understanding
+    max_tokens: 2000
+  ground_truth:
+    root_cause: "LESSONS FROM REFUTATION:\n\n1. WHAT WE LEARNED:\n   - App has explicit input validation on SQL parameters\n\
+      \   - Defense is proactive (blocks before execution)\n   - Developers are security-aware for this component\n\n2. DEFENSE\
+      \ ANALYSIS:\n   - Uses pattern-based blocking (forbids certain characters/patterns)\n   - Likely a custom validation\
+      \ layer, not just parameterized queries\n   - \"Forbidden characters\" suggests deny-list approach\n   - Deny-lists\
+      \ are often bypassable with encoding or edge cases\n\n3. BYPASS HYPOTHESES:\n   H-NEW-1: Unicode normalization bypass\n\
+      \   - Try: selection with Unicode characters that normalize to SQL\n   - Confidence: 0.40\n   - Reasoning: Many deny-lists\
+      \ don't handle Unicode properly\n\n   H-NEW-2: Double encoding bypass\n   - Try: URL-encoded or double-encoded payloads\n\
+      \   - Confidence: 0.35\n   - Reasoning: Validation might happen before decoding\n\n   H-NEW-3: Alternative injection\
+      \ points\n   - Try: projection parameter, sortOrder, URI path\n   - Confidence: 0.60\n   - Reasoning: Validation might\
+      \ only apply to selection\n\n4. MODEL UPDATES:\n   - This app has some security maturity\n   - Other components may\
+      \ also be hardened\n   - Increase confidence requirements for future hypotheses\n   - Look for inconsistent protection\
+      \ (some components secured, others not)\n"
+  training:
+    common_mistakes:
+    - Treating refutation as failure instead of information
+    - Not considering bypass opportunities
+    - Not updating mental model of target
+  tags:
+  - negative_results
+  - methodology
+  - bypass
+  verification_tasks:
+  - instruction: Write an ADB command that lists the contents of the data directory
+    mcp_tool_call:
+      tool: adb_shell
+      command: run-as com.android.settings ls /data/data/com.android.settings/
+    validation_rule:
+      type: output_contains
+      expected: shared_prefs
+  - instruction: Write an ADB command that force stops the Calculator application
+    mcp_tool_call:
+      tool: adb_shell
+      command: am force-stop com.android.calculator2
+    validation_rule:
+      type: regex
+      pattern: .+

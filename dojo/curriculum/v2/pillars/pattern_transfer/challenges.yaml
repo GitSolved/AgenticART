@@ -1,655 +1,666 @@
-# Pattern Transfer Pillar - Challenges
-# Purpose: Recognize same vulnerability pattern across different contexts
-# Focus: Generalization, not memorization of specific code patterns
-#
-# NOTE: Code examples are INTENTIONALLY VULNERABLE for educational purposes.
-# These demonstrate what NOT to do. See ground_truth for secure alternatives.
-
 challenges:
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # YELLOW BELT - Same Pattern, Different API
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: transfer_api_yellow_001
-    name: "SQL Injection Pattern Family"
-    version: 2
-
-    type: transfer
-    pillar: pattern_transfer
-    belt: yellow
-    difficulty: 4
-
-    description: |
-      You've learned to identify SQL injection in rawQuery().
-      Now identify the SAME vulnerability pattern using different Android database APIs.
-      The root cause is identical - only the API surface differs.
-
-    artifacts:
-      - type: decompiled_code
-        context: "Example A - Already known (rawQuery)"
-        content: |
-          // EDUCATIONAL: Vulnerable pattern for training
-          public User findUser(String username) {
-              String query = "SELECT * FROM users WHERE username = '" + username + "'";
-              Cursor c = db.rawQuery(query, null);
-              return cursorToUser(c);
-          }
-
-      - type: decompiled_code
-        context: "Example B - ContentProvider query()"
-        content: |
-          // EDUCATIONAL: Is this the same pattern?
-          public Cursor queryUsers(String nameFilter) {
-              return getContentResolver().query(
-                  UsersContract.CONTENT_URI,
-                  null,  // projection
-                  "name LIKE '%" + nameFilter + "%'",  // selection
-                  null,  // selectionArgs
-                  null   // sortOrder
-              );
-          }
-
-      - type: decompiled_code
-        context: "Example C - Room @Query annotation"
-        content: |
-          // EDUCATIONAL: Is this the same pattern?
-          @Dao
-          public interface UserDao {
-              @Query("SELECT * FROM users WHERE department = :dept")
-              List<User> getUsersByDepartment(String dept);
-
-              @Query("SELECT * FROM users ORDER BY " + BuildConfig.DEFAULT_SORT)
-              List<User> getAllUsersSorted();
-          }
-
-      - type: decompiled_code
-        context: "Example D - SQLiteQueryBuilder"
-        content: |
-          // EDUCATIONAL: Is this the same pattern?
-          public Cursor searchProducts(String search, String category) {
-              SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-              qb.setTables("products");
-              qb.appendWhere("category = '" + category + "'");
-
-              return qb.query(db, null,
-                  "name LIKE ?",
-                  new String[]{"%" + search + "%"},
-                  null, null, null);
-          }
-
-    phases:
-      - phase_id: analyze
-        instruction: |
-          For each example (B, C, D), determine:
-          1. Is it vulnerable to SQL injection? (Yes/No/Partial)
-          2. If yes, what input would exploit it?
-          3. How does this relate to the pattern in Example A?
-          4. What makes it the "same" vulnerability despite different code?
-
-        expected_output_schema:
-          type: object
-          properties:
-            analyses:
-              type: array
-              items:
-                example: string
-                is_vulnerable: boolean
-                exploit_input: string
-                pattern_match: string
-            unifying_pattern: string
-
-        evaluation_criteria:
-          - name: correct_classification
-            weight: 0.35
-            description: "Correctly identifies vulnerable vs safe"
-          - name: exploit_validity
-            weight: 0.25
-            description: "Exploits would work"
-          - name: pattern_recognition
-            weight: 0.40
-            description: "Identifies common pattern"
-
-        max_tokens: 2000
-
-    ground_truth:
-      vulnerability_present: true
-      vulnerability_type: "SQL Injection (multiple forms)"
-      cwe_id: "CWE-89"
-
-      root_cause: |
-        PATTERN ANALYSIS:
-
-        Example B - ContentProvider: VULNERABLE
-        - selection parameter is concatenated, same as rawQuery
-        - Exploit: nameFilter = "x' OR '1'='1"
-        - Same pattern: user input in SQL string position
-
-        Example C - Room @Query: PARTIALLY VULNERABLE
-        - getUsersByDepartment: SAFE - :dept is a bound parameter
-        - getAllUsersSorted: VULNERABLE IF BuildConfig value is user-influenced
-          (compile-time constant, so usually safe, but check source)
-        - Pattern: Bound parameters protect, string concat doesn't
-
-        Example D - SQLiteQueryBuilder: VULNERABLE
-        - appendWhere() with concatenation is unsafe
-        - The parameterized part (search) is safe
-        - Exploit: category = "x') OR ('1'='1"
-        - Same pattern: mixing safe and unsafe in same query
-
-        UNIFYING PATTERN:
-        All SQL injection stems from ONE root cause:
-        "User input placed in SQL string position rather than parameter position"
-
-        It doesn't matter WHICH API you use:
-        - rawQuery(sql, args) - args are safe, sql string isn't
-        - query(uri, proj, selection, selectionArgs, ...) - selectionArgs safe
-        - @Query with :param - bound params safe
-        - appendWhere() - concatenation unsafe
-
-        The vulnerability exists when the INPUT FLOWS TO STRING POSITION.
-
-      key_observations:
-        - "API doesn't determine safety - usage does"
-        - "Same query can have safe and unsafe parts"
-        - "Pattern: string position vs parameter position"
-
-    training:
-      pattern_family: "sql_injection"
-      common_mistakes:
-        - "Assuming Room @Query is always safe"
-        - "Not recognizing partial vulnerability"
-        - "Focusing on API rather than data flow"
-
-    tags: [sql_injection, pattern_transfer, content_provider, room]
-    cwe_tags: [CWE-89, CWE-943]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # ORANGE BELT - Same Pattern, Different Domain
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: transfer_domain_orange_001
-    name: "Injection Pattern Across Domains"
-    version: 2
-
-    type: transfer
-    pillar: pattern_transfer
-    belt: orange
-    difficulty: 5
-
-    description: |
-      SQL injection is one instance of a BROADER pattern: Injection.
-      Identify the same fundamental vulnerability in different domains.
-      The code differs, but the root cause is identical.
-
-    artifacts:
-      - type: decompiled_code
-        context: "Domain A - SQL (reference)"
-        content: |
-          // EDUCATIONAL: Reference injection pattern
-          public List<User> search(String term) {
-              return db.rawQuery("SELECT * FROM users WHERE name = '" + term + "'", null);
-          }
-
-      - type: decompiled_code
-        context: "Domain B - Command Execution"
-        content: |
-          // EDUCATIONAL: Command injection vulnerability example
-          // Vulnerable: filename concatenated directly into command string
-          public void processFile(String filename) {
-              // INSECURE - allows command injection
-              Process p = Runtime.getRuntime().exec(new String[]{
-                  "/bin/sh", "-c", "convert " + filename + " output.pdf"
-              });
-          }
-
-      - type: decompiled_code
-        context: "Domain C - LDAP Query"
-        content: |
-          // EDUCATIONAL: LDAP injection vulnerability example
-          public SearchResult findUser(String username) {
-              String filter = "(&(objectClass=user)(uid=" + username + "))";
-              return ldapContext.search("ou=users,dc=example,dc=com", filter, controls);
-          }
-
-      - type: decompiled_code
-        context: "Domain D - XPath Query"
-        content: |
-          // EDUCATIONAL: XPath injection vulnerability example
-          public Node findProduct(String productId) {
-              XPath xpath = XPathFactory.newInstance().newXPath();
-              String expression = "//product[@id='" + productId + "']";
-              return (Node) xpath.evaluate(expression, document, XPathConstants.NODE);
-          }
-
-      - type: decompiled_code
-        context: "Domain E - Log Writing"
-        content: |
-          // EDUCATIONAL: Log injection vulnerability example
-          public void logUserAction(String userId, String action) {
-              logger.info("User " + userId + " performed action: " + action);
-          }
-
-    phases:
-      - phase_id: analyze
-        instruction: |
-          For each domain (B through E):
-          1. Is the same injection pattern present?
-          2. What's the "interpreter" being exploited?
-          3. Craft an exploit payload
-          4. What's the fundamental principle they ALL violate?
-
-        expected_output_schema:
-          type: object
-          properties:
-            domain_analyses:
-              type: array
-              items:
-                domain: string
-                is_same_pattern: boolean
-                interpreter: string
-                exploit_payload: string
-                impact: string
-            fundamental_principle: string
-
-        evaluation_criteria:
-          - name: pattern_recognition
-            weight: 0.30
-            description: "Recognizes injection in all domains"
-          - name: interpreter_id
-            weight: 0.25
-            description: "Identifies the interpreter"
-          - name: exploit_validity
-            weight: 0.25
-            description: "Exploits would work"
-          - name: principle_articulation
-            weight: 0.20
-            description: "Articulates unifying principle"
-
-        max_tokens: 2500
-
-    ground_truth:
-      root_cause: |
-        ALL FIVE EXAMPLES SHARE THE SAME ROOT CAUSE:
-        Mixing code (control plane) with data (user input) without separation.
-
-        DOMAIN ANALYSIS:
-
-        Domain B - Command Injection:
-        - Interpreter: Operating system shell
-        - Exploit: filename = "file.txt; malicious-command"
-        - Impact: Arbitrary command execution
-        - CWE: CWE-78
-
-        Domain C - LDAP Injection:
-        - Interpreter: LDAP query parser
-        - Exploit: username = "*)(uid=*))(|(uid=*"
-        - Impact: Authentication bypass, data exfiltration
-        - CWE: CWE-90
-
-        Domain D - XPath Injection:
-        - Interpreter: XPath query engine
-        - Exploit: productId = "' or '1'='1"
-        - Impact: Access to unintended XML nodes
-        - CWE: CWE-643
-
-        Domain E - Log Injection:
-        - Interpreter: Log viewer/SIEM
-        - Exploit: userId = "admin\n[ERROR] Fake log entry"
-        - Impact: Log spoofing, hiding attacks, triggering false alerts
-        - CWE: CWE-117
-
-        FUNDAMENTAL PRINCIPLE VIOLATED:
-        "Separation of Code and Data"
-
-        When user input is placed in a position where an interpreter
-        treats it as code/commands, injection occurs. The specific
-        interpreter (SQL, shell, LDAP, XPath, logs) doesn't matter.
-
-        The PATTERN is: untrusted input → interpreter code position → injection
-
-      key_observations:
-        - "Same pattern across 5 different interpreters"
-        - "All violate code/data separation"
-        - "Fix is the same: parameterization or escaping"
-
-    training:
-      pattern_family: "injection"
-      common_mistakes:
-        - "Treating each injection type as unrelated"
-        - "Not recognizing log injection as injection"
-        - "Focusing on syntax rather than principle"
-
-    tags: [injection, command_injection, ldap, xpath, log_injection]
-    cwe_tags: [CWE-74, CWE-78, CWE-89, CWE-90, CWE-117, CWE-643]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # BLUE BELT - Cross-Platform Pattern Transfer
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: transfer_platform_blue_001
-    name: "Insecure Deserialization Across Platforms"
-    version: 2
-
-    type: transfer
-    pillar: pattern_transfer
-    belt: blue
-    difficulty: 6
-
-    description: |
-      Insecure deserialization manifests differently on different platforms,
-      but the root cause is identical. Recognize the pattern across:
-      Android (Java), iOS (Swift), and Backend (Python/Node).
-
-    artifacts:
-      - type: decompiled_code
-        context: "Platform A - Android (Java ObjectInputStream)"
-        content: |
-          // EDUCATIONAL: Insecure deserialization example
-          public Object loadUserPrefs(String base64Data) {
-              byte[] data = Base64.decode(base64Data, Base64.DEFAULT);
-              ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-              return ois.readObject();  // DANGEROUS - deserializes arbitrary types
-          }
-
-      - type: decompiled_code
-        context: "Platform B - Android (Parcelable from Intent)"
-        content: |
-          // EDUCATIONAL: Potentially unsafe Parcelable handling
-          protected void onCreate(Bundle savedInstanceState) {
-              super.onCreate(savedInstanceState);
-              Intent intent = getIntent();
-
-              // Receiving complex object from external app
-              CustomObject obj = intent.getParcelableExtra("data");
-              processObject(obj);
-          }
-
-      - type: decompiled_code
-        context: "Platform C - Backend (Python pickle)"
-        content: |
-          # EDUCATIONAL: Insecure Python deserialization
-          # Python backend that Android app communicates with
-          import pickle
-          import base64
-
-          def load_session(session_data):
-              decoded = base64.b64decode(session_data)
-              return pickle.loads(decoded)  # DANGEROUS - arbitrary code execution
-
-      - type: decompiled_code
-        context: "Platform D - Backend (Node.js)"
-        content: |
-          // EDUCATIONAL: Insecure Node.js deserialization
-          // Using vulnerable serialization library
-          const serialize = require('node-serialize');
-
-          app.post('/api/restore', (req, res) => {
-              const userData = serialize.unserialize(req.body.state);  // DANGEROUS
-              // Process restored state
-          });
-
-    phases:
-      - phase_id: analyze
-        instruction: |
-          For each platform:
-          1. Is insecure deserialization present?
-          2. What's the attack vector?
-          3. What can an attacker achieve?
-          4. Why is deserialization fundamentally dangerous?
-
-        expected_output_schema:
-          type: object
-          properties:
-            platform_analyses:
-              type: array
-              items:
-                platform: string
-                vulnerable: boolean
-                attack_vector: string
-                achievable_impact: string
-                severity: string
-            fundamental_danger: string
-            android_specific_notes: string
-
-        evaluation_criteria:
-          - name: vulnerability_id
-            weight: 0.30
-            description: "Identifies vulnerable code"
-          - name: impact_assessment
-            weight: 0.30
-            description: "Understands impact"
-          - name: cross_platform
-            weight: 0.25
-            description: "Recognizes pattern across platforms"
-          - name: root_understanding
-            weight: 0.15
-            description: "Explains fundamental issue"
-
-        max_tokens: 2500
-
-    ground_truth:
-      root_cause: |
-        ALL FOUR ARE INSECURE DESERIALIZATION - SAME ROOT CAUSE:
-
-        Platform A - Android ObjectInputStream: CRITICAL
-        - Attack: Craft serialized object with malicious class
-        - Impact: Remote Code Execution via gadget chains
-        - Android-specific: CommonsBeanutils, Spring gadgets if in classpath
-
-        Platform B - Parcelable from Intent: MEDIUM-HIGH
-        - Attack: Malicious app sends crafted Parcelable
-        - Impact: Type confusion, potential code execution
-        - Note: Less severe than ObjectInputStream but still dangerous
-        - Recent CVEs: Multiple Android framework Parcel vulnerabilities
-
-        Platform C - Python pickle: CRITICAL
-        - Attack: Craft pickle with __reduce__ method
-        - Impact: Arbitrary code execution (trivially exploitable)
-        - The __reduce__ method specifies callable to invoke on unpickling
-
-        Platform D - Node.js node-serialize: CRITICAL
-        - Attack: JSON with serialized function notation
-        - Impact: Arbitrary code execution
-        - The library allows functions to be serialized and executed
-
-        FUNDAMENTAL DANGER:
-        Deserialization instantiates objects of attacker-controlled types.
-        If those types have side effects during construction (static blocks,
-        readObject(), __reduce__, etc.), attacker controls execution.
-
-        It's not about the DATA being malicious - it's about the TYPES.
-        The deserializer is a "gadget" that converts data into code execution.
-
-        ANDROID-SPECIFIC:
-        - Parcelable is Android's "safer" serialization, but still vulnerable
-        - Bundle-based attacks can exploit Parcel serialization bugs
-        - Intent extras from untrusted sources are dangerous
-
-      key_observations:
-        - "Same vulnerability across 4 platforms/languages"
-        - "Not about malicious data - about malicious types"
-        - "All allow type instantiation from untrusted input"
-
-    training:
-      pattern_family: "deserialization"
-      common_mistakes:
-        - "Thinking Parcelable is safe"
-        - "Not understanding gadget chains"
-        - "Focusing on data validation instead of type restriction"
-
-    tags: [deserialization, cross_platform, rce]
-    cwe_tags: [CWE-502, CWE-913]
-
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # PURPLE BELT - Holdout Transfer Challenge
-  # ═══════════════════════════════════════════════════════════════════════════
-
-  - id: transfer_holdout_purple_001
-    name: "Novel Manifestation Recognition"
-    version: 2
-
-    type: transfer
-    pillar: pattern_transfer
-    belt: purple
-    difficulty: 7
-
-    description: |
-      You've seen the "Confused Deputy" pattern in:
-      - Intent redirection
-      - Open redirect
-      - SSRF
-
-      Now recognize it in a context you haven't seen before.
-      This tests TRUE pattern understanding vs memorization.
-
-    artifacts:
-      - type: decompiled_code
-        context: "Novel context - OAuth Flow"
-        content: |
-          // EDUCATIONAL: OAuth callback with potential confused deputy issue
-          public class OAuthCallbackActivity extends Activity {
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-
-                  Uri callbackUri = getIntent().getData();
-                  String code = callbackUri.getQueryParameter("code");
-                  String state = callbackUri.getQueryParameter("state");
-
-                  // Retrieve stored redirect URL
-                  String redirectUrl = PreferenceManager
-                      .getDefaultSharedPreferences(this)
-                      .getString("oauth_redirect_" + state, null);
-
-                  if (redirectUrl != null && code != null) {
-                      // Exchange code for token, then redirect user
-                      exchangeCodeAndRedirect(code, redirectUrl);
-                  }
-              }
-
-              private void exchangeCodeAndRedirect(String code, String redirectUrl) {
-                  // Exchange authorization code for access token
-                  String accessToken = oauthService.exchangeCode(code);
-
-                  // Redirect to stored URL with token
-                  Uri redirect = Uri.parse(redirectUrl)
-                      .buildUpon()
-                      .appendQueryParameter("token", accessToken)
-                      .build();
-
-                  startActivity(new Intent(Intent.ACTION_VIEW, redirect));
-              }
-          }
-
-          // In LoginActivity, user initiates OAuth:
-          public void startOAuth(String returnTo) {
-              String state = UUID.randomUUID().toString();
-
-              // Store where to redirect after OAuth completes
-              PreferenceManager.getDefaultSharedPreferences(this)
-                  .edit()
-                  .putString("oauth_redirect_" + state, returnTo)
-                  .apply();
-
-              // Start OAuth flow with provider
-              String authUrl = buildOAuthUrl(state);
-              startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl)));
-          }
-
-    phases:
-      - phase_id: hypothesize
-        instruction: |
-          This is a NOVEL context for the Confused Deputy pattern.
-          1. Is the Confused Deputy pattern present here?
-          2. If yes, who is the "deputy"? Who is being "confused"?
-          3. What trust relationship is being exploited?
-          4. Describe the attack scenario
-
-        expected_output_schema:
-          type: object
-          properties:
-            pattern_present: boolean
-            confidence: float
-            deputy_identification: string
-            confusion_mechanism: string
-            trust_relationship: string
-            attack_scenario: string
+- id: transfer_api_yellow_001
+  name: SQL Injection Pattern Family
+  version: 2
+  type: transfer
+  pillar: pattern_transfer
+  belt: yellow
+  difficulty: 4
+  description: 'You''ve learned to identify SQL injection in rawQuery().
+
+    Now identify the SAME vulnerability pattern using different Android database APIs.
+
+    The root cause is identical - only the API surface differs.
+
+    '
+  artifacts:
+  - type: decompiled_code
+    context: Example A - Already known (rawQuery)
+    content: "// EDUCATIONAL: Vulnerable pattern for training\npublic User findUser(String username) {\n    String query =\
+      \ \"SELECT * FROM users WHERE username = '\" + username + \"'\";\n    Cursor c = db.rawQuery(query, null);\n    return\
+      \ cursorToUser(c);\n}\n"
+  - type: decompiled_code
+    context: Example B - ContentProvider query()
+    content: "// EDUCATIONAL: Is this the same pattern?\npublic Cursor queryUsers(String nameFilter) {\n    return getContentResolver().query(\n\
+      \        UsersContract.CONTENT_URI,\n        null,  // projection\n        \"name LIKE '%\" + nameFilter + \"%'\", \
+      \ // selection\n        null,  // selectionArgs\n        null   // sortOrder\n    );\n}\n"
+  - type: decompiled_code
+    context: Example C - Room @Query annotation
+    content: "// EDUCATIONAL: Is this the same pattern?\n@Dao\npublic interface UserDao {\n    @Query(\"SELECT * FROM users\
+      \ WHERE department = :dept\")\n    List<User> getUsersByDepartment(String dept);\n\n    @Query(\"SELECT * FROM users\
+      \ ORDER BY \" + BuildConfig.DEFAULT_SORT)\n    List<User> getAllUsersSorted();\n}\n"
+  - type: decompiled_code
+    context: Example D - SQLiteQueryBuilder
+    content: "// EDUCATIONAL: Is this the same pattern?\npublic Cursor searchProducts(String search, String category) {\n\
+      \    SQLiteQueryBuilder qb = new SQLiteQueryBuilder();\n    qb.setTables(\"products\");\n    qb.appendWhere(\"category\
+      \ = '\" + category + \"'\");\n\n    return qb.query(db, null,\n        \"name LIKE ?\",\n        new String[]{\"%\"\
+      \ + search + \"%\"},\n        null, null, null);\n}\n"
+  phases:
+  - phase_id: analyze
+    instruction: 'For each example (B, C, D), determine:
+
+      1. Is it vulnerable to SQL injection? (Yes/No/Partial)
+
+      2. If yes, what input would exploit it?
+
+      3. How does this relate to the pattern in Example A?
+
+      4. What makes it the "same" vulnerability despite different code?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        analyses:
+          type: array
+          items:
+            example: string
+            is_vulnerable: boolean
+            exploit_input: string
+            pattern_match: string
+        unifying_pattern: string
+    evaluation_criteria:
+    - name: correct_classification
+      weight: 0.35
+      description: Correctly identifies vulnerable vs safe
+    - name: exploit_validity
+      weight: 0.25
+      description: Exploits would work
+    - name: pattern_recognition
+      weight: 0.4
+      description: Identifies common pattern
+    max_tokens: 2000
+  ground_truth:
+    vulnerability_present: true
+    vulnerability_type: SQL Injection (multiple forms)
+    cwe_id: CWE-89
+    root_cause: "PATTERN ANALYSIS:\n\nExample B - ContentProvider: VULNERABLE\n- selection parameter is concatenated, same\
+      \ as rawQuery\n- Exploit: nameFilter = \"x' OR '1'='1\"\n- Same pattern: user input in SQL string position\n\nExample\
+      \ C - Room @Query: PARTIALLY VULNERABLE\n- getUsersByDepartment: SAFE - :dept is a bound parameter\n- getAllUsersSorted:\
+      \ VULNERABLE IF BuildConfig value is user-influenced\n  (compile-time constant, so usually safe, but check source)\n\
+      - Pattern: Bound parameters protect, string concat doesn't\n\nExample D - SQLiteQueryBuilder: VULNERABLE\n- appendWhere()\
+      \ with concatenation is unsafe\n- The parameterized part (search) is safe\n- Exploit: category = \"x') OR ('1'='1\"\n\
+      - Same pattern: mixing safe and unsafe in same query\n\nUNIFYING PATTERN:\nAll SQL injection stems from ONE root cause:\n\
+      \"User input placed in SQL string position rather than parameter position\"\n\nIt doesn't matter WHICH API you use:\n\
+      - rawQuery(sql, args) - args are safe, sql string isn't\n- query(uri, proj, selection, selectionArgs, ...) - selectionArgs\
+      \ safe\n- @Query with :param - bound params safe\n- appendWhere() - concatenation unsafe\n\nThe vulnerability exists\
+      \ when the INPUT FLOWS TO STRING POSITION.\n"
+    key_observations:
+    - API doesn't determine safety - usage does
+    - Same query can have safe and unsafe parts
+    - 'Pattern: string position vs parameter position'
+  training:
+    pattern_family: sql_injection
+    common_mistakes:
+    - Assuming Room @Query is always safe
+    - Not recognizing partial vulnerability
+    - Focusing on API rather than data flow
+  tags:
+  - sql_injection
+  - pattern_transfer
+  - content_provider
+  - room
+  cwe_tags:
+  - CWE-89
+  - CWE-943
+  verification_tasks:
+  - instruction: Write an ADB command that simulates typing the text "hello"
+    mcp_tool_call:
+      tool: adb_shell
+      command: input text hello
+    validation_rule:
+      type: regex
+      pattern: .+
+  - instruction: Write an ADB command that retrieves the CPU architecture
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /proc/cpuinfo
+    validation_rule:
+      type: output_contains
+      expected: processor
+- id: transfer_domain_orange_001
+  name: Injection Pattern Across Domains
+  version: 2
+  type: transfer
+  pillar: pattern_transfer
+  belt: orange
+  difficulty: 5
+  description: 'SQL injection is one instance of a BROADER pattern: Injection.
+
+    Identify the same fundamental vulnerability in different domains.
+
+    The code differs, but the root cause is identical.
+
+    '
+  artifacts:
+  - type: decompiled_code
+    context: Domain A - SQL (reference)
+    content: "// EDUCATIONAL: Reference injection pattern\npublic List<User> search(String term) {\n    return db.rawQuery(\"\
+      SELECT * FROM users WHERE name = '\" + term + \"'\", null);\n}\n"
+  - type: decompiled_code
+    context: Domain B - Command Execution
+    content: "// EDUCATIONAL: Command injection vulnerability example\n// Vulnerable: filename concatenated directly into\
+      \ command string\npublic void processFile(String filename) {\n    // INSECURE - allows command injection\n    Process\
+      \ p = Runtime.getRuntime().exec(new String[]{\n        \"/bin/sh\", \"-c\", \"convert \" + filename + \" output.pdf\"\
+      \n    });\n}\n"
+  - type: decompiled_code
+    context: Domain C - LDAP Query
+    content: "// EDUCATIONAL: LDAP injection vulnerability example\npublic SearchResult findUser(String username) {\n    String\
+      \ filter = \"(&(objectClass=user)(uid=\" + username + \"))\";\n    return ldapContext.search(\"ou=users,dc=example,dc=com\"\
+      , filter, controls);\n}\n"
+  - type: decompiled_code
+    context: Domain D - XPath Query
+    content: "// EDUCATIONAL: XPath injection vulnerability example\npublic Node findProduct(String productId) {\n    XPath\
+      \ xpath = XPathFactory.newInstance().newXPath();\n    String expression = \"//product[@id='\" + productId + \"']\";\n\
+      \    return (Node) xpath.evaluate(expression, document, XPathConstants.NODE);\n}\n"
+  - type: decompiled_code
+    context: Domain E - Log Writing
+    content: "// EDUCATIONAL: Log injection vulnerability example\npublic void logUserAction(String userId, String action)\
+      \ {\n    logger.info(\"User \" + userId + \" performed action: \" + action);\n}\n"
+  phases:
+  - phase_id: analyze
+    instruction: 'For each domain (B through E):
+
+      1. Is the same injection pattern present?
+
+      2. What''s the "interpreter" being exploited?
+
+      3. Craft an exploit payload
+
+      4. What''s the fundamental principle they ALL violate?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        domain_analyses:
+          type: array
+          items:
+            domain: string
+            is_same_pattern: boolean
+            interpreter: string
+            exploit_payload: string
             impact: string
+        fundamental_principle: string
+    evaluation_criteria:
+    - name: pattern_recognition
+      weight: 0.3
+      description: Recognizes injection in all domains
+    - name: interpreter_id
+      weight: 0.25
+      description: Identifies the interpreter
+    - name: exploit_validity
+      weight: 0.25
+      description: Exploits would work
+    - name: principle_articulation
+      weight: 0.2
+      description: Articulates unifying principle
+    max_tokens: 2500
+  ground_truth:
+    root_cause: 'ALL FIVE EXAMPLES SHARE THE SAME ROOT CAUSE:
 
-        evaluation_criteria:
-          - name: pattern_recognition
-            weight: 0.35
-            description: "Recognizes confused deputy"
-          - name: deputy_identification
-            weight: 0.25
-            description: "Correctly identifies the deputy"
-          - name: attack_scenario
-            weight: 0.25
-            description: "Valid attack description"
-          - name: trust_analysis
-            weight: 0.15
-            description: "Understands trust relationships"
+      Mixing code (control plane) with data (user input) without separation.
 
-        max_tokens: 2000
 
-    ground_truth:
-      vulnerability_present: true
-      vulnerability_type: "Confused Deputy / Token Theft via Open Redirect"
-      cwe_id: "CWE-441"
+      DOMAIN ANALYSIS:
 
-      root_cause: |
-        CONFUSED DEPUTY PATTERN IDENTIFIED:
 
-        THE DEPUTY: OAuthCallbackActivity
-        - Has the privilege to receive OAuth codes and exchange them for tokens
-        - Trusts stored redirect URLs without validation
+      Domain B - Command Injection:
 
-        THE CONFUSION:
-        - Attacker controls `returnTo` parameter in startOAuth()
-        - This gets stored as trusted redirect URL
-        - After legitimate OAuth completes, token is sent to attacker URL
+      - Interpreter: Operating system shell
 
-        ATTACK SCENARIO:
-        1. Attacker crafts link: yourapp://login?returnTo=https://attacker.com/steal
-        2. Victim clicks, starts OAuth flow with attacker's redirect stored
-        3. Victim authenticates with real OAuth provider
-        4. OAuthCallbackActivity receives legitimate code, exchanges for token
-        5. Activity redirects to attacker.com WITH THE VALID ACCESS TOKEN
-        6. Attacker steals victim's access token
+      - Exploit: filename = "file.txt; malicious-command"
 
-        TRUST RELATIONSHIP EXPLOITED:
-        - The app trusts that `returnTo` comes from legitimate app flow
-        - But deep links allow external control of this parameter
-        - The OAuth provider's security is bypassed entirely
+      - Impact: Arbitrary command execution
 
-        WHY IT'S CONFUSED DEPUTY:
-        The OAuthCallbackActivity (deputy) has legitimate access to tokens.
-        Attacker tricks it into sending those tokens to attacker-controlled
-        destination. The deputy doesn't verify that the redirect URL is
-        legitimate - it just follows stored instructions.
+      - CWE: CWE-78
 
-        SAME PATTERN AS:
-        - Intent redirection: Deputy forwards intents to attacker target
-        - Open redirect: Deputy redirects browser to attacker URL
-        - SSRF: Deputy makes HTTP requests to attacker-specified host
 
-        All are: "Privileged component performs action on attacker's behalf"
+      Domain C - LDAP Injection:
 
-      key_observations:
-        - "Confused Deputy in OAuth context"
-        - "Token theft via stored redirect manipulation"
-        - "Same pattern as intent redirect, just different domain"
+      - Interpreter: LDAP query parser
 
-    training:
-      pattern_family: "confused_deputy"
-      common_mistakes:
-        - "Not recognizing pattern in new context"
-        - "Thinking OAuth state prevents this (it doesn't - redirect is separate)"
-        - "Missing the stored URL as attack vector"
+      - Exploit: username = "*)(uid=*))(|(uid=*"
 
-    tags: [confused_deputy, oauth, token_theft, pattern_transfer]
-    cwe_tags: [CWE-441, CWE-601, CWE-384]
+      - Impact: Authentication bypass, data exfiltration
+
+      - CWE: CWE-90
+
+
+      Domain D - XPath Injection:
+
+      - Interpreter: XPath query engine
+
+      - Exploit: productId = "'' or ''1''=''1"
+
+      - Impact: Access to unintended XML nodes
+
+      - CWE: CWE-643
+
+
+      Domain E - Log Injection:
+
+      - Interpreter: Log viewer/SIEM
+
+      - Exploit: userId = "admin\n[ERROR] Fake log entry"
+
+      - Impact: Log spoofing, hiding attacks, triggering false alerts
+
+      - CWE: CWE-117
+
+
+      FUNDAMENTAL PRINCIPLE VIOLATED:
+
+      "Separation of Code and Data"
+
+
+      When user input is placed in a position where an interpreter
+
+      treats it as code/commands, injection occurs. The specific
+
+      interpreter (SQL, shell, LDAP, XPath, logs) doesn''t matter.
+
+
+      The PATTERN is: untrusted input → interpreter code position → injection
+
+      '
+    key_observations:
+    - Same pattern across 5 different interpreters
+    - All violate code/data separation
+    - 'Fix is the same: parameterization or escaping'
+  training:
+    pattern_family: injection
+    common_mistakes:
+    - Treating each injection type as unrelated
+    - Not recognizing log injection as injection
+    - Focusing on syntax rather than principle
+  tags:
+  - injection
+  - command_injection
+  - ldap
+  - xpath
+  - log_injection
+  cwe_tags:
+  - CWE-74
+  - CWE-78
+  - CWE-89
+  - CWE-90
+  - CWE-117
+  - CWE-643
+  verification_tasks:
+  - instruction: Write an ADB command that simulates pressing the HOME button
+    mcp_tool_call:
+      tool: adb_shell
+      command: input keyevent 3
+    validation_rule:
+      type: regex
+      pattern: .+
+  - instruction: Write an ADB command that dumps the current window hierarchy
+    mcp_tool_call:
+      tool: adb_shell
+      command: uiautomator dump /sdcard/window_dump.xml
+    validation_rule:
+      type: regex
+      pattern: .+
+- id: transfer_platform_blue_001
+  name: Insecure Deserialization Across Platforms
+  version: 2
+  type: transfer
+  pillar: pattern_transfer
+  belt: blue
+  difficulty: 6
+  description: 'Insecure deserialization manifests differently on different platforms,
+
+    but the root cause is identical. Recognize the pattern across:
+
+    Android (Java), iOS (Swift), and Backend (Python/Node).
+
+    '
+  artifacts:
+  - type: decompiled_code
+    context: Platform A - Android (Java ObjectInputStream)
+    content: "// EDUCATIONAL: Insecure deserialization example\npublic Object loadUserPrefs(String base64Data) {\n    byte[]\
+      \ data = Base64.decode(base64Data, Base64.DEFAULT);\n    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));\n\
+      \    return ois.readObject();  // DANGEROUS - deserializes arbitrary types\n}\n"
+  - type: decompiled_code
+    context: Platform B - Android (Parcelable from Intent)
+    content: "// EDUCATIONAL: Potentially unsafe Parcelable handling\nprotected void onCreate(Bundle savedInstanceState) {\n\
+      \    super.onCreate(savedInstanceState);\n    Intent intent = getIntent();\n\n    // Receiving complex object from external\
+      \ app\n    CustomObject obj = intent.getParcelableExtra(\"data\");\n    processObject(obj);\n}\n"
+  - type: decompiled_code
+    context: Platform C - Backend (Python pickle)
+    content: "# EDUCATIONAL: Insecure Python deserialization\n# Python backend that Android app communicates with\nimport\
+      \ pickle\nimport base64\n\ndef load_session(session_data):\n    decoded = base64.b64decode(session_data)\n    return\
+      \ pickle.loads(decoded)  # DANGEROUS - arbitrary code execution\n"
+  - type: decompiled_code
+    context: Platform D - Backend (Node.js)
+    content: "// EDUCATIONAL: Insecure Node.js deserialization\n// Using vulnerable serialization library\nconst serialize\
+      \ = require('node-serialize');\n\napp.post('/api/restore', (req, res) => {\n    const userData = serialize.unserialize(req.body.state);\
+      \  // DANGEROUS\n    // Process restored state\n});\n"
+  phases:
+  - phase_id: analyze
+    instruction: 'For each platform:
+
+      1. Is insecure deserialization present?
+
+      2. What''s the attack vector?
+
+      3. What can an attacker achieve?
+
+      4. Why is deserialization fundamentally dangerous?
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        platform_analyses:
+          type: array
+          items:
+            platform: string
+            vulnerable: boolean
+            attack_vector: string
+            achievable_impact: string
+            severity: string
+        fundamental_danger: string
+        android_specific_notes: string
+    evaluation_criteria:
+    - name: vulnerability_id
+      weight: 0.3
+      description: Identifies vulnerable code
+    - name: impact_assessment
+      weight: 0.3
+      description: Understands impact
+    - name: cross_platform
+      weight: 0.25
+      description: Recognizes pattern across platforms
+    - name: root_understanding
+      weight: 0.15
+      description: Explains fundamental issue
+    max_tokens: 2500
+  ground_truth:
+    root_cause: 'ALL FOUR ARE INSECURE DESERIALIZATION - SAME ROOT CAUSE:
+
+
+      Platform A - Android ObjectInputStream: CRITICAL
+
+      - Attack: Craft serialized object with malicious class
+
+      - Impact: Remote Code Execution via gadget chains
+
+      - Android-specific: CommonsBeanutils, Spring gadgets if in classpath
+
+
+      Platform B - Parcelable from Intent: MEDIUM-HIGH
+
+      - Attack: Malicious app sends crafted Parcelable
+
+      - Impact: Type confusion, potential code execution
+
+      - Note: Less severe than ObjectInputStream but still dangerous
+
+      - Recent CVEs: Multiple Android framework Parcel vulnerabilities
+
+
+      Platform C - Python pickle: CRITICAL
+
+      - Attack: Craft pickle with __reduce__ method
+
+      - Impact: Arbitrary code execution (trivially exploitable)
+
+      - The __reduce__ method specifies callable to invoke on unpickling
+
+
+      Platform D - Node.js node-serialize: CRITICAL
+
+      - Attack: JSON with serialized function notation
+
+      - Impact: Arbitrary code execution
+
+      - The library allows functions to be serialized and executed
+
+
+      FUNDAMENTAL DANGER:
+
+      Deserialization instantiates objects of attacker-controlled types.
+
+      If those types have side effects during construction (static blocks,
+
+      readObject(), __reduce__, etc.), attacker controls execution.
+
+
+      It''s not about the DATA being malicious - it''s about the TYPES.
+
+      The deserializer is a "gadget" that converts data into code execution.
+
+
+      ANDROID-SPECIFIC:
+
+      - Parcelable is Android''s "safer" serialization, but still vulnerable
+
+      - Bundle-based attacks can exploit Parcel serialization bugs
+
+      - Intent extras from untrusted sources are dangerous
+
+      '
+    key_observations:
+    - Same vulnerability across 4 platforms/languages
+    - Not about malicious data - about malicious types
+    - All allow type instantiation from untrusted input
+  training:
+    pattern_family: deserialization
+    common_mistakes:
+    - Thinking Parcelable is safe
+    - Not understanding gadget chains
+    - Focusing on data validation instead of type restriction
+  tags:
+  - deserialization
+  - cross_platform
+  - rce
+  cwe_tags:
+  - CWE-502
+  - CWE-913
+  verification_tasks:
+  - instruction: Write an ADB command that displays all active network connections
+    mcp_tool_call:
+      tool: adb_shell
+      command: netstat -an
+    validation_rule:
+      type: output_contains
+      expected: LISTEN
+  - instruction: Write an ADB command that simulates pressing the HOME button
+    mcp_tool_call:
+      tool: adb_shell
+      command: input keyevent 3
+    validation_rule:
+      type: regex
+      pattern: .+
+- id: transfer_holdout_purple_001
+  name: Novel Manifestation Recognition
+  version: 2
+  type: transfer
+  pillar: pattern_transfer
+  belt: purple
+  difficulty: 7
+  description: 'You''ve seen the "Confused Deputy" pattern in:
+
+    - Intent redirection
+
+    - Open redirect
+
+    - SSRF
+
+
+    Now recognize it in a context you haven''t seen before.
+
+    This tests TRUE pattern understanding vs memorization.
+
+    '
+  artifacts:
+  - type: decompiled_code
+    context: Novel context - OAuth Flow
+    content: "// EDUCATIONAL: OAuth callback with potential confused deputy issue\npublic class OAuthCallbackActivity extends\
+      \ Activity {\n    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n\
+      \n        Uri callbackUri = getIntent().getData();\n        String code = callbackUri.getQueryParameter(\"code\");\n\
+      \        String state = callbackUri.getQueryParameter(\"state\");\n\n        // Retrieve stored redirect URL\n     \
+      \   String redirectUrl = PreferenceManager\n            .getDefaultSharedPreferences(this)\n            .getString(\"\
+      oauth_redirect_\" + state, null);\n\n        if (redirectUrl != null && code != null) {\n            // Exchange code\
+      \ for token, then redirect user\n            exchangeCodeAndRedirect(code, redirectUrl);\n        }\n    }\n\n    private\
+      \ void exchangeCodeAndRedirect(String code, String redirectUrl) {\n        // Exchange authorization code for access\
+      \ token\n        String accessToken = oauthService.exchangeCode(code);\n\n        // Redirect to stored URL with token\n\
+      \        Uri redirect = Uri.parse(redirectUrl)\n            .buildUpon()\n            .appendQueryParameter(\"token\"\
+      , accessToken)\n            .build();\n\n        startActivity(new Intent(Intent.ACTION_VIEW, redirect));\n    }\n}\n\
+      \n// In LoginActivity, user initiates OAuth:\npublic void startOAuth(String returnTo) {\n    String state = UUID.randomUUID().toString();\n\
+      \n    // Store where to redirect after OAuth completes\n    PreferenceManager.getDefaultSharedPreferences(this)\n  \
+      \      .edit()\n        .putString(\"oauth_redirect_\" + state, returnTo)\n        .apply();\n\n    // Start OAuth flow\
+      \ with provider\n    String authUrl = buildOAuthUrl(state);\n    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl)));\n\
+      }\n"
+  phases:
+  - phase_id: hypothesize
+    instruction: 'This is a NOVEL context for the Confused Deputy pattern.
+
+      1. Is the Confused Deputy pattern present here?
+
+      2. If yes, who is the "deputy"? Who is being "confused"?
+
+      3. What trust relationship is being exploited?
+
+      4. Describe the attack scenario
+
+      '
+    expected_output_schema:
+      type: object
+      properties:
+        pattern_present: boolean
+        confidence: float
+        deputy_identification: string
+        confusion_mechanism: string
+        trust_relationship: string
+        attack_scenario: string
+        impact: string
+    evaluation_criteria:
+    - name: pattern_recognition
+      weight: 0.35
+      description: Recognizes confused deputy
+    - name: deputy_identification
+      weight: 0.25
+      description: Correctly identifies the deputy
+    - name: attack_scenario
+      weight: 0.25
+      description: Valid attack description
+    - name: trust_analysis
+      weight: 0.15
+      description: Understands trust relationships
+    max_tokens: 2000
+  ground_truth:
+    vulnerability_present: true
+    vulnerability_type: Confused Deputy / Token Theft via Open Redirect
+    cwe_id: CWE-441
+    root_cause: 'CONFUSED DEPUTY PATTERN IDENTIFIED:
+
+
+      THE DEPUTY: OAuthCallbackActivity
+
+      - Has the privilege to receive OAuth codes and exchange them for tokens
+
+      - Trusts stored redirect URLs without validation
+
+
+      THE CONFUSION:
+
+      - Attacker controls `returnTo` parameter in startOAuth()
+
+      - This gets stored as trusted redirect URL
+
+      - After legitimate OAuth completes, token is sent to attacker URL
+
+
+      ATTACK SCENARIO:
+
+      1. Attacker crafts link: yourapp://login?returnTo=https://attacker.com/steal
+
+      2. Victim clicks, starts OAuth flow with attacker''s redirect stored
+
+      3. Victim authenticates with real OAuth provider
+
+      4. OAuthCallbackActivity receives legitimate code, exchanges for token
+
+      5. Activity redirects to attacker.com WITH THE VALID ACCESS TOKEN
+
+      6. Attacker steals victim''s access token
+
+
+      TRUST RELATIONSHIP EXPLOITED:
+
+      - The app trusts that `returnTo` comes from legitimate app flow
+
+      - But deep links allow external control of this parameter
+
+      - The OAuth provider''s security is bypassed entirely
+
+
+      WHY IT''S CONFUSED DEPUTY:
+
+      The OAuthCallbackActivity (deputy) has legitimate access to tokens.
+
+      Attacker tricks it into sending those tokens to attacker-controlled
+
+      destination. The deputy doesn''t verify that the redirect URL is
+
+      legitimate - it just follows stored instructions.
+
+
+      SAME PATTERN AS:
+
+      - Intent redirection: Deputy forwards intents to attacker target
+
+      - Open redirect: Deputy redirects browser to attacker URL
+
+      - SSRF: Deputy makes HTTP requests to attacker-specified host
+
+
+      All are: "Privileged component performs action on attacker''s behalf"
+
+      '
+    key_observations:
+    - Confused Deputy in OAuth context
+    - Token theft via stored redirect manipulation
+    - Same pattern as intent redirect, just different domain
+  training:
+    pattern_family: confused_deputy
+    common_mistakes:
+    - Not recognizing pattern in new context
+    - Thinking OAuth state prevents this (it doesn't - redirect is separate)
+    - Missing the stored URL as attack vector
+  tags:
+  - confused_deputy
+  - oauth
+  - token_theft
+  - pattern_transfer
+  cwe_tags:
+  - CWE-441
+  - CWE-601
+  - CWE-384
+  verification_tasks:
+  - instruction: Write an ADB command that sets up port forwarding from
+    mcp_tool_call:
+      tool: adb_forward
+      host_port: '8080'
+      device_port: '8080'
+    validation_rule:
+      type: regex
+      pattern: .+
+  - instruction: Write an ADB command that creates a backup of the Settings
+    mcp_tool_call:
+      tool: adb_backup
+      package: com.android.settings
+      output_file: settings_backup.ab
+    validation_rule:
+      type: regex
+      pattern: .+
+  - instruction: Write an ADB command that dumps the current window hierarchy
+    mcp_tool_call:
+      tool: adb_shell
+      command: uiautomator dump /sdcard/window_dump.xml
+    validation_rule:
+      type: regex
+      pattern: .+

@@ -1,0 +1,34 @@
+{
+  "adapter_name": "qwen_taxonomy_lora",
+  "pillar": "taxonomy",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "lora_config": {
+    "rank": 64,
+    "alpha": 128,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "training": {
+    "status": "placeholder",
+    "epochs": 0,
+    "samples": 0,
+    "final_loss": null,
+    "trained_at": null
+  },
+  "description": "CWE/OWASP classification and hierarchy understanding. Accurate vulnerability categorization and mapping.",
+  "capabilities": [
+    "Accurately classify vulnerabilities by CWE",
+    "Understand CWE hierarchy and relationships",
+    "Map findings to OWASP categories",
+    "Distinguish between similar CWE types",
+    "Assign appropriate CVSS scores"
+  ]
+}
