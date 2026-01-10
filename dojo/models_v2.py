@@ -8,6 +8,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
+# Import Belt from original models for compatibility
+from dojo.models import Belt, Grade
+
 
 class ChallengeType(Enum):
     """Types of reasoning challenges."""
@@ -173,13 +176,9 @@ class TrainingMetadata:
         }
 
 
-# Import Belt from original models for compatibility
-from dojo.models import Belt, Grade
-
-
 @dataclass
 class ChallengeV2:
-    """V2 Challenge: Multi-phase reasoning challenge for discovery training."""
+
 
     # Identity
     id: str

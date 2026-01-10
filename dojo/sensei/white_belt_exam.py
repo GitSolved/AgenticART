@@ -46,10 +46,12 @@ class CognitiveGrader:
         scores = {"trajectory": 0, "argumentation": 0}
         phases = [r"ENGAGE", r"EXPLORE", r"EXPLAIN", r"ELABORATE", r"EVALUATE"]
         for p in phases:
-            if re.search(p, text, re.IGNORECASE): scores["trajectory"] += 1
+            if re.search(p, text, re.IGNORECASE):
+                scores["trajectory"] += 1
         elements = ["CLAIM", "EVIDENCE", "REASONING", "REBUTTAL", "CONCLUSION"]
         for e in elements:
-            if re.search(e, text, re.IGNORECASE): scores["argumentation"] += 1
+            if re.search(e, text, re.IGNORECASE):
+                scores["argumentation"] += 1
         return scores
 
 def main():

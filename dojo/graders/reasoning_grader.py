@@ -133,7 +133,7 @@ class PhaseGrader(ABC):
         Returns list of terms that appear in response but not in artifacts.
         """
         hallucinations = []
-        response_lower = response.lower()
+        response.lower()
 
         # Look for technical terms in response
         # Class/type names (PascalCase)
@@ -279,7 +279,7 @@ class ObservationGrader(PhaseGrader):
         criterion_scores = []
 
         # Parse response
-        parsed = self.parse_response(response)
+        self.parse_response(response)
 
         # 1. Completeness - check against key_observations
         key_obs = ground_truth.key_observations
@@ -1279,7 +1279,7 @@ class VerificationGrader(PhaseGrader):
 
         concludes_confirmed = any(ind in response_lower for ind in confirmed_indicators)
         concludes_refuted = any(ind in response_lower for ind in refuted_indicators)
-        concludes_inconclusive = any(ind in response_lower for ind in inconclusive_indicators)
+        any(ind in response_lower for ind in inconclusive_indicators)
 
         is_vulnerable = ground_truth.vulnerability_present
 

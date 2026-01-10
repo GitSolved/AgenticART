@@ -99,7 +99,7 @@ class EmergentReasoningTrainer:
         This represents what WORKED - the model learns from seeing
         the sequence of actions that led to flag extraction.
         """
-        apk_info = self.apks.get(apk_name, {})
+        self.apks.get(apk_name, {})
         trajectory = ProblemSolvingTrajectory(
             problem=f"Extract the flag from {apk_name}.apk"
         )

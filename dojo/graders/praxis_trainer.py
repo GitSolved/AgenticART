@@ -89,7 +89,7 @@ class PraxisTrainer:
         observations = []
 
         # Get real data from the APK
-        apk_path = self.apk_dir / apk_name / "app" / "build" / "outputs" / "apk" / "debug"
+        self.apk_dir / apk_name / "app" / "build" / "outputs" / "apk" / "debug"
 
         # Try to get actual APK observations
         try:

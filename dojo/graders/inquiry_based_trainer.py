@@ -575,7 +575,7 @@ def main():
 
     trainer = InquiryBasedTrainer()
     output = Path("dojo/training_data/inquiry_based.jsonl")
-    stats = trainer.generate_all_training_data(output)
+    trainer.generate_all_training_data(output)
 
     print("\n" + "=" * 70)
 

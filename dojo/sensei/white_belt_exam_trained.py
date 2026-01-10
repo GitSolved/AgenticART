@@ -2,7 +2,7 @@
 """
 Simulated Post-Training Exam
 
-Runs the White Belt exam with FEW-SHOT context to simulate 
+Runs the White Belt exam with FEW-SHOT context to simulate
 what the model learns during the SFT phase.
 """
 

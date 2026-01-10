@@ -447,7 +447,7 @@ Attack attempts would fail due to proper input handling and validation.
 def generate_test_response(challenge: ChallengeV2, gt: GroundTruth, elements: dict) -> str:
     """Generate test/verification phase response."""
 
-    vuln_type = gt.vulnerability_type or "vulnerability"
+    gt.vulnerability_type or "vulnerability"
     is_vulnerable = gt.vulnerability_present
 
     if is_vulnerable:

@@ -147,7 +147,8 @@ class Grader:
 
         if "```json" in json_content:
             match = re.search(r"```json(.*?)```", json_content, re.DOTALL)
-            if match: json_content = match.group(1)
+            if match:
+                json_content = match.group(1)
         elif "{" in json_content:
             start = json_content.find("{")
             end = json_content.rfind("}")
@@ -187,11 +188,14 @@ class Grader:
         # 2. Extract Claims
         items = []
         if isinstance(data, dict):
-            if "command" in data: items.append(data)
-            if "tasks" in data: items.extend(data["tasks"])
+            if "command" in data:
+                items.append(data)
+            if "tasks" in data:
+                items.extend(data["tasks"])
             if "observations" in data:
                 for obs in data["observations"]:
-                    if isinstance(obs, dict) and "command" in obs: items.append(obs)
+                    if isinstance(obs, dict) and "command" in obs:
+                        items.append(obs)
 
         if not items:
             return 1.0, ["No verifiable claims found in JSON."]
@@ -200,7 +204,8 @@ class Grader:
         for item in items:
             cmd = item.get("command")
             expected = str(item.get("expected_output", ""))
-            if not cmd: continue
+            if not cmd:
+                continue
 
             if self.adb and self.adb.is_connected():
                 stdout, _, _ = self.adb.execute(f"shell {cmd}")
@@ -237,13 +242,16 @@ class Grader:
         return len(issues) == 0, issues
 
     def _evaluate_execution(self, session: ChallengeSession) -> tuple[bool, list[str]]:
-        if not session.attempts: return False, ["No attempts"]
+        if not session.attempts:
+            return False, ["No attempts"]
         res = session.attempts[-1].execution_result
-        if not res.success: return False, [f"Exec failed: {res.error_type}"]
+        if not res.success:
+            return False, [f"Exec failed: {res.error_type}"]
         return True, []
 
     def _evaluate_objective(self, session: ChallengeSession) -> tuple[bool, list[str]]:
-        if not session.final_success: return False, ["Objective not met"]
+        if not session.final_success:
+            return False, ["Objective not met"]
         return True, []
 
     def _identify_security_issues(self, output: str) -> list[str]:
@@ -257,13 +265,16 @@ class Grader:
         halls = []
         for pattern in self.HALLUCINATED_API_PATTERNS:
             matches = re.findall(pattern, output)
-            for m in matches: halls.append(f"api:{m}")
+            for m in matches:
+                halls.append(f"api:{m}")
         adb_matches = re.findall(r"adb\s+([a-z_-]+)", output, re.IGNORECASE)
         for cmd in adb_matches:
-            if cmd.lower() not in self.VALID_ADB_COMMANDS: halls.append(f"adb:{cmd}")
+            if cmd.lower() not in self.VALID_ADB_COMMANDS:
+                halls.append(f"adb:{cmd}")
         for pattern in self.HALLUCINATED_PATH_PATTERNS:
             matches = re.findall(pattern, output, re.IGNORECASE)
-            for m in matches: halls.append(f"path:{m}")
+            for m in matches:
+                halls.append(f"path:{m}")
         return len(halls), halls
 
     def _generate_correction(self, session: ChallengeSession, issues: list[str]) -> tuple[Optional[str], Optional[str]]:
@@ -272,7 +283,8 @@ class Grader:
         return None, None
 
     def get_grading_summary(self, assessments: list[SenseiAssessment]) -> dict:
-        if not assessments: return {"total": 0}
+        if not assessments:
+            return {"total": 0}
         total = len(assessments)
         passed = sum(1 for a in assessments if a.grade.is_passing)
         return {

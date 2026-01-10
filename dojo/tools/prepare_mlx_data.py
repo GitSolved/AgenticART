@@ -19,7 +19,8 @@ def convert_to_mlx_chat(input_path: str, output_dir: str):
     # Read all data
     with open(input_file, 'r') as infile:
         for line in infile:
-            if not line.strip(): continue
+            if not line.strip():
+                continue
             try:
                 data = json.loads(line)
 

@@ -20,7 +20,8 @@ def extract_chosen_sft(input_path: str, output_dir: str):
 
     with open(input_file, 'r') as infile:
         for line in infile:
-            if not line.strip(): continue
+            if not line.strip():
+                continue
             try:
                 data = json.loads(line)
 

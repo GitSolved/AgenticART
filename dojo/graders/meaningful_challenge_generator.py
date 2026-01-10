@@ -563,7 +563,7 @@ def main():
     # Generate training data
     print("\n" + "-" * 40)
     output = Path("dojo/training_data/meaningful_challenges.jsonl")
-    stats = generator.generate_all_training_data(output)
+    generator.generate_all_training_data(output)
 
 
 if __name__ == "__main__":

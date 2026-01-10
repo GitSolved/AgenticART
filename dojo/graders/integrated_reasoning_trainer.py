@@ -707,7 +707,7 @@ def main():
 
     trainer = IntegratedReasoningTrainer()
     output = Path("dojo/training_data/integrated_reasoning.jsonl")
-    stats = trainer.generate_all_training_data(output)
+    trainer.generate_all_training_data(output)
 
     print("\n" + "=" * 70)
 

@@ -3,7 +3,7 @@
 # Multi-stage build for optimized image size
 # ═══════════════════════════════════════════════════════════════════════════════
 
-FROM python:3.11-slim as base
+FROM python:3.11-slim-bookworm as base
 
 # Prevent Python from writing pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1

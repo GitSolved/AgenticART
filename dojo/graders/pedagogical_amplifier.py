@@ -369,7 +369,7 @@ def main():
 
     # First, combine existing pedagogical data
     print("\n1. Combining existing pedagogical training data...")
-    combine_stats = combine_pedagogical_training_data(output_dir)
+    combine_pedagogical_training_data(output_dir)
 
     # Then amplify the unified curriculum data
     print("\n2. Amplifying unified curriculum data...")
