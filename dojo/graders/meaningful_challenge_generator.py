@@ -21,8 +21,7 @@ import json
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Any
-
+from typing import Any, Optional
 
 
 class Competency(Enum):

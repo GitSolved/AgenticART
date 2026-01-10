@@ -313,8 +313,8 @@ class NVDCollector:
 
             try:
                 # cast params to satisfy mypy's strict checking of requests.get
-                request_params: Any = params
-                response = self.session.get(self.BASE_URL, params=request_params, timeout=30)
+                request_params = cast(Any, params)
+                response = self.session.get(self.BASE_URL, params=request_params, timeout=30)  # type: ignore
                 response.raise_for_status()
                 data = response.json()
             except requests.RequestException as e:
@@ -818,7 +818,7 @@ class GitHubAdvisoryCollector:
             params["severity"] = severity.lower()
 
         try:
-            response = self.session.get(url, params=params, timeout=30)
+            response = self.session.get(url, params=cast(Any, params), timeout=30)
             response.raise_for_status()
             advisories = response.json()
 

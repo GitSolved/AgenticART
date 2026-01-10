@@ -33,8 +33,7 @@ def main():
     print("=" * 60)
 
     # Import dependencies
-    print("
-📦 Loading dependencies...")
+    print("\n📦 Loading dependencies...")
     import torch
     from datasets import load_dataset
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -44,8 +43,7 @@ def main():
     print(f"   Device: {device}")
 
     # Load training data
-    print("
-📂 Loading training data...")
+    print("\n📂 Loading training data...")
     dataset = load_dataset("json", data_files="data/dpo_pairs.jsonl", split="train")
     print(f"   Loaded {len(dataset)} DPO pairs")
 
@@ -56,8 +54,7 @@ def main():
     print(f"   Train: {len(train_dataset)}, Eval: {len(eval_dataset)}")
 
     # Load model
-    print(f"
-🤖 Loading model: {args.model}...")
+    print(f"\n🤖 Loading model: {args.model}...")
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -90,18 +87,15 @@ def main():
     )
 
     # Train
-    print("
-🚀 Starting DPO training...")
+    print("\n🚀 Starting DPO training...")
     trainer.train()
 
     # Save
-    print(f"
-💾 Saving to {args.output_dir}...")
+    print(f"\n💾 Saving to {args.output_dir}...")
     trainer.save_model()
     tokenizer.save_pretrained(args.output_dir)
 
-    print("
-✅ Training complete!")
+    print("\n✅ Training complete!")
     print(f"Model saved to: {args.output_dir}")
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ from __future__ import annotations
 import random
 import re
 from dataclasses import dataclass
-from typing import Optional, Any, cast
+from typing import Any, Optional
 
 from dojo.graders.dpo_generator import DPOPair, DPOPairGenerator
 from dojo.models_v2 import (
@@ -97,7 +97,7 @@ PHRASING_VARIANTS = {
 }
 
 # Diverse mistake categories for rejection generation
-MISTAKE_CATEGORIES = {
+MISTAKE_CATEGORIES: dict[str, Any] = {
     "hallucination": {
         "fake_api": [
             "SecureValidator.checkInput()",
@@ -445,29 +445,29 @@ class TrainingAmplifier:
 
         # Apply structure template
         content_dict: Any = content
-        
+
         # Intro
         intro = structure["intro"].format(
-            topic=content_dict.get("topic", "the code"),
+            topic=content_dict.get("topic", "the code"),  # type: ignore
         )
         parts.append(intro)
         parts.append("")
 
         # Findings
-        for i, obs in enumerate(content_dict.get("observations", [])[:3], 1):
+        for i, obs in enumerate(content_dict.get("observations", [])[:3], 1):  # type: ignore
             finding = structure["finding"].format(
                 n=i,
                 observation=obs,
-                evidence=content_dict.get("evidence", "Analysis"),
-                impact=content_dict.get("impact", "Security impact"),
-                severity=content_dict.get("severity", "Medium"),
-                remediation=content_dict.get("remediation", "Fix needed"),
+                evidence=content_dict.get("evidence", "Analysis"),  # type: ignore
+                impact=content_dict.get("impact", "Security impact"),  # type: ignore
+                severity=content_dict.get("severity", "Medium"),  # type: ignore
+                remediation=content_dict.get("remediation", "Fix needed"),  # type: ignore
             )
             parts.append(finding)
             parts.append("")
 
         # Conclusion
-        verdict_text = "code is vulnerable" if content_dict["is_vulnerable"] else "code is secure"
+        verdict_text = "code is vulnerable" if content_dict["is_vulnerable"] else "code is secure"  # type: ignore
         conclusion = structure["conclusion"].format(
             verdict=verdict_text,
         )
@@ -475,10 +475,10 @@ class TrainingAmplifier:
 
         # Add metadata
         parts.append("")
-        parts.append(f"**is_vulnerable**: {str(content_dict['is_vulnerable']).lower()}")
+        parts.append(f"**is_vulnerable**: {str(content_dict['is_vulnerable']).lower()}")  # type: ignore
         parts.append("**confidence**: 0.9")
-        if content_dict["is_vulnerable"] and content_dict.get("cwe"):
-            parts.append(f"**CWE**: {content_dict['cwe']}")
+        if content_dict["is_vulnerable"] and content_dict.get("cwe"):  # type: ignore
+            parts.append(f"**CWE**: {content_dict['cwe']}")  # type: ignore
 
         return '\n'.join(parts)
 
