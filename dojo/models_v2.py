@@ -199,6 +199,9 @@ class ChallengeV2:
     ground_truth: GroundTruth
     training_metadata: TrainingMetadata
 
+    # V1 Linkage
+    v1_verification_id: Optional[str] = None  # Link to V1 (execution) challenge
+
     # Fields with defaults must come last
     version: int = 2
 
@@ -263,6 +266,7 @@ class ChallengeV2:
             "phases": [p.to_dict() for p in self.phases],
             "ground_truth": self.ground_truth.to_dict(),
             "training_metadata": self.training_metadata.to_dict(),
+            "v1_verification_id": self.v1_verification_id,
             "prerequisites": self.prerequisites,
             "unlocks": self.unlocks,
             "related_challenges": self.related_challenges,
