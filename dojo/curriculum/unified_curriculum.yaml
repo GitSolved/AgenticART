@@ -1,0 +1,494 @@
+# AgenticART Unified Curriculum
+# ============================================================================
+# Sequential progression from Tool Mastery (V1) to Security Reasoning (V2)
+#
+# Philosophy:
+#   - V1 teaches HOW to use tools (ADB commands)
+#   - V2 teaches HOW to think (security reasoning)
+#   - You must know the tools before applying reasoning with them
+#
+# Progression follows Bloom's Taxonomy:
+#   Remember → Understand → Apply → Analyze → Evaluate → Create
+# ============================================================================
+
+version: "3.0"
+name: "AgenticART Unified Curriculum"
+
+# ============================================================================
+# METADATA
+# ============================================================================
+
+metadata:
+  total_challenges: 64
+  v1_challenges: 33
+  v2_challenges: 31
+  belt_levels: 8  # white, yellow, orange, green, blue, purple, brown, black
+  estimated_training_samples: 3500  # With DPO amplification
+
+# ============================================================================
+# STAGE DEFINITIONS
+# ============================================================================
+
+stages:
+  # --------------------------------------------------------------------------
+  # PHASE 1: TOOL MASTERY (V1)
+  # Learn to interact with Android devices via ADB
+  # --------------------------------------------------------------------------
+
+  - stage: 1
+    name: "Tool Foundations"
+    phase: "tool_mastery"
+    belt: "white"
+    source: "v1"
+
+    description: |
+      Basic ADB command fundamentals. Learn to query device state,
+      list packages, and perform simple operations.
+
+    skills_gained:
+      - "Device connection and identification"
+      - "System property queries"
+      - "Package enumeration"
+      - "Basic shell commands"
+
+    challenges:
+      - white_001  # Device Android Version
+      - white_002  # Package Listing
+      - white_003  # Device Model Info
+      - white_004  # Screen Capture
+      - white_005  # List Running Processes
+      - white_006  # Check Device Root Status
+      - white_007  # Get Device Serial
+      - white_008  # List Connected Devices
+
+    prerequisites: []
+    unlocks: [2]
+
+  - stage: 2
+    name: "App Inspection"
+    phase: "tool_mastery"
+    belt: "yellow"
+    source: "v1"
+
+    description: |
+      Intermediate ADB operations. Learn to inspect apps, work with
+      intents, analyze permissions, and read logs.
+
+    skills_gained:
+      - "Permission analysis"
+      - "Intent construction and activity launching"
+      - "Logcat filtering"
+      - "Package manager operations"
+      - "Broadcast receivers"
+
+    challenges:
+      - yellow_001  # App Permission Extraction
+      - yellow_002  # Launch Activity via Intent
+      - yellow_003  # Logcat Filtering
+      - yellow_004  # Package Info Dump
+      - yellow_005  # Send Broadcast Intent
+      - yellow_006  # List Content Providers
+      - yellow_007  # App Component Enumeration
+      - yellow_008  # Service Management
+      - yellow_009  # Activity Stack Analysis
+      - yellow_010  # Input Event Injection
+
+    prerequisites: [1]
+    unlocks: [3]
+
+  - stage: 3
+    name: "Deep Device Access"
+    phase: "tool_mastery"
+    belt: "orange"
+    source: "v1"
+
+    description: |
+      Advanced ADB operations. Access file systems, query databases,
+      analyze network state, and extract sensitive data.
+
+    skills_gained:
+      - "File system navigation"
+      - "SQLite database queries"
+      - "Network connection analysis"
+      - "SharedPreferences extraction"
+      - "APK pulling and analysis"
+      - "Memory inspection"
+
+    challenges:
+      - orange_001  # App Data Directory Exploration
+      - orange_002  # SQLite Database Extraction
+      - orange_003  # Active Network Connections
+      - orange_004  # SharedPreferences Reading
+      - orange_005  # APK Extraction
+      - orange_006  # Process Memory Maps
+      - orange_007  # File Permission Analysis
+      - orange_008  # Content Provider Query
+      - orange_009  # Backup Extraction
+      - orange_010  # Keystore Enumeration
+      - orange_011  # Certificate Pinning Check
+      - orange_012  # Native Library Listing
+      - orange_013  # SELinux Context Check
+      - orange_014  # Port Forwarding Setup
+      - orange_015  # Trace System Calls
+
+    prerequisites: [2]
+    unlocks: [4]
+
+  # --------------------------------------------------------------------------
+  # PHASE 2: SECURITY REASONING (V2)
+  # Apply structured thinking to security analysis
+  # --------------------------------------------------------------------------
+
+  - stage: 4
+    name: "Observation Discipline"
+    phase: "security_reasoning"
+    belt: "white"
+    source: "v2"
+
+    description: |
+      Learn to observe systematically before forming conclusions.
+      Identify security-relevant patterns without jumping to conclusions.
+
+    skills_gained:
+      - "Structured observation process"
+      - "Security-relevant pattern recognition"
+      - "Distinguishing secure from insecure patterns"
+      - "Basic vulnerability classification"
+
+    challenges:
+      - method_observe_white_001     # Structured Observation Practice
+      - static_basic_white_001       # Identifying Security-Relevant Patterns
+      - neg_secure_white_001         # Recognizing Secure Code
+      - neg_secure_white_002         # Parameterized Query Recognition
+      - taxonomy_basic_white_001     # Basic CWE Classification
+
+    prerequisites: [3]  # Must complete V1 Orange before V2 White
+    unlocks: [5]
+
+  - stage: 5
+    name: "Hypothesis Formation"
+    phase: "security_reasoning"
+    belt: "yellow"
+    source: "v2"
+
+    description: |
+      Form testable security hypotheses. Learn to trace data flows,
+      classify vulnerabilities, and propose verification approaches.
+
+    skills_gained:
+      - "Hypothesis construction"
+      - "Data flow tracing"
+      - "OWASP Mobile classification"
+      - "Pattern recognition across similar code"
+
+    challenges:
+      - method_hypothesis_yellow_001  # Hypothesis Construction
+      - static_dataflow_yellow_001    # Data Flow Analysis
+      - neg_compare_yellow_001        # Secure vs Insecure Comparison
+      - taxonomy_owasp_yellow_001     # OWASP Mobile Top 10 Mapping
+      - transfer_api_yellow_001       # API Pattern Transfer
+
+    prerequisites: [4]
+    unlocks: [6]
+
+  - stage: 6
+    name: "Verification Design"
+    phase: "security_reasoning"
+    belt: "orange"
+    source: "v2"
+
+    description: |
+      Design and execute tests to verify hypotheses. Handle ambiguous
+      cases and subtle security issues.
+
+    skills_gained:
+      - "Test plan design"
+      - "Cross-function analysis"
+      - "Subtle vulnerability detection"
+      - "Ambiguous classification handling"
+      - "Cross-domain pattern application"
+
+    challenges:
+      - method_test_orange_001        # Verification Test Design
+      - static_crossfunc_orange_001   # Cross-Function Data Flow
+      - neg_subtle_orange_001         # Subtle Secure Patterns
+      - taxonomy_ambiguous_orange_001 # Ambiguous Classification
+      - transfer_domain_orange_001    # Domain Transfer
+
+    prerequisites: [5]
+    unlocks: [7]
+
+  - stage: 7
+    name: "Systematic Analysis"
+    phase: "security_reasoning"
+    belt: "green"
+    source: "v2"
+
+    description: |
+      Prioritize findings, analyze components systematically,
+      and understand vulnerability chains.
+
+    skills_gained:
+      - "Finding prioritization"
+      - "Component-level analysis"
+      - "Vulnerability chain understanding"
+      - "Patch analysis basics"
+
+    challenges:
+      - method_prioritize_green_001   # Finding Prioritization
+      - static_component_green_001    # Component Analysis
+      - taxonomy_chain_green_001      # Vulnerability Chains
+      - patch_basic_green_001         # Basic Patch Analysis
+
+    prerequisites: [6]
+    unlocks: [8]
+
+  - stage: 8
+    name: "Deep Understanding"
+    phase: "security_reasoning"
+    belt: "blue"
+    source: "v2"
+
+    description: |
+      Understand fundamental security principles, analyze cryptographic
+      implementations, and identify root causes.
+
+    skills_gained:
+      - "Negative case handling"
+      - "Cryptographic vulnerability analysis"
+      - "Novel vulnerability classification"
+      - "Root cause identification"
+      - "Platform-specific pattern transfer"
+      - "Complex patch analysis"
+
+    challenges:
+      - method_negative_blue_001      # Negative Case Methodology
+      - static_crypto_blue_001        # Cryptographic Analysis
+      - taxonomy_novel_blue_001       # Novel Vulnerability Types
+      - root_fund_blue_001            # Fundamental Root Cause 1
+      - root_fund_blue_002            # Fundamental Root Cause 2
+      - transfer_platform_blue_001    # Platform Transfer
+      - patch_complex_blue_001        # Complex Patch Analysis
+
+    prerequisites: [7]
+    unlocks: [9]
+
+  - stage: 9
+    name: "Expert Calibration"
+    phase: "security_reasoning"
+    belt: "purple"
+    source: "v2"
+
+    description: |
+      Avoid false positives, handle edge cases, and demonstrate
+      expert-level pattern generalization.
+
+    skills_gained:
+      - "False positive avoidance"
+      - "Holdout pattern recognition"
+      - "Expert-level calibration"
+
+    challenges:
+      - neg_fp_purple_001             # False Positive Avoidance
+      - transfer_holdout_purple_001   # Holdout Pattern Test
+
+    prerequisites: [8]
+    unlocks: [10]
+
+  - stage: 10
+    name: "Advanced Root Cause"
+    phase: "security_reasoning"
+    belt: "brown"
+    source: "v2"
+
+    description: |
+      Analyze complex vulnerability chains and incomplete patches.
+      Understand systemic security failures.
+
+    skills_gained:
+      - "Vulnerability chain analysis"
+      - "Incomplete patch detection"
+      - "Systemic failure understanding"
+
+    challenges:
+      - root_chain_brown_001          # Vulnerability Chain Analysis
+      - patch_incomplete_brown_001    # Incomplete Patch Detection
+
+    prerequisites: [9]
+    unlocks: [11]
+
+  - stage: 11
+    name: "Novel Discovery"
+    phase: "security_reasoning"
+    belt: "black"
+    source: "v2"
+
+    description: |
+      Discover novel vulnerabilities using all accumulated skills.
+      The synthesis of tool mastery and security reasoning.
+
+    skills_gained:
+      - "Novel vulnerability discovery"
+      - "Zero-day identification"
+      - "Full security research workflow"
+
+    challenges:
+      - root_novel_black_001          # Novel Vulnerability Discovery
+
+    prerequisites: [10]
+    unlocks: []
+
+# ============================================================================
+# SKILL PROGRESSION MATRIX
+# ============================================================================
+
+skill_matrix:
+  tool_mastery:
+    description: "Ability to interact with Android devices"
+    stages: [1, 2, 3]
+    progression:
+      - level: "basic"
+        stage: 1
+        capabilities: ["device queries", "package listing"]
+      - level: "intermediate"
+        stage: 2
+        capabilities: ["intent handling", "log analysis", "permission review"]
+      - level: "advanced"
+        stage: 3
+        capabilities: ["file access", "database queries", "network analysis"]
+
+  security_reasoning:
+    description: "Ability to analyze code for vulnerabilities"
+    stages: [4, 5, 6, 7, 8, 9, 10, 11]
+    progression:
+      - level: "observation"
+        stage: 4
+        capabilities: ["pattern recognition", "secure/insecure distinction"]
+      - level: "hypothesis"
+        stage: 5
+        capabilities: ["data flow tracing", "testable hypothesis formation"]
+      - level: "verification"
+        stage: 6
+        capabilities: ["test design", "cross-function analysis"]
+      - level: "analysis"
+        stage: 7
+        capabilities: ["prioritization", "component analysis"]
+      - level: "synthesis"
+        stages: [8, 9, 10, 11]
+        capabilities: ["root cause", "novel discovery", "expert calibration"]
+
+# ============================================================================
+# TRAINING DATA GENERATION
+# ============================================================================
+
+training:
+  # How to generate training data from this curriculum
+
+  sft_format: "alpaca"  # instruction, input, output
+
+  dpo_generation:
+    enabled: true
+    strategies:
+      - "reasoning_chain_comparison"  # Compare full vs partial reasoning
+      - "correct_vs_hallucinated"     # Right answer vs made-up answer
+      - "confident_vs_uncertain"      # Appropriate confidence calibration
+
+  amplification:
+    enabled: true
+    factor: 5  # Generate 5x variations per challenge
+    techniques:
+      - "paraphrase_instruction"
+      - "vary_code_samples"
+      - "swap_vulnerability_types"
+      - "adjust_complexity"
+
+  sequencing:
+    # Training data order matters for curriculum learning
+    strategy: "staged"
+    description: |
+      Train on Stage 1 data first, then incrementally add later stages.
+      This implements curriculum learning - easier examples first.
+
+    warmup_stages: [1, 2]      # Initial training
+    core_stages: [3, 4, 5, 6]  # Main capability building
+    advanced_stages: [7, 8, 9, 10, 11]  # Expert-level refinement
+
+# ============================================================================
+# EVALUATION CHECKPOINTS
+# ============================================================================
+
+evaluation:
+  checkpoints:
+    - after_stage: 3
+      name: "Tool Mastery Checkpoint"
+      test_type: "adb_command_generation"
+      pass_threshold: 0.85
+      description: "Verify model can generate correct ADB commands"
+
+    - after_stage: 6
+      name: "Basic Reasoning Checkpoint"
+      test_type: "vulnerability_identification"
+      pass_threshold: 0.75
+      description: "Verify model can identify common vulnerabilities"
+
+    - after_stage: 8
+      name: "Advanced Reasoning Checkpoint"
+      test_type: "root_cause_analysis"
+      pass_threshold: 0.70
+      description: "Verify model understands why vulnerabilities exist"
+
+    - after_stage: 11
+      name: "Full Curriculum Checkpoint"
+      test_type: "novel_discovery"
+      pass_threshold: 0.60
+      description: "Verify model can discover vulnerabilities in unseen code"
+
+  holdout_set:
+    description: "Reserved challenges for final evaluation"
+    strategy: "per_pillar"
+    holdout_percentage: 10
+
+# ============================================================================
+# BELT UNLOCK CONDITIONS
+# ============================================================================
+
+belt_progression:
+  white:
+    unlock_condition: "automatic"
+    stages: [1, 4]
+
+  yellow:
+    unlock_condition: "complete_previous_belt"
+    stages: [2, 5]
+    min_score: 0.80
+
+  orange:
+    unlock_condition: "complete_previous_belt"
+    stages: [3, 6]
+    min_score: 0.80
+
+  green:
+    unlock_condition: "complete_previous_belt"
+    stages: [7]
+    min_score: 0.75
+
+  blue:
+    unlock_condition: "complete_previous_belt"
+    stages: [8]
+    min_score: 0.75
+
+  purple:
+    unlock_condition: "complete_previous_belt"
+    stages: [9]
+    min_score: 0.70
+
+  brown:
+    unlock_condition: "complete_previous_belt"
+    stages: [10]
+    min_score: 0.70
+
+  black:
+    unlock_condition: "complete_previous_belt"
+    stages: [11]
+    min_score: 0.65
+    special_requirement: "novel_vulnerability_demonstrated"

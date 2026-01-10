@@ -132,6 +132,7 @@ def load_challenge_from_yaml(yaml_data: dict) -> ChallengeV2:
         phases=phases,
         ground_truth=ground_truth,
         training_metadata=TrainingMetadata(),
+        verification_tasks=[],  # Empty by default for examples
         cwe_tags=yaml_data.get("cwe_tags", []),
         tags=yaml_data.get("tags", []),
     )

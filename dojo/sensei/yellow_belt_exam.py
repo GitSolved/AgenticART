@@ -90,7 +90,8 @@ def create_exam_challenges() -> list[ChallengeV2]:
             vulnerability_present=True,
             valid_tests=[{"command": "frida", "script_content": "isAdmin"}]
         ),
-        training_metadata=meta
+        training_metadata=meta,
+        verification_tasks=[]
     )
 
     # 2. Target Eta
@@ -123,7 +124,8 @@ def create_exam_challenges() -> list[ChallengeV2]:
             vulnerability_present=True,
             valid_tests=[{"command": "content query", "args": "--projection"}]
         ),
-        training_metadata=meta
+        training_metadata=meta,
+        verification_tasks=[]
     )
 
     # 3. Target Theta
@@ -156,7 +158,8 @@ def create_exam_challenges() -> list[ChallengeV2]:
             vulnerability_present=True,
             valid_tests=[{"command": "frida-trace", "args": "open"}]
         ),
-        training_metadata=meta
+        training_metadata=meta,
+        verification_tasks=[]
     )
 
     return [ch1, ch2, ch3]

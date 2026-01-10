@@ -256,6 +256,7 @@ def vulnerable_challenge(
         phases=[observe_phase, hypothesize_phase, analyze_phase, test_phase],
         ground_truth=vulnerable_ground_truth,
         training_metadata=TrainingMetadata(),
+        verification_tasks=[],
         cwe_tags=["CWE-89"],
     )
 
@@ -280,6 +281,7 @@ def secure_challenge(
         phases=[observe_phase, analyze_phase],
         ground_truth=secure_ground_truth,
         training_metadata=TrainingMetadata(),
+        verification_tasks=[],
     )
 
 

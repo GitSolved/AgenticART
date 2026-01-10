@@ -22,25 +22,26 @@ Usage:
 
 from __future__ import annotations
 
-import yaml
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional, Iterator, Union, cast
 from enum import Enum
+from pathlib import Path
+from typing import Any, Iterator, Optional
+
+import yaml
 
 from dojo.models import Belt
 from dojo.models_v2 import (
-    ChallengeV2,
     ChallengeType,
-    Pillar,
-    Artifact,
-    ArtifactType,
-    Phase,
-    PhaseID,
+    ChallengeV2,
     EvaluationCriteria,
     GroundTruth,
+    Phase,
+    PhaseID,
+    Pillar,
     TrainingMetadata,
+    VerificationTask,
 )
+
 # We avoid direct import of loaders at module level to prevent circular imports if they use UnifiedCurriculum
 # They will be imported inside methods.
 
@@ -180,14 +181,27 @@ class UnifiedCurriculum:
         )
 
     # -------------------------------------------------------------------------
-    # Unified Challenge Loading
+    # Unified Challenge Loading (Praxis Loop)
     # -------------------------------------------------------------------------
+
+    # Mapping of V2 Reasoning IDs to V1 Verification task IDs
+    # This implements the "injection" logic.
+    V2_TO_V1_VERIFICATION_MAP = {
+        "method_observe_white_001": ["white_001", "white_003"],
+        "static_basic_white_001": ["white_002", "white_008"],
+        "neg_secure_white_001": ["white_006"],
+        "method_hypothesis_yellow_001": ["yellow_001", "yellow_002"],
+        "static_dataflow_yellow_001": ["yellow_004", "yellow_007"],
+        "method_test_orange_001": ["orange_001", "orange_008"],
+        "static_crossfunc_orange_001": ["orange_002", "orange_004"],
+        "static_component_green_001": ["yellow_006", "orange_005"],
+        "static_crypto_blue_001": ["orange_010", "orange_011"],
+    }
 
     def load_challenge(self, challenge_id: str) -> ChallengeV2:
         """
         Load any challenge (V1 or V2) as a standardized ChallengeV2 object.
-
-        This provides the '1 list of challenges in sequence' capability.
+        Ensures a single sequential list of challenges in the curriculum.
         """
         if challenge_id in self._challenge_cache:
             return self._challenge_cache[challenge_id]
@@ -197,17 +211,18 @@ class UnifiedCurriculum:
             raise ValueError(f"Challenge {challenge_id} not found in curriculum")
 
         if stage.is_v1:
-            challenge = self._load_v1_as_v2(challenge_id, stage.belt)
+            # Standalone V1 challenge being treated as a sequence item
+            challenge = self._load_v1_as_v2(challenge_id)
         else:
-            challenge = self._load_v2(challenge_id)
+            # V2 Reasoning challenge with potential V1 injections
+            challenge = self._load_v2_with_injections(challenge_id)
 
         self._challenge_cache[challenge_id] = challenge
         return challenge
 
-    def _load_v1_as_v2(self, challenge_id: str, belt: Belt) -> ChallengeV2:
-        """Load and convert a V1 challenge to V2 format."""
+    def _load_v1_as_v2(self, challenge_id: str) -> ChallengeV2:
+        """Convert a legacy V1 challenge to a first-class ChallengeV2 object."""
         from dojo.curriculum.loader import ChallengeLoader
-        
         # Load legacy challenge
         loader = ChallengeLoader()
         # V1 loader expects belt to find the file
@@ -222,84 +237,94 @@ class UnifiedCurriculum:
                     v1_challenge = loader.load_challenge(challenge_id)
                     found = True
                     break
-                except:
+                except Exception:
                     continue
             if not found:
                 raise ValueError(f"Could not load V1 challenge {challenge_id}")
 
-        # Convert to V2
-        # V1 is purely about execution (Verification)
-        
-        # Create artifacts representing the task
-        artifacts = []
-        if v1_challenge.hints:
-            artifacts.append(Artifact(
-                artifact_type=ArtifactType.APK_METADATA,
-                content="\n".join(v1_challenge.hints),
-                context="Hints provided for this task"
-            ))
-
-        # Create a single TEST phase
+        # Convert to V2 phase
         phase = Phase(
             phase_id=PhaseID.TEST,
             instruction=v1_challenge.description,
-            expected_output_schema={"command": "str", "explanation": "str"},
+            expected_output_schema={"command": "string", "explanation": "string"},
             evaluation_criteria=[
-                EvaluationCriteria(
-                    name="execution_success",
-                    weight=1.0,
-                    description="Command executes successfully and matches validation rules"
-                )
-            ],
-            max_tokens=1000
+                EvaluationCriteria("execution", 1.0, "Matches V1 validation rules")
+            ]
         )
 
-        # Create Ground Truth
-        ground_truth = GroundTruth(
-            vulnerability_present=True, # Implicitly true for tasks - 'vulnerability' here means 'task to solve'
-            valid_tests=[{"command": v1_challenge.kata_solution}] if v1_challenge.kata_solution else []
-        )
+        # Create verification task from V1 data
+        v_task = self._v1_to_verification_task(v1_challenge)
 
         return ChallengeV2(
             id=v1_challenge.id,
             name=v1_challenge.name,
             challenge_type=ChallengeType.VERIFICATION,
-            pillar=Pillar.METHODOLOGY, # Tool mastery maps best to Methodology
+            pillar=Pillar.METHODOLOGY,
             belt=v1_challenge.belt,
             difficulty=v1_challenge.difficulty,
             description=v1_challenge.description,
-            artifacts=artifacts,
+            artifacts=[],
             phases=[phase],
-            ground_truth=ground_truth,
-            training_metadata=TrainingMetadata(
-                reasoning_chain_required=False, # V1 is execution-focused
-                dpo_pairs_available=True
+            ground_truth=GroundTruth(
+                vulnerability_present=True,
+                valid_tests=[{"command": v1_challenge.kata_solution}]
             ),
+            training_metadata=TrainingMetadata(reasoning_chain_required=False),
+            verification_tasks=[v_task],  # Non-optional
             tags=v1_challenge.tags
         )
 
-    def _load_v2(self, challenge_id: str) -> ChallengeV2:
-        """Load a V2 challenge directly."""
-        # Use the existing mechanism in run_all_challenges.py or similar
+    def _load_v2_with_injections(self, challenge_id: str) -> ChallengeV2:
+        """Load a V2 challenge and inject corresponding V1 verification tasks."""
         # Since V2 files are scattered in pillars, we need a way to find them.
         # For now, we assume we can look them up via the pillar directory structure.
-        
-        # We'll use the load_all_challenges logic from run_all_challenges.py
-        # But we need to do it efficiently.
-        
         from dojo.graders.run_all_challenges import load_all_challenges
-        
+
         # This is inefficient (reloading all) but reliable for this Proof of Concept.
         # A production version would index them once.
         curriculum_dir = Path(__file__).parent
         all_challenges_map = load_all_challenges(curriculum_dir.parent / "curriculum")
-        
+
+        target_ch = None
         for challenges in all_challenges_map.values():
             for ch in challenges:
                 if ch.id == challenge_id:
-                    return ch
-                    
-        raise ValueError(f"V2 challenge {challenge_id} not found in pillar files")
+                    target_ch = ch
+                    break
+            if target_ch:
+                break
+
+        if not target_ch:
+            raise ValueError(f"V2 challenge {challenge_id} not found")
+
+        # Inject V1 tasks if mapped
+        v1_ids = self.V2_TO_V1_VERIFICATION_MAP.get(challenge_id, [])
+        from dojo.curriculum.loader import ChallengeLoader
+        v1_loader = ChallengeLoader()
+
+        injected_tasks = []
+        for v1_id in v1_ids:
+            try:
+                v1_ch = v1_loader.load_challenge(v1_id)
+                injected_tasks.append(self._v1_to_verification_task(v1_ch))
+            except Exception:
+                continue
+
+        # Ensure verification_tasks is non-optional
+        target_ch.verification_tasks = injected_tasks
+        return target_ch
+
+    def _v1_to_verification_task(self, v1_challenge: Any) -> VerificationTask:
+        """Helper to convert V1 challenge to VerificationTask."""
+        # Note: 'Any' used for v1_challenge to avoid complex import typing here
+        return VerificationTask(
+            instruction=v1_challenge.description,
+            mcp_tool_call={
+                "tool": "adb_shell",
+                "command": v1_challenge.kata_solution or "echo 'No solution provided'"
+            },
+            validation_rule=v1_challenge.inputs.additional_context.get("validation", {})
+        )
 
     # -------------------------------------------------------------------------
     # Stage Access
@@ -378,7 +403,6 @@ class UnifiedCurriculum:
         # Get training config from curriculum
         warmup = {1, 2}
         core = {3, 4, 5, 6}
-        advanced = {7, 8, 9, 10, 11}
 
         for stage in self.stages_in_order():
             if stage.number in warmup:
@@ -497,7 +521,7 @@ def main():
         print(f"  Prerequisites: {stage.prerequisites}")
         print(f"  Unlocks: {stage.unlocks}")
         print(f"\n  Description:\n    {stage.description}")
-        print(f"\n  Skills Gained:")
+        print("\n  Skills Gained:")
         for skill in stage.skills_gained:
             print(f"    - {skill}")
         print(f"\n  Challenges ({len(stage.challenge_ids)}):")
@@ -526,3 +550,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
