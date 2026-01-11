@@ -72,6 +72,8 @@ AgenticART creates a **feedback loop** between the model and a real Android devi
 
 **Failures become training data.** The model learns what works and how to recover from what doesn't.
 
+**V2 Enhancements:** The Praxis Loop adds RAG-based knowledge retrieval (OWASP/CWE context) and MCP tool verification for epistemic calibration—matching model confidence to empirical reality.
+
 AgenticART targets **Android** devices, with testing focused on Samsung, Xiaomi, and Google Pixel phones.  
 
 ---
@@ -139,10 +141,11 @@ Models advance through structured difficulty levels:
 | Doc | Description |
 |-----|-------------|
 | [Quick Start](https://www.secureyourgear.com/AgenticART/quickstart/) | Get running in 5 minutes |
-| [Architecture](https://www.secureyourgear.com/AgenticART/architecture/) | System design and components |
-| [Dojo Framework](https://www.secureyourgear.com/AgenticART/DOJO_FRAMEWORK/) | Training methodology |
+| [Architecture](https://www.secureyourgear.com/AgenticART/architecture/) | System design and V2 Praxis Loop |
+| [Dojo Framework](https://www.secureyourgear.com/AgenticART/DOJO_FRAMEWORK/) | Training methodology and 7 pillars |
+| [RAG System](https://www.secureyourgear.com/AgenticART/RAG_SYSTEM/) | Knowledge retrieval for context |
+| [MCP Integration](https://www.secureyourgear.com/AgenticART/MCP_INTEGRATION/) | Tool execution protocol |
 | [Docker Sandbox](https://www.secureyourgear.com/AgenticART/DOCKER_SANDBOX/) | Isolated script execution |
-| [Governance](https://www.secureyourgear.com/AgenticART/GOVERNANCE/) | Safety controls and approval tiers |
 
 ---
 

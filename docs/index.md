@@ -73,6 +73,19 @@ Models advance through structured difficulty levels:
 
 ---
 
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Quick Start](quickstart.md) | Get running in 5 minutes |
+| [Architecture](architecture.md) | System design and V2 implementation |
+| [Dojo Framework](DOJO_FRAMEWORK.md) | Training methodology and curriculum |
+| [RAG System](RAG_SYSTEM.md) | Knowledge retrieval for context augmentation |
+| [MCP Integration](MCP_INTEGRATION.md) | Tool execution protocol |
+| [Setup Guide](SETUP.md) | Detailed installation instructions |
+
+---
+
 ## Research
 
 Inspired by [**"LLM-Powered Android Exploitation"**](https://arxiv.org/abs/2509.07933) which introduces the feedback loop methodology.

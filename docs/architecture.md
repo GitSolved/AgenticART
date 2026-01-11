@@ -4,6 +4,17 @@
 
 The AgenticART architecture trains models to **reason about vulnerabilities** through structured cognitive phases, using tool execution as binary ground truth.
 
+### Key Components
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| **Praxis Loop** | ✅ Implemented | Reasoning → Verification → Calibration cycle |
+| **MCP Integration** | ✅ Implemented | Model Context Protocol for Android security tools |
+| **RAG System** | ✅ Implemented | Retrieval-Augmented Generation for context |
+| **V2 Curriculum** | ✅ Implemented | 7 pillars, multi-phase challenges |
+| **DPO Training** | ✅ Implemented | Preference pair extraction |
+| **Belt Progression** | 🔄 In Progress | White through Black belt challenges |
+
 ---
 
 ## Core Paradigm
@@ -325,71 +336,192 @@ BLACK BELT: Discovery
 
 ---
 
+## RAG System
+
+The RAG (Retrieval-Augmented Generation) system provides contextual knowledge to reduce hallucinations:
+
+```
+Challenge Input
+      │
+      ▼
+┌─────────────────┐     ┌──────────────────────────────────┐
+│  Query Router   │────▶│  Knowledge Bases (ChromaDB)      │
+│  (Pillar-aware) │     │  ┌──────────┐ ┌──────────┐      │
+└─────────────────┘     │  │ vuln_db  │ │ examples │      │
+      │                 │  └──────────┘ └──────────┘      │
+      ▼                 │  ┌──────────┐ ┌──────────┐      │
+┌─────────────────┐     │  │android_api│ │tool_docs │      │
+│ RAG Context     │◀────│  └──────────┘ └──────────┘      │
+│ Builder         │     └──────────────────────────────────┘
+└─────────────────┘
+      │
+      ▼
+ LLM (Qwen 32B / MLX)
+```
+
+**Knowledge Bases:**
+- `vuln_db`: CWE definitions, OWASP Mobile Top 10
+- `examples`: Analysis examples from curriculum
+- `android_api`: API docs, permissions, deprecations
+- `tool_docs`: ADB, Frida, jadx commands
+
+**See:** [RAG_SYSTEM.md](RAG_SYSTEM.md) for detailed documentation.
+
+---
+
+## MCP Integration
+
+The MCP (Model Context Protocol) provides standardized tool execution for verification:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                       Praxis Verification Layer                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  PraxisRunner                                                        │
+│       │                                                              │
+│       ▼                                                              │
+│  ┌─────────────┐                                                     │
+│  │MCPExecutor  │──────┬──────────┬──────────┬──────────┐            │
+│  └─────────────┘      │          │          │          │            │
+│                       ▼          ▼          ▼          ▼            │
+│                 ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐    │
+│                 │  JADX   │ │Apktool  │ │  ADB    │ │ Frida   │    │
+│                 │ Server  │ │ Server  │ │ Server  │ │ Server  │    │
+│                 └─────────┘ └─────────┘ └─────────┘ └─────────┘    │
+│                       │          │          │          │            │
+│                       ▼          ▼          ▼          ▼            │
+│                 ┌─────────────────────────────────────────────┐     │
+│                 │              Tool Results                    │     │
+│                 │  (Binary ground truth for calibration)       │     │
+│                 └─────────────────────────────────────────────┘     │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**MCP Servers:**
+- `jadx`: Java decompilation, code search, security patterns
+- `apktool`: APK decoding, manifest extraction, smali analysis
+- `adb`: Device interaction, package info
+- `frida`: Dynamic instrumentation (planned)
+
+**See:** [MCP_INTEGRATION.md](MCP_INTEGRATION.md) for detailed documentation.
+
+---
+
 ## Implementation Phases
 
-### Phase 1: Foundation (New Models)
+### Phase 1: Foundation (New Models) ✅ COMPLETE
 1. Create `ChallengeV2` model with multi-phase support
 2. Create `ReasoningChain` model for capturing full traces
 3. Create `PhaseEvaluation` model for per-phase grading
 4. Update loader to support V2 challenges while maintaining V1 compatibility
 
-### Phase 2: Evaluation (New Grader)
+### Phase 2: Evaluation (New Grader) ✅ COMPLETE
 1. Create `ReasoningGrader` with per-phase rubrics
 2. Implement hallucination detection for reasoning (not just commands)
 3. Create `TransferEvaluator` for pattern recognition assessment
 4. Implement negative example evaluation
 
-### Phase 3: Execution (New Executors)
+### Phase 3: Execution (New Executors) ✅ COMPLETE
 1. Implement Frida script executor
-2. Implement static analysis tooling (jadx output parsing)
-3. Create multi-phase executor that chains phases
+2. Implement static analysis tooling (jadx output parsing) → MCP servers
+3. Create multi-phase executor that chains phases → PraxisRunner
 4. Add artifact extraction utilities
 
-### Phase 4: Training Data (New Extractor)
+### Phase 4: Training Data (New Extractor) ✅ COMPLETE
 1. Create `ReasoningExtractor` for full chain capture
 2. Implement per-phase DPO pair generation
 3. Create negative example extraction
 4. Implement pattern family clustering
 
-### Phase 5: Curriculum (Challenge Creation)
-1. Write 50 WHITE belt observation challenges
-2. Write 75 YELLOW belt taxonomy challenges
+### Phase 5: Curriculum (Challenge Creation) 🔄 IN PROGRESS
+1. Write 50 WHITE belt observation challenges ✅
+2. Write 75 YELLOW belt taxonomy challenges ✅
 3. Continue through all belts with ~1000 total challenges
 4. Integrate existing vulnerable APKs
+
+### Phase 6: RAG System ✅ COMPLETE
+1. Implement ChromaDB-based knowledge bases
+2. Create embedding pipeline (sentence-transformers)
+3. Implement pillar-aware query routing
+4. Create context builder with token budgeting
+5. Integrate with PraxisRunner
+
+### Phase 7: MCP Integration ✅ COMPLETE
+1. Create MCPExecutor for tool routing
+2. Implement JADX MCP server
+3. Implement Apktool MCP server
+4. Integrate with Praxis verification loop
 
 ---
 
 ## Directory Structure
 
 ```
-dojo/
-├── curriculum/
-│   ├── v2/                          # New curriculum
-│   │   ├── schema.yaml              # V2 challenge schema
-│   │   ├── pillars/
-│   │   │   ├── static_analysis/
-│   │   │   │   ├── challenges.yaml
-│   │   │   │   └── artifacts/       # Code samples
-│   │   │   ├── negative_knowledge/
-│   │   │   ├── root_cause/
-│   │   │   ├── pattern_transfer/
-│   │   │   ├── methodology/
-│   │   │   ├── taxonomy/
-│   │   │   └── patch_analysis/
-│   │   └── belts/
-│   │       ├── white/
-│   │       │   ├── progression.yaml # Belt-specific config
-│   │       │   └── challenges/      # Symlinks or includes
-│   │       ├── yellow/
-│   │       └── .../
-│   └── v1/                          # Legacy challenges (move existing)
-├── models_v2.py                     # New data structures
-├── sensei/
-│   ├── reasoning_grader.py          # New grader
-│   ├── reasoning_extractor.py       # New extractor
-│   └── transfer_evaluator.py        # Pattern transfer evaluation
-└── targets/
-    └── vulnerable_apks/             # Existing - integrate into V2
+AgenticART/
+├── agent/                           # Agent components
+│   ├── memory/                      # Vector store, conversation memory
+│   ├── prompts/                     # Prompt templates
+│   └── chains/                      # LangChain-style chains
+├── core/                            # Core security modules
+│   ├── traffic/                     # Network traffic analysis
+│   ├── exploitation/                # Exploitation techniques
+│   ├── scanning/                    # Vulnerability scanning
+│   ├── verification/                # Result verification
+│   └── reconnaissance/              # Recon modules
+├── dojo/                            # Training & curriculum
+│   ├── curriculum/
+│   │   └── v2/                      # V2 curriculum
+│   │       ├── schema.yaml          # Challenge schema
+│   │       └── pillars/             # 7 pillar challenges
+│   │           ├── static_analysis/
+│   │           ├── negative_knowledge/
+│   │           ├── root_cause/
+│   │           ├── pattern_transfer/
+│   │           ├── methodology/
+│   │           ├── taxonomy/
+│   │           └── patch_analysis/
+│   ├── graders/                     # Challenge grading
+│   │   └── praxis_runner.py         # Main Praxis loop
+│   ├── sensei/                      # Training components
+│   │   ├── reasoning_grader.py
+│   │   └── reasoning_extractor.py
+│   ├── evaluation/                  # Evaluation results
+│   ├── finetune/                    # Fine-tuning scripts
+│   ├── mcp/                         # MCP Integration
+│   │   ├── executor.py              # MCPExecutor, ToolResult
+│   │   ├── server.py                # Base server utilities
+│   │   ├── config/                  # Server configurations
+│   │   └── servers/                 # MCP server implementations
+│   │       ├── jadx_server.py
+│   │       └── apktool_server.py
+│   ├── rag/                         # RAG System
+│   │   ├── config.py                # RAGConfig, pillar weights
+│   │   ├── embeddings.py            # EmbeddingPipeline
+│   │   ├── chunking.py              # Text/code chunking
+│   │   ├── retriever.py             # RAGRetriever, QueryRouter
+│   │   ├── context_builder.py       # RAGContextBuilder
+│   │   ├── knowledge_bases/         # KB implementations
+│   │   │   ├── vuln_db.py
+│   │   │   ├── examples.py
+│   │   │   ├── android_api.py
+│   │   │   └── tool_docs.py
+│   │   └── loaders/                 # Data loaders
+│   │       ├── owasp_loader.py
+│   │       ├── cwe_loader.py
+│   │       └── curriculum_loader.py
+│   ├── targets/                     # Target APKs
+│   │   └── vulnerable_apks/
+│   └── training_data/               # Generated training data
+│       ├── dpo/                     # DPO pairs
+│       └── mlx/                     # MLX format
+├── webapp/                          # Streamlit web interface
+├── tests/                           # Test suite
+├── docs/                            # Documentation
+├── scripts/                         # Utility scripts
+├── experiments/                     # Experiment tracking
+└── docker/                          # Docker configurations
 ```
 
 ---

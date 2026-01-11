@@ -2,6 +2,16 @@
 
 **Transform AgenticART from a tool into a training ground for security LLMs**
 
+> **Status**: V2 architecture fully implemented with Praxis Loop, RAG system, and MCP integration.
+
+---
+
+## Quick Links
+
+- [Architecture Overview](architecture.md) - System architecture and implementation phases
+- [RAG System](RAG_SYSTEM.md) - Retrieval-Augmented Generation for context
+- [MCP Integration](MCP_INTEGRATION.md) - Model Context Protocol for tool execution
+
 ---
 
 ## Philosophy
@@ -97,6 +107,89 @@ dojo/
 |-- test_end_to_end.py       # Integration test
 |-- test_phase2.py           # Curriculum tests
 +-- test_phase3.py           # Sensei tests
+```
+
+---
+
+## V2 Praxis Loop
+
+The V2 architecture introduces the **Praxis Loop**—a reasoning → verification → calibration cycle:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          PRAXIS LOOP                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│    ┌─────────────┐                                                   │
+│    │  Challenge  │                                                   │
+│    │   Input     │                                                   │
+│    └──────┬──────┘                                                   │
+│           │                                                          │
+│           ▼                                                          │
+│    ┌─────────────┐      ┌─────────────┐                             │
+│    │  RAG System │─────▶│ Augmented   │                             │
+│    │  (Context)  │      │   Prompt    │                             │
+│    └─────────────┘      └──────┬──────┘                             │
+│                                │                                     │
+│                                ▼                                     │
+│    ┌──────────────────────────────────────────────────────────┐     │
+│    │                    REASONING PHASE                        │     │
+│    │  OBSERVE → HYPOTHESIZE → TEST → CALIBRATE → CORRECT      │     │
+│    └──────────────────────────────────────────────────────────┘     │
+│                                │                                     │
+│                                ▼                                     │
+│    ┌─────────────┐      ┌─────────────┐      ┌─────────────┐       │
+│    │   MCP       │─────▶│   Tool      │─────▶│ Calibration │       │
+│    │  Executor   │      │  Results    │      │   Signal    │       │
+│    └─────────────┘      └─────────────┘      └──────┬──────┘       │
+│                                                      │               │
+│                                                      ▼               │
+│                                               ┌─────────────┐       │
+│                                               │  DPO Pairs  │       │
+│                                               │ (Training)  │       │
+│                                               └─────────────┘       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 7 Pillars (V2 Curriculum)
+
+Challenges are organized by cognitive skill rather than just difficulty:
+
+| Pillar | Focus | Challenge Types |
+|--------|-------|-----------------|
+| `static_analysis` | Code review, artifact identification | OBSERVATION, HYPOTHESIS |
+| `negative_knowledge` | Recognizing secure patterns | NEGATIVE |
+| `root_cause` | Understanding WHY vulnerabilities exist | ROOT_CAUSE |
+| `pattern_transfer` | Applying patterns across contexts | TRANSFER |
+| `methodology` | Tool selection, test design | VERIFICATION |
+| `taxonomy` | CWE/OWASP classification | All types with classification focus |
+| `patch_analysis` | Analyzing security fixes | OBSERVATION, ROOT_CAUSE |
+
+### PraxisRunner
+
+The main execution engine for V2 challenges:
+
+```python
+from dojo.graders.praxis_runner import PraxisRunner
+from dojo.mcp import MCPExecutor
+from dojo.rag import RAGSystem
+
+# Initialize components
+executor = MCPExecutor()
+rag = RAGSystem(persist_dir=Path(".rag_data"))
+
+runner = PraxisRunner(
+    llm_client=client,
+    mcp_executor=executor,
+    enable_rag=True,
+    rag_system=rag,
+)
+
+# Run challenge
+result = runner.run_challenge(challenge)
+print(f"Score: {result.total_score}")
+print(f"Calibration Error: {result.calibration_error}")
 ```
 
 ---
@@ -627,13 +720,40 @@ class ModelProgress:
 
 ---
 
-## Next Steps
+## Implementation Status
 
-1. **Implement Green+ belt challenges** - Extend curriculum beyond Orange
-2. **Add CLI interface** - `python -m dojo train`, `python -m dojo export`
-3. **Build metrics dashboard** - Streamlit visualization of progress
-4. **Integrate with webapp** - Add Dojo tab to existing Streamlit app
-5. **Automate training loop** - Scheduled daily challenge runs
+### Completed ✅
+
+- **V2 Curriculum Architecture** - 7 pillars, multi-phase challenges
+- **PraxisRunner** - Main execution engine with reasoning loop
+- **RAG System** - ChromaDB-based retrieval with OWASP/CWE knowledge
+- **MCP Integration** - JADX and Apktool servers for verification
+- **DPO Training Pipeline** - Chosen/rejected pair extraction
+- **ReasoningGrader** - Epistemic calibration, hallucination detection
+- **White/Yellow Belt Challenges** - Foundation curriculum complete
+
+### In Progress 🔄
+
+- **Green+ Belt Challenges** - Extending curriculum depth
+- **Frida MCP Server** - Dynamic instrumentation integration
+- **Metrics Dashboard** - Streamlit visualization
+- **Automated Training Loop** - Scheduled challenge runs
+
+### Planned 📋
+
+- **CLI Interface** - `python -m dojo train`, `python -m dojo export`
+- **Pattern Family Clustering** - For transfer learning
+- **Multi-APK Synthesis Challenges** - Black belt complexity
+- **Real-time Progress Tracking** - WebSocket updates
+
+---
+
+## Related Documentation
+
+- [Architecture](architecture.md) - System design and component overview
+- [RAG System](RAG_SYSTEM.md) - Knowledge retrieval details
+- [MCP Integration](MCP_INTEGRATION.md) - Tool execution protocol
+- [Quickstart](quickstart.md) - Getting started guide
 
 ---
 

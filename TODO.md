@@ -1,6 +1,38 @@
-# AgenticART Metrics Enhancement Roadmap
+# AgenticART Development Roadmap
 
 Track progress on quantifying AgenticART's impact through comprehensive metrics.
+
+---
+
+## Recently Completed ✅
+
+### RAG System
+- [x] ChromaDB-based vector store integration
+- [x] EmbeddingPipeline with sentence-transformers
+- [x] Pillar-aware query routing
+- [x] OWASP Mobile Top 10 2024 loader
+- [x] Knowledge base infrastructure (vuln_db, examples, android_api, tool_docs)
+- [x] RAGContextBuilder with token budgeting
+- [x] Integration with PraxisRunner
+
+### MCP Integration
+- [x] MCPExecutor for tool routing
+- [x] JADX MCP server (decompile, search_code, get_class, find_security_patterns)
+- [x] Apktool MCP server (decode, get_manifest, get_smali, find_security_issues)
+- [x] ToolResult dataclass for binary ground truth
+- [x] Integration with Praxis verification loop
+
+### V2 Curriculum Architecture
+- [x] 7 pillar system (static_analysis, negative_knowledge, root_cause, etc.)
+- [x] Multi-phase challenge schema
+- [x] White and Yellow belt challenges
+- [x] PraxisRunner with reasoning loop
+
+### Documentation
+- [x] RAG_SYSTEM.md comprehensive documentation
+- [x] MCP_INTEGRATION.md comprehensive documentation
+- [x] Architecture.md updates with RAG/MCP sections
+- [x] DOJO_FRAMEWORK.md V2 updates
 
 ---
 
@@ -102,8 +134,28 @@ Where:
 
 ---
 
+## In Progress 🔄
+
+### Curriculum Expansion
+- [ ] Green belt challenges (Scripting & Dynamic Analysis)
+- [ ] Blue belt challenges (CVE Exploitation)
+- [ ] Purple+ belt challenges (Advanced Proficiency)
+
+### MCP Servers
+- [ ] Frida MCP server for dynamic instrumentation
+- [ ] ADB MCP server for device interaction
+
+### Infrastructure
+- [ ] Metrics dashboard (Streamlit visualization)
+- [ ] CLI interface (`python -m dojo train`)
+- [ ] Automated training loop scheduling
+
+---
+
 ## References
 
 - Inspired by metrics from "LLM-Powered Android Exploitation" (arXiv:2509.07933)
 - Existing grading system: `dojo/sensei/grader.py`
 - Current models: `dojo/models.py`
+- RAG documentation: `docs/RAG_SYSTEM.md`
+- MCP documentation: `docs/MCP_INTEGRATION.md`

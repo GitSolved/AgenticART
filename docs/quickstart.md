@@ -43,6 +43,23 @@ ollama pull qwen2.5-coder:32b
 ollama pull qwen2.5-coder:7b
 ```
 
+### 4. Initialize RAG System (Optional but Recommended)
+
+The RAG system provides contextual knowledge to reduce hallucinations:
+
+```bash
+# Install RAG dependencies
+pip install sentence-transformers chromadb
+
+# Populate knowledge bases with OWASP/CWE data
+python scripts/populate_rag.py
+```
+
+This loads:
+- OWASP Mobile Top 10 2024 vulnerability data
+- CWE definitions relevant to Android security
+- Curriculum examples from completed challenges
+
 ## Run Challenges
 
 ### Basic Test Run
@@ -103,6 +120,8 @@ Access at [http://localhost:8501](http://localhost:8501)
 ## Next Steps
 
 - [Installation Guide](SETUP.md) - Detailed setup instructions
-- [Dojo Framework](DOJO_FRAMEWORK.md) - Training methodology
-- [Docker Sandbox](DOCKER_SANDBOX.md) - Isolated execution setup
+- [Dojo Framework](DOJO_FRAMEWORK.md) - Training methodology and V2 architecture
 - [Architecture](architecture.md) - System design overview
+- [RAG System](RAG_SYSTEM.md) - Knowledge retrieval for context augmentation
+- [MCP Integration](MCP_INTEGRATION.md) - Tool execution protocol for verification
+- [Docker Sandbox](DOCKER_SANDBOX.md) - Isolated execution setup
