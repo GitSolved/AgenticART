@@ -1,0 +1,108 @@
+{
+  "id": "neg_secure_white_001",
+  "name": "Secure Password Storage",
+  "type": "negative",
+  "pillar": "negative_knowledge",
+  "belt": "white",
+  "difficulty": 2,
+  "description": "Analyze this password storage implementation.\nDetermine if it is vulnerable or secure, and explain your reasoning.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "public class SecureCredentialManager {\n    private static final int ITERATIONS = 100000;\n    private static final int KEY_LENGTH = 256;\n\n    public String hashPassword(String password) {\n        byte[] salt = new byte[16];\n        new SecureRandom().nextBytes(salt);\n\n        PBEKeySpec spec = new PBEKeySpec(\n            password.toCharArray(),\n            salt,\n            ITERATIONS,\n            KEY_LENGTH\n        );\n\n        SecretKeyFactory factory = SecretKeyFactory.getInstance(\"PBKDF2WithHmacSHA256\");\n        byte[] hash = factory.generateSecret(spec).getEncoded();\n\n        // Store salt:hash together\n        return Base64.encodeToString(salt, Base64.NO_WRAP) + \":\" +\n               Base64.encodeToString(hash, Base64.NO_WRAP);\n    }\n\n    public boolean verifyPassword(String password, String stored) {\n        String[] parts = stored.split(\":\");\n        byte[] salt = Base64.decode(parts[0], Base64.NO_WRAP);\n        byte[] storedHash = Base64.decode(parts[1], Base64.NO_WRAP);\n\n        PBEKeySpec spec = new PBEKeySpec(\n            password.toCharArray(),\n            salt,\n            ITERATIONS,\n            KEY_LENGTH\n        );\n\n        SecretKeyFactory factory = SecretKeyFactory.getInstance(\"PBKDF2WithHmacSHA256\");\n        byte[] testHash = factory.generateSecret(spec).getEncoded();\n\n        return MessageDigest.isEqual(storedHash, testHash);\n    }\n}\n",
+      "context": "SecureCredentialManager from a banking app"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "Analyze this password handling code.\nFor each security-relevant pattern you observe, determine:\n1. What the pattern is\n2. Whether it strengthens or weakens security\n3. Why\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "is_vulnerable": "boolean",
+          "confidence": "number",
+          "security_properties": {
+            "type": "array",
+            "items": {
+              "property": "string",
+              "status": "string",
+              "reasoning": "string"
+            }
+          },
+          "attempted_attacks": {
+            "type": "array",
+            "items": {
+              "attack": "string",
+              "result": "string",
+              "why": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_classification",
+          "weight": 0.4,
+          "description": "Correctly identifies as NOT vulnerable"
+        },
+        {
+          "name": "security_property_id",
+          "weight": 0.3,
+          "description": "Identifies what makes it secure"
+        },
+        {
+          "name": "attack_resistance",
+          "weight": 0.2,
+          "description": "Explains why attacks fail"
+        },
+        {
+          "name": "no_false_positives",
+          "weight": 0.1,
+          "description": "Doesn't claim vulnerabilities that don't exist"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": false,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "",
+    "key_observations": [
+      "Uses PBKDF2 not MD5/SHA1",
+      "Salt is random and per-password",
+      "High iteration count",
+      "Constant-time comparison"
+    ],
+    "secure_properties": [
+      "PBKDF2 with SHA256 - modern, NIST-approved key derivation",
+      "100,000 iterations - meets current recommendations",
+      "Random 16-byte salt per password - prevents rainbow tables",
+      "256-bit key length - computationally secure",
+      "SecureRandom for salt - cryptographically secure randomness",
+      "MessageDigest.isEqual for comparison - timing-attack resistant"
+    ]
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Determine the Security Patch Level (SPL) of the device.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "getprop ro.build.version.security_patch"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+      }
+    }
+  ],
+  "cwe_tags": [],
+  "tags": [
+    "crypto",
+    "password",
+    "pbkdf2",
+    "secure"
+  ]
+}

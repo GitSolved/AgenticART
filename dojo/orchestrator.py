@@ -75,13 +75,13 @@ class DojoOrchestrator:
     def run_belt_exam(self, belt: Belt, model_id: str):
         """Runs all challenges for a belt as a single exam session."""
         curriculum = UnifiedCurriculum.load()
-        
+
         # Get challenges for this belt
         challenge_ids = []
         for stage in curriculum.stages_in_order():
             if stage.belt == belt:
                 challenge_ids.extend(stage.challenge_ids)
-        
+
         challenges = []
         for cid in challenge_ids:
             try:

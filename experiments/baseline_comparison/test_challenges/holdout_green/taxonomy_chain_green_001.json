@@ -1,0 +1,110 @@
+{
+  "id": "taxonomy_chain_green_001",
+  "name": "Vulnerability Chain Classification",
+  "type": "observation",
+  "pillar": "taxonomy",
+  "belt": "green",
+  "difficulty": 6,
+  "description": "Complex exploits chain multiple weaknesses. Learn to classify\neach step in the chain AND the overall impact.\n",
+  "artifacts": [
+    {
+      "type": "previous_output",
+      "content": "EXPLOIT CHAIN ANALYSIS:\n\nStep 1: Attacker calls exported IntentForwarder activity\nStep 2: IntentForwarder extracts and forwards nested Intent\nStep 3: Nested Intent targets internal AdminPanel activity\nStep 4: AdminPanel processes attacker-controlled extras\nStep 5: Admin command executed with elevated privileges\n\nIMPACT: Privilege escalation from unprivileged app to admin\n",
+      "context": "Multi-step exploit chain"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "Classify each step in the exploit chain:\n\n1. What CWE applies to EACH STEP?\n2. What is the PRIMARY CWE for the overall chain?\n3. What is the IMPACT CWE (what the attacker achieves)?\n4. How do these CWEs relate in the hierarchy?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "step_classifications": {
+            "type": "array",
+            "items": {
+              "step": "integer",
+              "cwe_id": "string",
+              "cwe_name": "string",
+              "role_in_chain": "string"
+            }
+          },
+          "primary_cwe": "string",
+          "impact_cwe": "string",
+          "chain_relationship": "string",
+          "complete_classification": "string"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "step_accuracy",
+          "weight": 0.3,
+          "description": "Correct CWE per step"
+        },
+        {
+          "name": "primary_selection",
+          "weight": 0.25,
+          "description": "Identifies primary weakness"
+        },
+        {
+          "name": "impact_mapping",
+          "weight": 0.25,
+          "description": "Correct impact classification"
+        },
+        {
+          "name": "chain_understanding",
+          "weight": 0.2,
+          "description": "Understands chain relationship"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "STEP-BY-STEP CWE CLASSIFICATION:\n\nStep 1 (Call exported activity):\n- CWE-926: Improper Export of Android Application Components\n- Role: Entry point, enables chain initiation\n\nStep 2 (Forward nested intent):\n- CWE-927: Use of Implicit Intent for Sensitive Communication\n- Role: Amplification, extends reach to internal components\n\nStep 3 (Access internal activity):\n- CWE-441: Unintended Proxy or Intermediary (Confused Deputy)\n- Role: Core vulnerability, trusted component acts on attacker's behalf\n\nStep 4 (Process attacker extras):\n- CWE-20: Improper Input Validation\n- Role: Enabler, allows malicious data to flow through\n\nStep 5 (Execute admin command):\n- CWE-269: Improper Privilege Management\n- Role: Impact realization\n\nPRIMARY CWE: CWE-441 (Confused Deputy)\n- This is the ROOT CAUSE of the chain\n- IntentForwarder acts as confused deputy\n\nIMPACT CWE: CWE-269 (Improper Privilege Management)\n- What the attacker ultimately achieves\n- Could also use CWE-272 (Least Privilege Violation)\n\nCOMPLETE CLASSIFICATION:\nCWE-926 (entry) \u2192 CWE-441 (root cause) \u2192 CWE-269 (impact)\n\nReport as: CWE-441 with CWE-269 impact\nSecondary: CWE-926, CWE-927 as contributing factors\n",
+    "key_observations": [
+      "Each step has its own CWE",
+      "Primary CWE is the root cause, not first or last",
+      "Report primary + impact + contributing"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that shows disk usage for the /data partition,",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "df -h /data"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "/data"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that enables USB debugging programmatically",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "settings put global adb_enabled 1"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-441",
+    "CWE-926",
+    "CWE-927",
+    "CWE-269"
+  ],
+  "tags": [
+    "chain_analysis",
+    "taxonomy",
+    "privilege_escalation"
+  ]
+}

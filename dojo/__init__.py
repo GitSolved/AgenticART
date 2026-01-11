@@ -10,7 +10,6 @@ from dojo.config import DojoConfig
 # Curriculum imports (Phase 2)
 from dojo.curriculum import (
     AttemptRecord,
-    ChallengeLoader,
     Challenger,
     ChallengeSession,
     ContextInjector,
@@ -92,7 +91,6 @@ __all__ = [
     "CurriculumError",
     # Curriculum (Phase 2)
     "UnifiedCurriculum",
-    "ChallengeLoader",
     "Executor",
     "ExecutionResult",
     "ErrorExtractor",

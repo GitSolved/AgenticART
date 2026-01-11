@@ -1,0 +1,132 @@
+{
+  "id": "root_chain_brown_001",
+  "name": "Intent Redirection Chain",
+  "type": "observation",
+  "pillar": "root_cause",
+  "belt": "brown",
+  "difficulty": 7,
+  "description": "A complex vulnerability chain was discovered involving intent redirection.\nMultiple components interact to create an exploitable condition.\nAnalyze the ROOT causes at each level.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "// Component 1: Intent Forwarder (exported)\npublic class IntentForwarder extends Activity {\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n\n        Intent forward = getIntent().getParcelableExtra(\"forward_intent\");\n        if (forward != null) {\n            startActivity(forward);\n        }\n        finish();\n    }\n}\n\n// Component 2: Internal Admin Panel (not exported)\npublic class AdminPanel extends Activity {\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        // Sensitive admin operations\n        // Assumes only reachable from within app\n        displayAdminControls();\n    }\n}\n",
+      "context": "IntentForwarder - forwards intents to target activities"
+    },
+    {
+      "type": "manifest",
+      "content": "<activity android:name=\".IntentForwarder\" android:exported=\"true\" />\n<activity android:name=\".AdminPanel\" android:exported=\"false\" />\n",
+      "context": "Component declarations"
+    },
+    {
+      "type": "previous_output",
+      "content": "Attack:\n1. Attacker creates Intent targeting AdminPanel\n2. Wraps it as \"forward_intent\" extra\n3. Sends to exported IntentForwarder\n4. IntentForwarder extracts and starts AdminPanel\n5. AdminPanel launches despite exported=\"false\"\n\nResult: Exported component acts as proxy to non-exported component\n",
+      "context": "Exploitation chain"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "Analyze the ROOT CAUSE at multiple levels:\n1. Why does exported=\"false\" fail to protect AdminPanel?\n2. What security assumption was incorrect?\n3. What is the fundamental architectural issue?\n4. How does this relate to other vulnerability patterns?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "attack_chain_analysis": {
+            "type": "array",
+            "items": {
+              "step": "string",
+              "root_cause": "string"
+            }
+          },
+          "incorrect_assumptions": {
+            "type": "array"
+          },
+          "fundamental_issue": "string",
+          "defense_principle_violated": "string",
+          "similar_patterns": {
+            "type": "array"
+          },
+          "remediation": {
+            "immediate": "string",
+            "architectural": "string"
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "chain_analysis",
+          "weight": 0.3,
+          "description": "Analyzes each step's root cause"
+        },
+        {
+          "name": "assumption_identification",
+          "weight": 0.25,
+          "description": "Identifies flawed security assumptions"
+        },
+        {
+          "name": "fundamental_issue",
+          "weight": 0.25,
+          "description": "Identifies core architectural problem"
+        },
+        {
+          "name": "generalization",
+          "weight": 0.2,
+          "description": "Connects to broader patterns"
+        }
+      ],
+      "max_tokens": 2500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "MULTI-LEVEL ROOT CAUSE ANALYSIS:\n\nLevel 1 - Immediate Cause:\nIntentForwarder blindly forwards any Intent provided by external caller.\n\nLevel 2 - Assumption Failure:\nAdminPanel assumes exported=\"false\" means it can ONLY be reached from\nwithin the app. This assumption is FALSE when another component can\nforward intents to it.\n\nLevel 3 - Architectural Issue:\nThe security model conflates \"who can START the component\" with\n\"who can REACH the component\". These are different:\n- Start: Direct invocation from another app\n- Reach: Indirect access via trusted component\n\nLevel 4 - Fundamental Principle:\n\"Confused Deputy\" - IntentForwarder is a privileged deputy that\ncan access internal components. Attacker tricks it into using\nits privilege on attacker's behalf.\n\nDEFENSE PRINCIPLE VIOLATED: Defense in Depth\nAdminPanel relies SOLELY on exported=\"false\". It should ALSO verify:\n- Calling component (getCallingActivity())\n- User authentication state\n- Action legitimacy\n\nSIMILAR PATTERNS:\n- Open Redirect: Web app forwards to attacker-controlled URL\n- SSRF: Server makes requests on attacker's behalf\n- Privilege Escalation: Any proxy that doesn't validate requests\n",
+    "key_observations": [],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that shows disk usage for the /data partition,",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "df -h /data"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "/data"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that enables USB debugging programmatically",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "settings put global adb_enabled 1"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that displays all environment variables",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "printenv"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "PATH"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-926",
+    "CWE-927",
+    "CWE-441"
+  ],
+  "tags": [
+    "intent_redirection",
+    "confused_deputy",
+    "privilege_escalation"
+  ]
+}

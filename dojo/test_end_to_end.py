@@ -27,18 +27,16 @@ sys.path.insert(0, str(project_root))
 
 from agent.llm_client import OllamaClient  # noqa: E402
 from dojo import (  # noqa: E402
-    # Phase 2
     Belt,
-    ChallengeLoader,
     Challenger,
     ChallengeSession,
     ContextInjector,
     ErrorExtractor,
     Executor,
-    ExportFormat,
-    # Phase 3
     Sensei,
+    UnifiedCurriculum,
 )
+from dojo.sensei import ExportFormat  # noqa: E402
 
 # ============================================================================
 # ADB Path Detection (from test_phase2.py)
@@ -320,6 +318,7 @@ def run_end_to_end(
     belt: str = "white",
     model: Optional[str] = None,
     adapter: Optional[str] = None,
+    limit: Optional[int] = None,
 ) -> int:
     """Run the complete Phase 2 + Phase 3 pipeline."""
     import yaml
@@ -422,7 +421,8 @@ def run_end_to_end(
     print(f"Connected: {device_id} (Android {device_info.get('android_version', '?')})")
     print()
 
-    loader = ChallengeLoader()
+    # loader = ChallengeLoader() -> UnifiedCurriculum handles this now
+    curriculum = UnifiedCurriculum.load()
     error_extractor = ErrorExtractor(executor)
     context_injector = ContextInjector(max_attempts=3)
 
@@ -439,18 +439,42 @@ def run_end_to_end(
         on_attempt=on_attempt,
     )
 
-    # Run challenges for selected belt
-    challenges = loader.load_belt(belt_enum)
-    print(f"Loaded {len(challenges)} {belt} belt challenges\n")
+    # Run challenges for the specified belt
+    print("-" * 70)
+    print(f"RUNNING {belt_enum.value.upper()} BELT CHALLENGES")
+    print("-" * 70 + "\n")
+
+    # Get challenges for this belt
+    challenge_ids = []
+    for stage in curriculum.stages_in_order():
+        if stage.belt == belt_enum:
+            challenge_ids.extend(stage.challenge_ids)
+
+    challenges = []
+    for cid in challenge_ids:
+        try:
+            challenges.append(curriculum.load_challenge(cid))
+        except Exception:
+            continue
+
+    if limit:
+        challenges = challenges[:limit]
+
+    print(f"Loaded {len(challenges)} {belt_enum.value} belt challenges\n")
 
     sessions: list[ChallengeSession] = []
     for challenge in challenges:
         print(f"Challenge: {challenge.id} - {challenge.name}")
-        session = challenger.run_challenge(challenge)
+        # Cast to Any/Challenge to bypass mypy check for now as Challenger expects V1 Challenge
+        # Ideally Challenger should be updated to support ChallengeV2
+        from typing import Any, cast
+        session = challenger.run_challenge(cast(Any, challenge))
         sessions.append(session)
 
         status = "PASS" if session.final_success else "FAIL"
-        print(f"  Result: {status} ({session.total_attempts} attempts)")
+        print(f"Result: {status} ({session.total_attempts} attempts)")
+        if not session.final_success:
+            print(f"Error: {session.attempts[-1].error_context.error_type if session.attempts[-1].error_context else 'Unknown'}")
         print()
 
     # Phase 2 summary
@@ -488,8 +512,9 @@ def run_end_to_end(
     print("Grading Results:")
     print("-" * 40)
     for i, assessment in enumerate(result.assessments):
-        challenge = sessions[i].challenge
-        print(f"  {challenge.id}: Grade {assessment.grade.value} (Score: {assessment.score})")
+        # Cast to Any to access id property which exists on both V1 and V2
+        challenge_obj: Any = sessions[i].challenge
+        print(f"  {challenge_obj.id}: Grade {assessment.grade.value} (Score: {assessment.score})")
         if assessment.all_issues:
             for issue in assessment.all_issues[:2]:
                 print(f"    - {issue}")
@@ -590,6 +615,13 @@ def main():
         help="Path to LoRA adapters (MLX mode only)",
     )
 
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit number of challenges to run",
+    )
+
     args = parser.parse_args()
     exit_code = run_end_to_end(
         mode=args.mode,
@@ -597,6 +629,7 @@ def main():
         belt=args.belt,
         model=args.model,
         adapter=args.adapter,
+        limit=args.limit,
     )
     sys.exit(exit_code)
 

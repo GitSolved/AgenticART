@@ -1,0 +1,109 @@
+{
+  "id": "neg_compare_yellow_001",
+  "name": "SQL Query Comparison",
+  "type": "negative",
+  "pillar": "negative_knowledge",
+  "belt": "yellow",
+  "difficulty": 4,
+  "description": "Compare these two SQL query implementations.\nIdentify which is secure, which is vulnerable, and explain why.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "// Implementation A - UserRepository.java\npublic class UserRepositoryA {\n    public User findByUsername(String username) {\n        String query = \"SELECT * FROM users WHERE username = '\" + username + \"'\";\n        return db.rawQuery(query, null);\n    }\n}\n\n// Implementation B - UserRepository.java (refactored)\npublic class UserRepositoryB {\n    public User findByUsername(String username) {\n        String query = \"SELECT * FROM users WHERE username = ?\";\n        return db.rawQuery(query, new String[]{username});\n    }\n}\n",
+      "context": "Two different query implementations from same app"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "Compare both implementations.\nFor each:\n1. Determine if it's vulnerable or secure\n2. Explain the specific mechanism that makes it so\n3. Show how an attack would succeed or fail\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "implementation_a": {
+            "is_vulnerable": "boolean",
+            "vulnerability_type": "string",
+            "attack_example": "string"
+          },
+          "implementation_b": {
+            "is_vulnerable": "boolean",
+            "security_mechanism": "string",
+            "why_attack_fails": "string"
+          },
+          "key_difference": "string"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_classification",
+          "weight": 0.3,
+          "description": "Correctly identifies A=vulnerable, B=secure"
+        },
+        {
+          "name": "mechanism_explanation",
+          "weight": 0.3,
+          "description": "Explains parameterization defense"
+        },
+        {
+          "name": "attack_demonstration",
+          "weight": 0.25,
+          "description": "Shows valid attack for A, explains failure for B"
+        },
+        {
+          "name": "no_errors",
+          "weight": 0.15,
+          "description": "No factual errors"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "",
+    "key_observations": [
+      "A uses string concatenation - VULNERABLE to SQL injection",
+      "B uses parameterized query with ? placeholder - SECURE",
+      "The difference is how user input is incorporated into query"
+    ],
+    "secure_properties": [
+      "Parameterized queries separate code from data",
+      "Database treats parameter as literal value, not SQL code",
+      "Special characters in input are automatically escaped"
+    ]
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that displays the network interface",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "ip addr"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": "\\d+\\.\\d+\\.\\d+\\.\\d+"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that lists all currently running services",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "dumpsys activity services"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "ServiceRecord"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-89"
+  ],
+  "tags": [
+    "sql",
+    "parameterized_query",
+    "comparison"
+  ]
+}

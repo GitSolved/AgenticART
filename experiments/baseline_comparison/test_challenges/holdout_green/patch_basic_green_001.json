@@ -1,0 +1,133 @@
+{
+  "id": "patch_basic_green_001",
+  "name": "Path Traversal Patch Analysis",
+  "type": "observation",
+  "pillar": "patch_analysis",
+  "belt": "green",
+  "difficulty": 5,
+  "description": "A path traversal vulnerability was patched in an Android file provider.\nAnalyze the patch to understand what was vulnerable and how it was fixed.\n",
+  "artifacts": [
+    {
+      "type": "patch_diff",
+      "content": "diff --git a/FileProvider.java b/FileProvider.java\n--- a/FileProvider.java\n+++ b/FileProvider.java\n@@ -45,8 +45,15 @@ public class SecureFileProvider extends ContentProvider {\n     @Override\n     public ParcelFileDescriptor openFile(Uri uri, String mode) {\n         String path = uri.getPath();\n-        File file = new File(getContext().getFilesDir(), path);\n-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);\n+\n+        // Canonicalize and validate path\n+        File baseDir = getContext().getFilesDir();\n+        File file = new File(baseDir, path).getCanonicalFile();\n+\n+        if (!file.getPath().startsWith(baseDir.getCanonicalPath())) {\n+            throw new SecurityException(\"Path traversal attempt blocked\");\n+        }\n+\n+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);\n     }\n }\n",
+      "context": "Security patch for CVE-XXXX-XXXX"
+    },
+    {
+      "type": "cve_description",
+      "content": "CVE-XXXX-XXXX: Path Traversal in FileProvider\nCVSS: 7.5 (High)\nCWE: CWE-22 (Path Traversal)\n\nA malicious app could access arbitrary files by sending a content:// URI\nwith path traversal sequences (../) to the vulnerable FileProvider.\n",
+      "context": "CVE Details"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "Examine the patch diff and identify:\n1. What code was added?\n2. What code was removed/changed?\n3. What new security checks are present?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "additions": {
+            "type": "array",
+            "items": "string"
+          },
+          "removals": {
+            "type": "array",
+            "items": "string"
+          },
+          "new_checks": {
+            "type": "array",
+            "items": "string"
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "completeness",
+          "weight": 0.4,
+          "description": "Identifies all changes"
+        },
+        {
+          "name": "accuracy",
+          "weight": 0.4,
+          "description": "Correctly describes what changed"
+        },
+        {
+          "name": "security_focus",
+          "weight": 0.2,
+          "description": "Identifies security-relevant changes"
+        }
+      ],
+      "max_tokens": 1000
+    },
+    {
+      "phase_id": "analyze",
+      "instruction": "Based on the patch:\n1. What was the vulnerability in the original code?\n2. How does the patch fix it?\n3. Why is canonicalization important here?\n4. Could the patch be bypassed? How robust is it?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "original_vulnerability": "string",
+          "fix_mechanism": "string",
+          "canonicalization_purpose": "string",
+          "patch_robustness": "string",
+          "potential_bypasses": "array"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "vulnerability_understanding",
+          "weight": 0.3,
+          "description": "Correctly identifies the vuln"
+        },
+        {
+          "name": "fix_understanding",
+          "weight": 0.3,
+          "description": "Explains how patch works"
+        },
+        {
+          "name": "depth",
+          "weight": 0.25,
+          "description": "Understands canonicalization"
+        },
+        {
+          "name": "critical_thinking",
+          "weight": 0.15,
+          "description": "Considers bypass scenarios"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": "Path Traversal",
+    "cwe_id": "CWE-22",
+    "root_cause": "ORIGINAL VULNERABILITY:\nThe original code directly concatenated user-controlled path to base directory\nwithout any validation. Paths like \"/../../../etc/passwd\" would resolve to\nfiles outside the intended directory.\n\nFIX MECHANISM:\n1. getCanonicalFile() - Resolves symbolic links and removes ../ sequences\n2. startsWith() check - Verifies resolved path is still under base directory\n3. SecurityException - Explicit rejection of traversal attempts\n\nWHY CANONICALIZATION:\nWithout canonicalization, \"../\" sequences remain in the path string even\nafter File object creation. The attacker's path might look valid as a string\nbut resolve to an unintended location. Canonicalization normalizes the path\nto its true filesystem location.\n\nPATCH ROBUSTNESS:\nThis is a robust fix because:\n- Canonicalization handles all path manipulation tricks\n- Check happens AFTER canonicalization, not before\n- Both paths are canonicalized for consistent comparison\n",
+    "key_observations": [
+      "Original code had no path validation",
+      "Patch adds canonicalization before comparison",
+      "Comparison uses canonicalized base path too"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that displays all environment variables",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "printenv"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "PATH"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-22",
+    "CWE-73"
+  ],
+  "tags": [
+    "path_traversal",
+    "patch_analysis",
+    "file_provider"
+  ]
+}

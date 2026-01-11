@@ -1,0 +1,116 @@
+{
+  "id": "transfer_api_yellow_001",
+  "name": "SQL Injection Pattern Family",
+  "type": "transfer",
+  "pillar": "pattern_transfer",
+  "belt": "yellow",
+  "difficulty": 4,
+  "description": "You've learned to identify SQL injection in rawQuery().\nNow identify the SAME vulnerability pattern using different Android database APIs.\nThe root cause is identical - only the API surface differs.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Vulnerable pattern for training\npublic User findUser(String username) {\n    String query = \"SELECT * FROM users WHERE username = '\" + username + \"'\";\n    Cursor c = db.rawQuery(query, null);\n    return cursorToUser(c);\n}\n",
+      "context": "Example A - Already known (rawQuery)"
+    },
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Is this the same pattern?\npublic Cursor queryUsers(String nameFilter) {\n    return getContentResolver().query(\n        UsersContract.CONTENT_URI,\n        null,  // projection\n        \"name LIKE '%\" + nameFilter + \"%'\",  // selection\n        null,  // selectionArgs\n        null   // sortOrder\n    );\n}\n",
+      "context": "Example B - ContentProvider query()"
+    },
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Is this the same pattern?\n@Dao\npublic interface UserDao {\n    @Query(\"SELECT * FROM users WHERE department = :dept\")\n    List<User> getUsersByDepartment(String dept);\n\n    @Query(\"SELECT * FROM users ORDER BY \" + BuildConfig.DEFAULT_SORT)\n    List<User> getAllUsersSorted();\n}\n",
+      "context": "Example C - Room @Query annotation"
+    },
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Is this the same pattern?\npublic Cursor searchProducts(String search, String category) {\n    SQLiteQueryBuilder qb = new SQLiteQueryBuilder();\n    qb.setTables(\"products\");\n    qb.appendWhere(\"category = '\" + category + \"'\");\n\n    return qb.query(db, null,\n        \"name LIKE ?\",\n        new String[]{\"%\" + search + \"%\"},\n        null, null, null);\n}\n",
+      "context": "Example D - SQLiteQueryBuilder"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "For each example (B, C, D), determine:\n1. Is it vulnerable to SQL injection? (Yes/No/Partial)\n2. If yes, what input would exploit it?\n3. How does this relate to the pattern in Example A?\n4. What makes it the \"same\" vulnerability despite different code?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "analyses": {
+            "type": "array",
+            "items": {
+              "example": "string",
+              "is_vulnerable": "boolean",
+              "exploit_input": "string",
+              "pattern_match": "string"
+            }
+          },
+          "unifying_pattern": "string"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_classification",
+          "weight": 0.35,
+          "description": "Correctly identifies vulnerable vs safe"
+        },
+        {
+          "name": "exploit_validity",
+          "weight": 0.25,
+          "description": "Exploits would work"
+        },
+        {
+          "name": "pattern_recognition",
+          "weight": 0.4,
+          "description": "Identifies common pattern"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": "SQL Injection (multiple forms)",
+    "cwe_id": "CWE-89",
+    "root_cause": "PATTERN ANALYSIS:\n\nExample B - ContentProvider: VULNERABLE\n- selection parameter is concatenated, same as rawQuery\n- Exploit: nameFilter = \"x' OR '1'='1\"\n- Same pattern: user input in SQL string position\n\nExample C - Room @Query: PARTIALLY VULNERABLE\n- getUsersByDepartment: SAFE - :dept is a bound parameter\n- getAllUsersSorted: VULNERABLE IF BuildConfig value is user-influenced\n  (compile-time constant, so usually safe, but check source)\n- Pattern: Bound parameters protect, string concat doesn't\n\nExample D - SQLiteQueryBuilder: VULNERABLE\n- appendWhere() with concatenation is unsafe\n- The parameterized part (search) is safe\n- Exploit: category = \"x') OR ('1'='1\"\n- Same pattern: mixing safe and unsafe in same query\n\nUNIFYING PATTERN:\nAll SQL injection stems from ONE root cause:\n\"User input placed in SQL string position rather than parameter position\"\n\nIt doesn't matter WHICH API you use:\n- rawQuery(sql, args) - args are safe, sql string isn't\n- query(uri, proj, selection, selectionArgs, ...) - selectionArgs safe\n- @Query with :param - bound params safe\n- appendWhere() - concatenation unsafe\n\nThe vulnerability exists when the INPUT FLOWS TO STRING POSITION.\n",
+    "key_observations": [
+      "API doesn't determine safety - usage does",
+      "Same query can have safe and unsafe parts",
+      "Pattern: string position vs parameter position"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that simulates typing the text \"hello\"",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "input text hello"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that retrieves the CPU architecture",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "cat /proc/cpuinfo"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "processor"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-89",
+    "CWE-943"
+  ],
+  "tags": [
+    "sql_injection",
+    "pattern_transfer",
+    "content_provider",
+    "room"
+  ]
+}

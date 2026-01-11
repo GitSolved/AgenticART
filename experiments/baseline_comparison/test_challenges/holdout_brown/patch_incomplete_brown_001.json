@@ -1,0 +1,152 @@
+{
+  "id": "patch_incomplete_brown_001",
+  "name": "Incomplete Patch Detection",
+  "type": "observation",
+  "pillar": "patch_analysis",
+  "belt": "brown",
+  "difficulty": 8,
+  "description": "This patch was released to fix a SQL injection vulnerability.\nHowever, security researchers found it was INCOMPLETE.\nYour task: Find what the patch missed.\n",
+  "artifacts": [
+    {
+      "type": "patch_diff",
+      "content": "diff --git a/UserRepository.java b/UserRepository.java\n--- a/UserRepository.java\n+++ b/UserRepository.java\n@@ -34,10 +34,15 @@ public class UserRepository {\n\n     public User findUserByEmail(String email) {\n-        String query = \"SELECT * FROM users WHERE email = '\" + email + \"'\";\n-        return db.rawQuery(query, null);\n+        // Fixed: Use parameterized query\n+        String query = \"SELECT * FROM users WHERE email = ?\";\n+        return db.rawQuery(query, new String[]{email});\n     }\n\n     public List<User> searchUsers(String searchTerm, String sortColumn) {\n-        String query = \"SELECT * FROM users WHERE name LIKE '%\" + searchTerm + \"%'\";\n-        return db.rawQuery(query, null);\n+        // Fixed: Use parameterized query for search term\n+        String query = \"SELECT * FROM users WHERE name LIKE ? ORDER BY \" + sortColumn;\n+        return db.rawQuery(query, new String[]{\"%\" + searchTerm + \"%\"});\n     }\n\n     public List<User> getUsersByRole(String role) {\n-        String query = \"SELECT * FROM users WHERE role = '\" + role + \"'\";\n-        return db.rawQuery(query, null);\n+        // Fixed: Use parameterized query\n+        String query = \"SELECT * FROM users WHERE role = ?\";\n+        return db.rawQuery(query, new String[]{role});\n     }\n",
+      "context": "Patch that was released (but incomplete)"
+    },
+    {
+      "type": "cve_description",
+      "content": "CVE-XXXX-XXXX: SQL Injection in UserRepository\nCVSS: 9.8 (Critical)\nCWE: CWE-89\n\nMultiple SQL injection vulnerabilities in UserRepository allow\nattackers to execute arbitrary SQL commands.\n",
+      "context": "Original CVE"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "Carefully examine each fix in the patch:\n1. What was fixed in each method?\n2. Is the fix complete for each method?\n3. Look for any remaining injection points\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "fixes_applied": {
+            "type": "array",
+            "items": {
+              "method": "string",
+              "fix_type": "string",
+              "is_complete": "boolean",
+              "remaining_issue": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "method_analysis",
+          "weight": 0.4,
+          "description": "Analyzes each method"
+        },
+        {
+          "name": "completeness_check",
+          "weight": 0.4,
+          "description": "Identifies incomplete fix"
+        },
+        {
+          "name": "specificity",
+          "weight": 0.2,
+          "description": "Pinpoints exact issue"
+        }
+      ],
+      "max_tokens": 1500
+    },
+    {
+      "phase_id": "analyze",
+      "instruction": "For the incomplete fix you found:\n1. Craft a proof-of-concept that bypasses the patch\n2. Explain why parameterized queries don't help here\n3. What's the correct fix?\n4. Why did the developer miss this?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "incomplete_fix_location": "string",
+          "proof_of_concept": "string",
+          "why_parameterized_fails": "string",
+          "correct_fix": "string",
+          "developer_mistake_analysis": "string"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "bypass_identification",
+          "weight": 0.35,
+          "description": "Finds the bypass"
+        },
+        {
+          "name": "poc_validity",
+          "weight": 0.25,
+          "description": "PoC would work"
+        },
+        {
+          "name": "root_cause",
+          "weight": 0.25,
+          "description": "Explains fundamental issue"
+        },
+        {
+          "name": "fix_proposal",
+          "weight": 0.15,
+          "description": "Proposes correct fix"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": "SQL Injection (ORDER BY)",
+    "cwe_id": "CWE-89",
+    "root_cause": "INCOMPLETE FIX LOCATION: searchUsers() method\n\nTHE MISSED VULNERABILITY:\nWhile searchTerm is now parameterized, sortColumn is STILL concatenated:\n\"SELECT * FROM users WHERE name LIKE ? ORDER BY \" + sortColumn\n\nORDER BY columns CANNOT be parameterized in standard SQL.\nPrepared statements only work for VALUES, not identifiers (table/column names).\n\nPROOF OF CONCEPT:\nsortColumn = \"name; DROP TABLE users; --\"\nor\nsortColumn = \"(CASE WHEN (SELECT password FROM users WHERE email='admin') LIKE 'a%' THEN name ELSE email END)\"\n(Blind SQL injection via ORDER BY)\n\nWHY PARAMETERIZED QUERIES DON'T HELP:\nParameterized queries escape VALUES. Column names and table names are\nIDENTIFIERS which go through different SQL parsing. You cannot do:\n\"ORDER BY ?\" with the column name as parameter.\n\nCORRECT FIX:\nWhitelist validation for sortColumn:\n```\nprivate static final Set<String> ALLOWED_SORT_COLUMNS =\n    Set.of(\"name\", \"email\", \"created_at\");\n\nif (!ALLOWED_SORT_COLUMNS.contains(sortColumn)) {\n    sortColumn = \"name\";  // Default to safe value\n}\n```\n\nWHY DEVELOPER MISSED IT:\n- Pattern-based fix: \"replace concatenation with ?\"\n- Didn't understand WHY parameterization works\n- ORDER BY injection is less known than WHERE injection\n",
+    "key_observations": [
+      "Three methods fixed, one incompletely",
+      "ORDER BY cannot use parameterized queries",
+      "Whitelist validation required for identifiers"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that queries the Settings content provider",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "content query --uri content://settings/system"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "Row:"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that displays the memory map of the",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "cat /proc/$(pidof system_server)/maps"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": ".so"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that lists all activities, services, and",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "dumpsys package com.android.browser | grep -A 100 'Activity Resolver Table'"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "Activity"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-89",
+    "CWE-943"
+  ],
+  "tags": [
+    "sql_injection",
+    "incomplete_patch",
+    "order_by_injection"
+  ]
+}

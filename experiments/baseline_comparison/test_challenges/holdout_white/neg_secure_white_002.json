@@ -1,0 +1,104 @@
+{
+  "id": "neg_secure_white_002",
+  "name": "Secure WebView Configuration",
+  "type": "negative",
+  "pillar": "negative_knowledge",
+  "belt": "white",
+  "difficulty": 3,
+  "description": "Review this WebView implementation for security issues.\nDetermine if the configuration is secure or vulnerable.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "public class SecureWebViewActivity extends Activity {\n    private WebView webView;\n    private static final Set<String> ALLOWED_HOSTS = new HashSet<>(Arrays.asList(\n        \"help.myapp.com\",\n        \"docs.myapp.com\"\n    ));\n\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        webView = new WebView(this);\n        setContentView(webView);\n\n        WebSettings settings = webView.getSettings();\n        settings.setJavaScriptEnabled(true);\n        settings.setAllowFileAccess(false);\n        settings.setAllowContentAccess(false);\n        settings.setAllowFileAccessFromFileURLs(false);\n        settings.setAllowUniversalAccessFromFileURLs(false);\n\n        webView.setWebViewClient(new WebViewClient() {\n            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {\n                Uri uri = request.getUrl();\n\n                if (!\"https\".equals(uri.getScheme())) {\n                    return true; // Block non-HTTPS\n                }\n\n                if (!ALLOWED_HOSTS.contains(uri.getHost())) {\n                    // Open external links in browser\n                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);\n                    startActivity(intent);\n                    return true;\n                }\n\n                return false; // Allow loading in WebView\n            }\n        });\n\n        // Load from trusted source only\n        webView.loadUrl(\"https://help.myapp.com/\");\n    }\n}\n",
+      "context": "SecureWebViewActivity for displaying help content"
+    },
+    {
+      "type": "manifest",
+      "content": "<activity\n    android:name=\".SecureWebViewActivity\"\n    android:exported=\"false\" />\n",
+      "context": "Activity declaration"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "Analyze this WebView configuration.\nIdentify all security controls and assess their effectiveness.\nDetermine if this implementation is vulnerable to common WebView attacks.\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "is_vulnerable": "boolean",
+          "confidence": "number",
+          "security_properties": {
+            "type": "array"
+          },
+          "attempted_attacks": {
+            "type": "array"
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_classification",
+          "weight": 0.4,
+          "description": "Correctly identifies as secure"
+        },
+        {
+          "name": "security_property_id",
+          "weight": 0.3,
+          "description": "Identifies security controls"
+        },
+        {
+          "name": "attack_resistance",
+          "weight": 0.2,
+          "description": "Explains defense against attacks"
+        },
+        {
+          "name": "no_false_positives",
+          "weight": 0.1,
+          "description": "Doesn't hallucinate vulnerabilities"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": false,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "",
+    "key_observations": [
+      "Activity not exported - no external attack surface",
+      "URL validation before loading",
+      "Allowlist approach (safer than blocklist)",
+      "All dangerous WebSettings disabled"
+    ],
+    "secure_properties": [
+      "exported=false - not accessible from other apps",
+      "HTTPS-only enforcement via URL scheme check",
+      "Host allowlist with strict matching",
+      "File access disabled (setAllowFileAccess(false))",
+      "Content access disabled",
+      "Cross-origin file access blocked",
+      "No JavaScript interface exposed",
+      "External links opened in browser, not WebView"
+    ]
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that lists all running processes on the device.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "ps"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "PID"
+      }
+    }
+  ],
+  "cwe_tags": [],
+  "tags": [
+    "webview",
+    "secure_config",
+    "allowlist"
+  ]
+}

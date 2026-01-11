@@ -1,0 +1,137 @@
+{
+  "id": "static_component_green_001",
+  "name": "Android Component Interaction Analysis",
+  "type": "hypothesis",
+  "pillar": "static_analysis",
+  "belt": "green",
+  "difficulty": 6,
+  "description": "Android apps have multiple components (Activities, Services, Providers).\nAnalyze how they interact and where trust boundaries exist.\n",
+  "artifacts": [
+    {
+      "type": "manifest",
+      "content": "<manifest package=\"com.example.vault\">\n    <application>\n        <activity android:name=\".MainActivity\" android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\" />\n            </intent-filter>\n        </activity>\n\n        <activity android:name=\".UnlockActivity\" android:exported=\"false\" />\n\n        <service android:name=\".VaultService\" android:exported=\"false\" />\n\n        <provider\n            android:name=\".VaultProvider\"\n            android:authorities=\"com.example.vault.data\"\n            android:exported=\"true\"\n            android:readPermission=\"com.example.vault.READ\" />\n\n        <receiver android:name=\".BackupReceiver\" android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"com.example.vault.BACKUP\" />\n            </intent-filter>\n        </receiver>\n    </application>\n</manifest>\n",
+      "context": "AndroidManifest.xml"
+    },
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Component interaction analysis\n\n// MainActivity - the launcher\npublic class MainActivity extends Activity {\n    protected void onCreate(Bundle b) {\n        if (isUnlocked()) {\n            showVaultContents();\n        } else {\n            startActivity(new Intent(this, UnlockActivity.class));\n        }\n    }\n}\n\n// VaultProvider - data access\npublic class VaultProvider extends ContentProvider {\n    public Cursor query(Uri uri, ...) {\n        // Returns vault data\n        return database.query(\"vault_items\", ...);\n    }\n}\n\n// BackupReceiver - handles backup requests\npublic class BackupReceiver extends BroadcastReceiver {\n    public void onReceive(Context ctx, Intent intent) {\n        String destination = intent.getStringExtra(\"backup_path\");\n        if (destination != null) {\n            performBackup(destination);\n        }\n    }\n\n    private void performBackup(String path) {\n        // Copies vault database to specified path\n        File src = ctx.getDatabasePath(\"vault.db\");\n        File dst = new File(path);\n        copyFile(src, dst);\n    }\n}\n",
+      "context": "Key component implementations"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "Analyze the component architecture:\n\n1. Map all exported vs non-exported components\n2. Identify trust boundaries\n3. For each exported component, what can external apps do?\n4. Are there paths to bypass non-exported protections?\n5. Form security hypotheses\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "component_map": {
+            "type": "array",
+            "items": {
+              "component": "string",
+              "type": "string",
+              "exported": "boolean",
+              "protection": "string"
+            }
+          },
+          "trust_boundaries": {
+            "type": "array",
+            "items": "string"
+          },
+          "attack_surface": {
+            "type": "array",
+            "items": {
+              "component": "string",
+              "external_capability": "string"
+            }
+          },
+          "bypass_paths": {
+            "type": "array",
+            "items": {
+              "description": "string",
+              "mechanism": "string"
+            }
+          },
+          "hypotheses": {
+            "type": "array",
+            "items": {
+              "statement": "string",
+              "confidence": "float",
+              "cwe": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "component_mapping",
+          "weight": 0.25,
+          "description": "Correct component analysis"
+        },
+        {
+          "name": "trust_analysis",
+          "weight": 0.25,
+          "description": "Identifies trust boundaries"
+        },
+        {
+          "name": "attack_surface",
+          "weight": 0.25,
+          "description": "Maps external capabilities"
+        },
+        {
+          "name": "hypothesis_quality",
+          "weight": 0.25,
+          "description": "Valid security hypotheses"
+        }
+      ],
+      "max_tokens": 2500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "COMPONENT ANALYSIS:\n\nEXPORTED COMPONENTS (Attack Surface):\n1. MainActivity - exported (launcher), reasonable\n2. VaultProvider - exported with READ permission, controllable\n3. BackupReceiver - exported with NO permission, DANGEROUS\n\nNON-EXPORTED (Protected):\n1. UnlockActivity - correctly protected\n2. VaultService - correctly protected\n\nTRUST BOUNDARIES:\n- App boundary: MainActivity requires unlock before showing data\n- Provider boundary: Requires READ permission\n- Receiver boundary: NO BOUNDARY - anyone can send\n\nCRITICAL FINDING - BackupReceiver:\n- Exported with no permission\n- Accepts backup_path from Intent\n- Copies vault database to attacker-specified location\n\nATTACK SCENARIO:\n1. Attacker app broadcasts: com.example.vault.BACKUP\n2. Intent extra: backup_path=\"/sdcard/attacker/vault.db\"\n3. BackupReceiver copies entire vault database\n4. Attacker reads copied database\n\nThis BYPASSES all other security:\n- Doesn't need to unlock (UnlockActivity bypass)\n- Doesn't need READ permission (VaultProvider bypass)\n- Gets ENTIRE database, not just query results\n\nHYPOTHESES:\n\nH1: Vault data theft via BackupReceiver\n- Mechanism: Broadcast with controlled backup_path\n- Confidence: 0.95\n- CWE: CWE-926 + CWE-22 (path traversal potential)\n\nH2: Path traversal in backup destination\n- Mechanism: backup_path=\"../../../sensitive/location\"\n- Confidence: 0.70\n- CWE: CWE-22\n",
+    "key_observations": [
+      "Exported receiver with no permission is extremely dangerous",
+      "One weak component can bypass all other security",
+      "The unlock flow is meaningless if data can be extracted directly"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that sets up port forwarding from",
+      "mcp_tool_call": {
+        "tool": "adb_forward",
+        "host_port": "8080",
+        "device_port": "8080"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that creates a backup of the Settings",
+      "mcp_tool_call": {
+        "tool": "adb_backup",
+        "package": "com.android.settings",
+        "output_file": "settings_backup.ab"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-926",
+    "CWE-22"
+  ],
+  "tags": [
+    "component_analysis",
+    "static_analysis",
+    "android_security"
+  ]
+}

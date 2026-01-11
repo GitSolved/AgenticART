@@ -275,7 +275,7 @@ class Challenger:
     def run_belt(
         self,
         belt: Belt,
-        curriculum: UnifiedCurriculum,
+        loader: UnifiedCurriculum,
         limit: Optional[int] = None,
     ) -> list[ChallengeSession]:
         """
@@ -283,27 +283,22 @@ class Challenger:
 
         Args:
             belt: The belt level to run.
-            curriculum: UnifiedCurriculum to get challenges.
+            loader: UnifiedCurriculum to get challenges.
             limit: Maximum number of challenges to run.
 
         Returns:
             List of ChallengeSession objects.
         """
         # Get challenges for this belt from curriculum
-        # Note: We need to adapt the challenge loading here
         challenge_ids = []
-        for stage in curriculum.stages_in_order():
+        for stage in loader.stages_in_order():
             if stage.belt == belt:
                 challenge_ids.extend(stage.challenge_ids)
-        
+
         challenges = []
         for cid in challenge_ids:
             try:
-                # Load challenge using unified loader (handles V1->V2 conversion)
-                # But Challenger expects V1 Challenge object...
-                # We need to adapt or cast.
-                # For now, we assume V2 challenges work if they have 'id', 'name', etc.
-                challenges.append(curriculum.load_challenge(cid))
+                challenges.append(loader.load_challenge(cid))
             except Exception:
                 continue
 
@@ -312,14 +307,12 @@ class Challenger:
 
         sessions = []
         for challenge in challenges:
-            # Cast V2 challenge to V1 challenge if necessary, or ensure Challenger handles V2
-            # This requires Challenger to be updated to handle ChallengeV2
+            # Cast V2 challenge to V1 challenge if necessary
             # For now, assume strict typing is loose enough or models match
             session = self.run_challenge(challenge) # type: ignore
             sessions.append(session)
 
         return sessions
-
     def get_session_summary(self, session: ChallengeSession) -> str:
         """
         Get a human-readable summary of a challenge session.

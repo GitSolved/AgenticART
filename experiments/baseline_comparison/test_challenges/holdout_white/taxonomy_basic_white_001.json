@@ -1,0 +1,117 @@
+{
+  "id": "taxonomy_basic_white_001",
+  "name": "CWE Hierarchy Navigation",
+  "type": "observation",
+  "pillar": "taxonomy",
+  "belt": "white",
+  "difficulty": 2,
+  "description": "CWEs form a hierarchy from abstract (pillars) to specific (variants).\nUnderstanding this hierarchy helps you:\n- Find related vulnerabilities\n- Understand root causes\n- Research mitigations\n",
+  "artifacts": [
+    {
+      "type": "cve_description",
+      "content": "VULNERABILITY FOUND:\nThe Android app's ContentProvider allows SQL injection through the\nselection parameter. An attacker can extract all database contents\nby crafting malicious queries.\n\nExample exploit: content://app.provider/users --where \"1=1 OR 1=1--\"\n",
+      "context": "A vulnerability report to classify"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "Classify this vulnerability in the CWE hierarchy:\n\n1. What is the SPECIFIC CWE? (variant level)\n2. What is its PARENT CWE? (base level)\n3. What is the ROOT CWE? (class or pillar level)\n4. What are SIBLING CWEs? (same parent)\n5. Why does hierarchy matter for this vulnerability?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "specific_cwe": {
+            "cwe_id": "string",
+            "name": "string",
+            "why_this_one": "string"
+          },
+          "parent_cwe": {
+            "cwe_id": "string",
+            "name": "string"
+          },
+          "root_cwe": {
+            "cwe_id": "string",
+            "name": "string"
+          },
+          "sibling_cwes": {
+            "type": "array",
+            "items": {
+              "cwe_id": "string",
+              "name": "string"
+            }
+          },
+          "hierarchy_importance": "string"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_specific",
+          "weight": 0.3,
+          "description": "Correct specific CWE"
+        },
+        {
+          "name": "correct_hierarchy",
+          "weight": 0.3,
+          "description": "Accurate parent chain"
+        },
+        {
+          "name": "sibling_awareness",
+          "weight": 0.2,
+          "description": "Knows related CWEs"
+        },
+        {
+          "name": "understanding",
+          "weight": 0.2,
+          "description": "Explains why hierarchy matters"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": "CWE-89",
+    "root_cause": "CWE HIERARCHY:\n\nSPECIFIC (Variant):\nCWE-89: Improper Neutralization of Special Elements used in an SQL Command\n- This is THE SQL injection CWE\n- Most precise match for this vulnerability\n\nPARENT (Base):\nCWE-943: Improper Neutralization of Special Elements in Data Query Logic\n- Covers SQL, NoSQL, ORM injection\n- Parent of CWE-89, CWE-90 (LDAP), CWE-652 (XPath)\n\nROOT (Class):\nCWE-74: Improper Neutralization of Special Elements in Output Used by a\n        Downstream Component ('Injection')\n- The fundamental injection class\n- Parent of ALL injection types\n\nPILLAR:\nCWE-707: Improper Neutralization\n- Highest level abstraction\n- Covers all input handling issues\n\nSIBLINGS (Same parent as CWE-89):\n- CWE-564: SQL Injection: Hibernate\n- CWE-566: SQL Injection via JDBC\n\nWHY HIERARCHY MATTERS:\n1. Research: CWE-89 research applies, but CWE-74 research gives\n   broader understanding of injection\n2. Mitigation: Fixes for CWE-943 (parameterization) work for all\n   children including CWE-89\n3. Pattern recognition: If you find CWE-89, look for siblings\n   (maybe LDAP or XPath injection too)\n",
+    "key_observations": [
+      "CWE-89 is the canonical SQL injection ID",
+      "Parent CWE-943 covers all query injection",
+      "Root CWE-74 is the injection pillar"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that attempts to read the contents of /data/system/packages.xml.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "su -c 'cat /data/system/packages.xml'"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "package"
+      }
+    },
+    {
+      "instruction": "Identify the Kernel version and processor architecture.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "uname -a"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "Linux"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-89",
+    "CWE-943",
+    "CWE-74"
+  ],
+  "tags": [
+    "cwe",
+    "taxonomy",
+    "sql_injection"
+  ]
+}

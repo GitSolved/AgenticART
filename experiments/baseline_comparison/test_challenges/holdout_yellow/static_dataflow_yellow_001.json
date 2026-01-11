@@ -1,0 +1,112 @@
+{
+  "id": "static_dataflow_yellow_001",
+  "name": "Tracing User Input Through Code",
+  "type": "observation",
+  "pillar": "static_analysis",
+  "belt": "yellow",
+  "difficulty": 4,
+  "description": "Security analysis requires tracing data from SOURCE to SINK.\nSource = where untrusted data enters\nSink = where data causes action (database, network, display, etc.)\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Data flow tracing exercise\n\npublic class SearchHandler {\n\n    public void handleSearch(Intent intent) {\n        // SOURCE: External Intent\n        String rawQuery = intent.getStringExtra(\"query\");\n\n        // Transformation 1\n        String trimmed = rawQuery.trim();\n\n        // Transformation 2\n        String normalized = trimmed.toLowerCase();\n\n        // Branch 1\n        if (normalized.length() > 100) {\n            normalized = normalized.substring(0, 100);\n        }\n\n        // Store for later\n        this.lastQuery = normalized;\n\n        // Branch 2: Display\n        searchView.setText(normalized);  // SINK 1\n\n        // Branch 3: Database\n        performDatabaseSearch(normalized);  // SINK 2\n    }\n\n    private void performDatabaseSearch(String term) {\n        // SINK 2 implementation\n        String query = \"SELECT * FROM products WHERE name LIKE '%\" + term + \"%'\";\n        database.rawQuery(query, null);\n    }\n}\n",
+      "context": "Trace data flow through this code"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "Trace the data flow:\n\n1. Identify the SOURCE (where untrusted data enters)\n2. Identify all TRANSFORMATIONS (what happens to the data)\n3. Identify all SINKS (where data causes action)\n4. For each sink, does the data reach it TAINTED or SANITIZED?\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "location": "string",
+            "data_type": "string",
+            "trust_level": "string"
+          },
+          "transformations": {
+            "type": "array",
+            "items": {
+              "location": "string",
+              "operation": "string",
+              "security_effect": "string"
+            }
+          },
+          "sinks": {
+            "type": "array",
+            "items": {
+              "location": "string",
+              "sink_type": "string",
+              "data_state": "string",
+              "risk_assessment": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "source_identification",
+          "weight": 0.2,
+          "description": "Correctly identifies source"
+        },
+        {
+          "name": "transformation_tracking",
+          "weight": 0.3,
+          "description": "Tracks all transformations"
+        },
+        {
+          "name": "sink_identification",
+          "weight": 0.3,
+          "description": "Identifies all sinks"
+        },
+        {
+          "name": "taint_assessment",
+          "weight": 0.2,
+          "description": "Correct taint state at sinks"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "DATA FLOW ANALYSIS:\n\nSOURCE:\n- Location: intent.getStringExtra(\"query\")\n- Type: String from external Intent\n- Trust: UNTRUSTED (external app can send anything)\n\nTRANSFORMATIONS:\n1. trim() - removes whitespace, NO security effect\n2. toLowerCase() - case normalization, NO security effect\n3. substring(0,100) - length limit, PARTIAL defense (DoS only)\n\nNone of these sanitize SQL special characters!\n\nSINKS:\n1. searchView.setText(normalized)\n   - Type: UI display\n   - Data state: Still tainted but UI display is generally safe\n   - Risk: Low (Android TextView escapes by default)\n\n2. database.rawQuery(...)\n   - Type: SQL execution\n   - Data state: TAINTED - reaches SQL string concatenation\n   - Risk: HIGH - SQL injection possible\n\nKEY INSIGHT:\nData flows from untrusted source to SQL sink without sanitization.\nThe transformations (trim, toLowerCase, substring) are NOT security controls.\n",
+    "key_observations": [],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that captures logcat output filtered to show",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "logcat -d ActivityManager:E *:S"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that sends a broadcast intent to trigger",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "am broadcast -a android.net.conn.CONNECTIVITY_CHANGE"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "Broadcast completed"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-89"
+  ],
+  "tags": [
+    "data_flow",
+    "static_analysis",
+    "source_sink"
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "id": "static_basic_white_001",
+  "name": "Identifying Security-Relevant Code Patterns",
+  "type": "observation",
+  "pillar": "static_analysis",
+  "belt": "white",
+  "difficulty": 2,
+  "description": "Learn to identify security-relevant patterns in Android code.\nNot all patterns are vulnerabilities - just learn to NOTICE them.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "// EDUCATIONAL: Identify which parts are security-relevant\n\npublic class TransferActivity extends Activity {\n\n    private SharedPreferences prefs;\n\n    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n\n        // Section A\n        prefs = getSharedPreferences(\"user_data\", MODE_PRIVATE);\n        String userId = prefs.getString(\"user_id\", \"\");\n\n        // Section B\n        WebView webView = findViewById(R.id.webview);\n        webView.getSettings().setJavaScriptEnabled(true);\n\n        // Section C\n        String amount = getIntent().getStringExtra(\"amount\");\n        String recipient = getIntent().getStringExtra(\"recipient\");\n\n        // Section D\n        Log.d(\"Transfer\", \"User \" + userId + \" transferring \" + amount);\n\n        // Section E\n        if (amount != null && recipient != null) {\n            initiateTransfer(userId, recipient, amount);\n        }\n    }\n\n    private void initiateTransfer(String user, String to, String amount) {\n        // ... transfer logic\n    }\n}\n",
+      "context": "Code from a banking app - identify security-relevant sections"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "For each section (A through E), answer:\n1. Is it security-relevant? (Yes/No)\n2. WHY is it relevant (or not)?\n3. What CATEGORY of security concern? (data storage, input, logging, etc.)\n\nDo NOT say whether it's vulnerable - just identify relevance.\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "section_analysis": {
+            "type": "array",
+            "items": {
+              "section": "string",
+              "is_relevant": "boolean",
+              "why": "string",
+              "category": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_identification",
+          "weight": 0.4,
+          "description": "Correctly identifies relevant sections"
+        },
+        {
+          "name": "correct_reasoning",
+          "weight": 0.35,
+          "description": "Valid reasoning for relevance"
+        },
+        {
+          "name": "categorization",
+          "weight": 0.25,
+          "description": "Proper category assignment"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "",
+    "key_observations": [
+      "Section A: Yes - data storage, sensitive user data",
+      "Section B: Yes - WebView with JS, potential attack surface",
+      "Section C: Yes - input handling, external data source",
+      "Section D: Yes - logging, may expose sensitive data",
+      "Section E: Yes - business logic with external inputs",
+      "ALL sections are security-relevant in this code"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that lists all installed packages on the device.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "pm list packages"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "package:"
+      }
+    },
+    {
+      "instruction": "Identify the hardware manufacturer/vendor of the device.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "getprop ro.product.manufacturer"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    }
+  ],
+  "cwe_tags": [],
+  "tags": [
+    "static_analysis",
+    "code_review",
+    "observation"
+  ]
+}

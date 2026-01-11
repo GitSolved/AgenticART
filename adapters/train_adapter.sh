@@ -48,10 +48,11 @@ case $PILLAR in
     methodology)              ADAPTER_DIR="qwen_methodology_lora" ;;
     taxonomy)                 ADAPTER_DIR="qwen_taxonomy_lora" ;;
     patch_analysis|patch)     ADAPTER_DIR="qwen_patch_lora" ;;
+    general|all)              ADAPTER_DIR="qwen_general_lora" ;;
     *)
         echo "Unknown pillar: $PILLAR"
         echo "Valid pillars: static_analysis, negative_knowledge, root_cause,"
-        echo "               pattern_transfer, methodology, taxonomy, patch_analysis"
+        echo "               pattern_transfer, methodology, taxonomy, patch_analysis, general"
         exit 1
         ;;
 esac
@@ -100,8 +101,9 @@ mlx_lm.lora \
     --iters "$EPOCHS" \
     --batch-size "$BATCH_SIZE" \
     --learning-rate "$LEARNING_RATE" \
-    --lora-rank "$RANK" \
-    --lora-layers 28
+    --num-layers 16 \
+    --steps-per-report 10 \
+    --save-every 50
 
 # Update adapter config with training metadata
 python3 << EOF

@@ -1,0 +1,144 @@
+{
+  "id": "root_novel_black_001",
+  "name": "Timing Side-Channel Root Cause",
+  "type": "observation",
+  "pillar": "root_cause",
+  "belt": "black",
+  "difficulty": 9,
+  "description": "A timing side-channel was discovered in the token validation.\nThis is subtle - the code LOOKS correct. Explain the fundamental\nissue and why it's exploitable.\n",
+  "artifacts": [
+    {
+      "type": "decompiled_code",
+      "content": "public class TokenValidator {\n\n    public boolean validateToken(String providedToken, String expectedToken) {\n        if (providedToken == null || expectedToken == null) {\n            return false;\n        }\n\n        if (providedToken.length() != expectedToken.length()) {\n            return false;\n        }\n\n        // Character-by-character comparison\n        for (int i = 0; i < expectedToken.length(); i++) {\n            if (providedToken.charAt(i) != expectedToken.charAt(i)) {\n                return false;  // Early return on mismatch\n            }\n        }\n\n        return true;\n    }\n}\n",
+      "context": "Token validation with timing leak"
+    },
+    {
+      "type": "previous_output",
+      "content": "Measurement data (average response time in microseconds):\n- Token \"AAAA...\": 12.3 \u03bcs (immediate fail at position 0)\n- Token \"XAAA...\": 14.1 \u03bcs (fail at position 1)\n- Token \"XBAA...\": 15.8 \u03bcs (fail at position 2)\n- Token \"XBCA...\": 17.5 \u03bcs (fail at position 3)\n...\n- Token \"XBCDEFGH\": 45.2 \u03bcs (all characters correct)\n\nAttack recovered full 32-character token in ~32 * 256 = 8192 attempts\n(vs 256^32 for brute force)\n",
+      "context": "Timing attack results"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "The code uses == for comparison, checks length, and iterates correctly.\nWhy is it STILL vulnerable? Explain:\n1. The fundamental information leak\n2. Why early return creates a side channel\n3. The mathematical impact on attack complexity\n4. Why this is hard to fix without constant-time comparison\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "surface_cause": "string",
+          "information_leak": "string",
+          "root_cause": "string",
+          "mathematical_analysis": {
+            "brute_force_complexity": "string",
+            "timing_attack_complexity": "string",
+            "improvement_factor": "string"
+          },
+          "fundamental_principle": "string",
+          "constant_time_solution": "string",
+          "taxonomy": {
+            "cwe": "string",
+            "related_cwes": "array"
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "leak_identification",
+          "weight": 0.3,
+          "description": "Correctly identifies information leak"
+        },
+        {
+          "name": "mathematical_analysis",
+          "weight": 0.25,
+          "description": "Accurate complexity analysis"
+        },
+        {
+          "name": "root_cause_depth",
+          "weight": 0.25,
+          "description": "Fundamental cause explained"
+        },
+        {
+          "name": "solution_understanding",
+          "weight": 0.2,
+          "description": "Understands constant-time requirement"
+        }
+      ],
+      "max_tokens": 2500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "INFORMATION LEAK:\nThe early return leaks HOW MANY characters were correct before failure.\nEach additional correct character adds measurable execution time.\n\nROOT CAUSE:\nExecution time is correlated with secret data (correct prefix length).\nThis violates the principle: \"Observable behavior should not vary based\non secret values.\"\n\nMATHEMATICAL IMPACT:\n- Brute force: O(k^n) where k=charset size, n=token length\n  For 32-char alphanumeric: 62^32 \u2248 10^57 attempts\n- Timing attack: O(k*n) = 62 * 32 \u2248 2000 attempts\n  Each position can be determined independently!\n\nFUNDAMENTAL PRINCIPLE VIOLATED:\nConstant-Time Cryptographic Operations\n\nSecret-dependent branching (the early return) creates timing variation.\nEven sub-microsecond differences can be amplified through:\n- Statistical analysis over many samples\n- Network jitter filtering\n- Local timing measurement\n\nWHY IT'S HARD TO FIX:\nCompilers optimize code. A \"fixed\" loop might be optimized back to\nearly-return form. Must use:\n- Hardware-backed constant-time primitives\n- MessageDigest.isEqual() in Java\n- crypto libraries designed for constant-time\n",
+    "key_observations": [],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that lists the contents of the data directory",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "run-as com.android.settings ls /data/data/com.android.settings/"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "shared_prefs"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that queries the contacts database to show",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "sqlite3 /data/data/com.android.providers.contacts/databases/contacts2.db '.tables'"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "table"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that displays all active network connections",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "netstat -an"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "LISTEN"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that queries the Settings content provider",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "content query --uri content://settings/system"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "Row:"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that displays the memory map of the",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "cat /proc/$(pidof system_server)/maps"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": ".so"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-208",
+    "CWE-385"
+  ],
+  "tags": [
+    "timing_attack",
+    "side_channel",
+    "cryptography",
+    "constant_time"
+  ]
+}

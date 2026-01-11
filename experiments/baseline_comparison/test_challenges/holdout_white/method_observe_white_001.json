@@ -1,0 +1,120 @@
+{
+  "id": "method_observe_white_001",
+  "name": "Structured Observation Practice",
+  "type": "observation",
+  "pillar": "methodology",
+  "belt": "white",
+  "difficulty": 2,
+  "description": "Before forming hypotheses, you must observe systematically.\nThis challenge trains disciplined observation without jumping to conclusions.\n",
+  "artifacts": [
+    {
+      "type": "manifest",
+      "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    package=\"com.example.messenger\">\n\n    <uses-permission android:name=\"android.permission.INTERNET\" />\n    <uses-permission android:name=\"android.permission.READ_CONTACTS\" />\n    <uses-permission android:name=\"android.permission.CAMERA\" />\n    <uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n\n    <application\n        android:name=\".MessengerApp\"\n        android:allowBackup=\"true\"\n        android:debuggable=\"false\"\n        android:usesCleartextTraffic=\"true\">\n\n        <activity\n            android:name=\".MainActivity\"\n            android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\" />\n                <category android:name=\"android.intent.category.LAUNCHER\" />\n            </intent-filter>\n        </activity>\n\n        <activity\n            android:name=\".DeepLinkActivity\"\n            android:exported=\"true\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.VIEW\" />\n                <category android:name=\"android.intent.category.DEFAULT\" />\n                <category android:name=\"android.intent.category.BROWSABLE\" />\n                <data android:scheme=\"messenger\" android:host=\"open\" />\n            </intent-filter>\n        </activity>\n\n        <service\n            android:name=\".MessageService\"\n            android:exported=\"false\" />\n\n        <receiver\n            android:name=\".PushReceiver\"\n            android:exported=\"true\"\n            android:permission=\"com.google.android.c2dm.permission.SEND\">\n            <intent-filter>\n                <action android:name=\"com.google.android.c2dm.intent.RECEIVE\" />\n            </intent-filter>\n        </receiver>\n\n        <provider\n            android:name=\".ContactsProvider\"\n            android:authorities=\"com.example.messenger.contacts\"\n            android:exported=\"true\"\n            android:grantUriPermissions=\"true\" />\n\n    </application>\n</manifest>\n",
+      "context": "AndroidManifest.xml from target app"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "observe",
+      "instruction": "OBSERVE ONLY - Do not hypothesize or conclude yet.\n\nList everything security-relevant you can find:\n1. Permissions requested\n2. Exported components\n3. Configuration settings\n4. Data handling indicators\n\nFor each observation, note:\n- What it IS (fact)\n- Why it MIGHT be relevant (not conclusion, just relevance)\n\nDO NOT: Say \"this is vulnerable\" or \"this could be exploited\"\nDO: Say \"this component is exported\" or \"this permission is requested\"\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "permission": "string",
+              "relevance": "string"
+            }
+          },
+          "exported_components": {
+            "type": "array",
+            "items": {
+              "component_type": "string",
+              "component_name": "string",
+              "additional_config": "string"
+            }
+          },
+          "configuration_flags": {
+            "type": "array",
+            "items": {
+              "flag": "string",
+              "value": "string",
+              "relevance": "string"
+            }
+          },
+          "observation_count": "integer"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "completeness",
+          "weight": 0.35,
+          "description": "Found all security-relevant items"
+        },
+        {
+          "name": "discipline",
+          "weight": 0.35,
+          "description": "Observations without conclusions"
+        },
+        {
+          "name": "organization",
+          "weight": 0.2,
+          "description": "Well-organized output"
+        },
+        {
+          "name": "no_jumping",
+          "weight": 0.1,
+          "description": "Didn't jump to exploit scenarios"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "",
+    "key_observations": [
+      "6 permissions requested including location, contacts, camera",
+      "allowBackup=true",
+      "usesCleartextTraffic=true",
+      "4 exported components: MainActivity, DeepLinkActivity, PushReceiver, ContactsProvider",
+      "ContentProvider exported with grantUriPermissions=true",
+      "Deep link scheme: messenger://open",
+      "debuggable=false (good)"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB shell command that outputs the Android version of the connected device.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "getprop ro.build.version.release"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": "^\\d+(\\.\\d+)*"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that retrieves the device model name.",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "getprop ro.product.model"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    }
+  ],
+  "cwe_tags": [],
+  "tags": [
+    "observation",
+    "methodology",
+    "manifest_analysis"
+  ]
+}

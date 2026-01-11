@@ -1,0 +1,101 @@
+{
+  "id": "method_prioritize_green_001",
+  "name": "Hypothesis Prioritization",
+  "type": "hypothesis",
+  "pillar": "methodology",
+  "belt": "green",
+  "difficulty": 6,
+  "description": "When you have multiple hypotheses, you must prioritize efficiently.\nTest order matters: high-impact, high-confidence hypotheses first.\n",
+  "artifacts": [
+    {
+      "type": "previous_output",
+      "content": "HYPOTHESES FROM CODE REVIEW:\n\nH1: SQL Injection in search function\n- Confidence: 0.85\n- Impact if confirmed: Critical (full database access)\n- Test complexity: Low (send crafted search query)\n\nH2: Insecure WebView JavaScript interface\n- Confidence: 0.70\n- Impact if confirmed: High (token theft)\n- Test complexity: Medium (craft malicious page, get victim to load)\n\nH3: Hardcoded API key in BuildConfig\n- Confidence: 0.95\n- Impact if confirmed: Medium (API abuse, depends on key scope)\n- Test complexity: Very Low (just decompile and read)\n\nH4: Path traversal in file download\n- Confidence: 0.50\n- Impact if confirmed: High (arbitrary file read)\n- Test complexity: Medium (need to find accessible endpoint)\n\nH5: Timing attack on password comparison\n- Confidence: 0.40\n- Impact if confirmed: High (credential theft)\n- Test complexity: High (requires many samples, statistical analysis)\n\nH6: Exported activity allows config modification\n- Confidence: 0.90\n- Impact if confirmed: Medium (change app settings)\n- Test complexity: Low (send intent with extras)\n",
+      "context": "Multiple hypotheses from analysis"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "Prioritize these hypotheses for testing. Consider:\n\n1. Expected Value = Confidence \u00d7 Impact\n2. Cost = Test Complexity\n3. ROI = Expected Value / Cost\n4. Dependencies (does one unlock others?)\n\nProduce a prioritized testing plan with justification.\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "prioritized_order": {
+            "type": "array",
+            "items": {
+              "rank": "integer",
+              "hypothesis_id": "string",
+              "expected_value": "string",
+              "cost": "string",
+              "roi_reasoning": "string"
+            }
+          },
+          "testing_strategy": "string",
+          "dependencies_noted": "array",
+          "estimated_coverage": "string"
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "prioritization_logic",
+          "weight": 0.35,
+          "description": "Sound prioritization reasoning"
+        },
+        {
+          "name": "roi_consideration",
+          "weight": 0.3,
+          "description": "Considers effort vs value"
+        },
+        {
+          "name": "practicality",
+          "weight": 0.2,
+          "description": "Realistic assessment"
+        },
+        {
+          "name": "strategy_coherence",
+          "weight": 0.15,
+          "description": "Overall strategy makes sense"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "OPTIMAL PRIORITIZATION:\n\n1. H3 (Hardcoded API key) - ROI: Highest\n   - 95% confidence, very low cost\n   - Even medium impact is worth it for 5-minute check\n   - Quick win, builds momentum\n\n2. H1 (SQL Injection) - ROI: Very High\n   - 85% confidence, critical impact, low cost\n   - Classic high-value target\n\n3. H6 (Exported activity) - ROI: High\n   - 90% confidence, low cost\n   - Medium impact but almost certain to work\n\n4. H2 (WebView) - ROI: Medium-High\n   - 70% confidence, high impact, medium cost\n   - Worth the effort for potential token theft\n\n5. H4 (Path traversal) - ROI: Medium\n   - Only 50% confidence, but high impact\n   - Explore if time permits\n\n6. H5 (Timing attack) - ROI: Lowest\n   - Low confidence (40%), high cost\n   - Only if everything else is done\n\nSTRATEGY:\nStart with \"free\" checks (H3), then high-confidence/high-impact (H1),\nthen diminishing ROI. Stop when time budget exhausted.\n",
+    "key_observations": [],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that finds the APK file path for the",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "pm path com.android.calculator2"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": ".apk"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that displays the memory map of the",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "cat /proc/$(pidof system_server)/maps"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": ".so"
+      }
+    }
+  ],
+  "cwe_tags": [],
+  "tags": [
+    "prioritization",
+    "methodology",
+    "efficiency"
+  ]
+}

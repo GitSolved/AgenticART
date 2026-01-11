@@ -1,0 +1,96 @@
+{
+  "id": "taxonomy_owasp_yellow_001",
+  "name": "OWASP Mobile Top 10 Classification",
+  "type": "observation",
+  "pillar": "taxonomy",
+  "belt": "yellow",
+  "difficulty": 3,
+  "description": "Map vulnerabilities to OWASP Mobile Top 10 categories.\nThis helps communicate findings to stakeholders and prioritize fixes.\n",
+  "artifacts": [
+    {
+      "type": "previous_output",
+      "content": "FINDING 1: API key hardcoded in BuildConfig\nThe Stripe API key is embedded in the app source code.\n\nFINDING 2: Insecure data storage\nUser credentials stored in SharedPreferences without encryption.\n\nFINDING 3: Certificate pinning bypass\nApp doesn't implement certificate pinning, allowing MitM attacks.\n\nFINDING 4: Debug logging enabled\nProduction build logs sensitive user data to logcat.\n\nFINDING 5: Exported activity allows settings change\nSettingsActivity is exported without permission protection.\n",
+      "context": "Vulnerability findings from assessment"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "analyze",
+      "instruction": "Map each finding to:\n1. The correct OWASP Mobile Top 10 (2024) category\n2. The specific CWE(s)\n3. Brief justification for the mapping\n\nOWASP Mobile Top 10 2024:\nM1: Improper Credential Usage\nM2: Inadequate Supply Chain Security\nM3: Insecure Authentication/Authorization\nM4: Insufficient Input/Output Validation\nM5: Insecure Communication\nM6: Inadequate Privacy Controls\nM7: Insufficient Binary Protections\nM8: Security Misconfiguration\nM9: Insecure Data Storage\nM10: Insufficient Cryptography\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "mappings": {
+            "type": "array",
+            "items": {
+              "finding_id": "integer",
+              "owasp_category": "string",
+              "cwe_ids": "array",
+              "justification": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "correct_owasp",
+          "weight": 0.4,
+          "description": "Correct OWASP category"
+        },
+        {
+          "name": "correct_cwe",
+          "weight": 0.3,
+          "description": "Correct CWE mapping"
+        },
+        {
+          "name": "justification",
+          "weight": 0.3,
+          "description": "Clear reasoning"
+        }
+      ],
+      "max_tokens": 1500
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "CORRECT MAPPINGS:\n\nFINDING 1 (Hardcoded API key):\n- OWASP: M1 - Improper Credential Usage\n- CWE: CWE-798 (Hardcoded Credentials)\n- Justification: Credentials embedded in source code\n\nFINDING 2 (Unencrypted SharedPreferences):\n- OWASP: M9 - Insecure Data Storage\n- CWE: CWE-312 (Cleartext Storage of Sensitive Information)\n- Justification: Sensitive data stored without encryption\n\nFINDING 3 (No certificate pinning):\n- OWASP: M5 - Insecure Communication\n- CWE: CWE-295 (Improper Certificate Validation)\n- Justification: TLS without pinning allows MitM\n\nFINDING 4 (Debug logging):\n- OWASP: M8 - Security Misconfiguration\n- Also touches: M6 - Inadequate Privacy Controls\n- CWE: CWE-532 (Insertion of Sensitive Information into Log File)\n- Justification: Logging sensitive data is a configuration error\n\nFINDING 5 (Exported activity):\n- OWASP: M8 - Security Misconfiguration\n- Also touches: M3 - Insecure Authentication/Authorization\n- CWE: CWE-926 (Improper Export of Android Application Components)\n- Justification: Component exposure without protection\n",
+    "key_observations": [
+      "Some findings map to multiple categories",
+      "M8 (Misconfiguration) is a catch-all for many issues",
+      "CWE provides more precision than OWASP category"
+    ],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that finds the APK file path for the",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "pm path com.android.calculator2"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": ".apk"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that captures a screenshot of the device",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "screencap -p /sdcard/screenshot.png"
+      },
+      "validation_rule": {
+        "type": "regex",
+        "pattern": ".+"
+      }
+    }
+  ],
+  "cwe_tags": [],
+  "tags": [
+    "owasp",
+    "taxonomy",
+    "mobile_top_10"
+  ]
+}

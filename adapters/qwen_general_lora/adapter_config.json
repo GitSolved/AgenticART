@@ -1,0 +1,36 @@
+{
+  "adapter_name": "qwen_general_lora",
+  "pillar": "general",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "lora_config": {
+    "rank": 64,
+    "alpha": 128,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "training": {
+    "status": "placeholder",
+    "epochs": 0,
+    "samples": 2950,
+    "final_loss": null,
+    "trained_at": null
+  },
+  "description": "General-purpose security analysis adapter combining all pillars. Used as baseline (Arm C) in experiments.",
+  "capabilities": [
+    "Static code analysis",
+    "Negative knowledge (secure pattern recognition)",
+    "Root cause analysis",
+    "Pattern transfer across domains",
+    "Security methodology",
+    "CWE/OWASP taxonomy classification",
+    "Patch completeness analysis"
+  ]
+}

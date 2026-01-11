@@ -1,0 +1,104 @@
+{
+  "id": "method_hypothesis_yellow_001",
+  "name": "From Observation to Hypothesis",
+  "type": "hypothesis",
+  "pillar": "methodology",
+  "belt": "yellow",
+  "difficulty": 4,
+  "description": "Given observations from a previous analysis, form TESTABLE hypotheses.\nA good hypothesis is specific, testable, and falsifiable.\n",
+  "artifacts": [
+    {
+      "type": "previous_output",
+      "content": "OBSERVATIONS:\n1. WebView component found in ProfileActivity\n2. setJavaScriptEnabled(true) called\n3. addJavascriptInterface() used with object named \"AppBridge\"\n4. URL loaded from intent extra: getIntent().getStringExtra(\"profile_url\")\n5. No setAllowFileAccess() call found (defaults to true on older API)\n6. targetSdkVersion is 28\n7. ProfileActivity is exported=true\n8. WebViewClient.shouldOverrideUrlLoading() not implemented\n9. AppBridge has methods: getUserToken(), getDeviceId()\n",
+      "context": "Observations from code review"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "hypothesize",
+      "instruction": "Based on these observations, form 3-5 TESTABLE hypotheses.\n\nFor each hypothesis:\n1. State it clearly and specifically\n2. Reference which observations support it\n3. Define what would CONFIRM it\n4. Define what would REFUTE it\n5. Assign a confidence level (0.0-1.0)\n6. Suggest the CWE if confirmed\n\nA hypothesis must be TESTABLE - vague statements like\n\"the app might be insecure\" are NOT hypotheses.\n",
+      "expected_output_schema": {
+        "type": "object",
+        "properties": {
+          "hypotheses": {
+            "type": "array",
+            "items": {
+              "statement": "string",
+              "supporting_observations": "array",
+              "confirmation_criteria": "string",
+              "refutation_criteria": "string",
+              "confidence": "float",
+              "cwe_if_confirmed": "string",
+              "test_method": "string"
+            }
+          }
+        }
+      },
+      "evaluation_criteria": [
+        {
+          "name": "testability",
+          "weight": 0.3,
+          "description": "Hypotheses are testable"
+        },
+        {
+          "name": "specificity",
+          "weight": 0.25,
+          "description": "Precise, not vague"
+        },
+        {
+          "name": "evidence_linkage",
+          "weight": 0.25,
+          "description": "Connected to observations"
+        },
+        {
+          "name": "falsifiability",
+          "weight": 0.2,
+          "description": "Can be proven wrong"
+        }
+      ],
+      "max_tokens": 2000
+    }
+  ],
+  "ground_truth": {
+    "vulnerability_present": true,
+    "vulnerability_type": null,
+    "cwe_id": null,
+    "root_cause": "",
+    "key_observations": [],
+    "secure_properties": []
+  },
+  "verification_tasks": [
+    {
+      "instruction": "Write an ADB command that extracts and displays all permissions",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "dumpsys package com.android.settings | grep permission"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "permission"
+      }
+    },
+    {
+      "instruction": "Write an ADB command that launches the Android Settings app's",
+      "mcp_tool_call": {
+        "tool": "adb_shell",
+        "command": "am start -n com.android.settings/.Settings"
+      },
+      "validation_rule": {
+        "type": "output_contains",
+        "expected": "Starting"
+      }
+    }
+  ],
+  "cwe_tags": [
+    "CWE-749",
+    "CWE-79",
+    "CWE-200"
+  ],
+  "tags": [
+    "hypothesis",
+    "webview",
+    "methodology"
+  ]
+}
