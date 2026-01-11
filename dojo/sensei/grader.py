@@ -6,7 +6,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 from core.reconnaissance.device_enum import ADBConnection
 from dojo.curriculum import ChallengeSession

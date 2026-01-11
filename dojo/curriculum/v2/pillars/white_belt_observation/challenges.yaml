@@ -1,0 +1,2457 @@
+challenges:
+# =============================================================================
+# STATIC ANALYSIS - DATA IDENTIFICATION (White Belt)
+# =============================================================================
+
+- id: static_data_id_white_001
+  name: Identifying Sensitive Data Types in Code
+  version: 2
+  type: observation
+  pillar: static_analysis
+  belt: white
+  difficulty: 1
+  description: |
+    Learn to identify different categories of sensitive data in Android code.
+    Your task is to CATALOG what types of data are present - NOT to assess risk.
+
+    Focus on OBSERVATION: What data types exist? Where are they stored or used?
+    Do NOT conclude whether anything is "vulnerable" or "insecure".
+  artifacts:
+  - type: decompiled_code
+    context: UserProfileManager from a healthcare app - catalog all data types
+    content: |
+      public class UserProfileManager {
+          private static final String PREFS_NAME = "user_profile";
+          private SharedPreferences prefs;
+          private SQLiteDatabase db;
+
+          public void saveUserProfile(UserProfile profile) {
+              SharedPreferences.Editor editor = prefs.edit();
+
+              // Basic info
+              editor.putString("full_name", profile.getFullName());
+              editor.putString("email", profile.getEmail());
+              editor.putString("phone", profile.getPhoneNumber());
+              editor.putString("ssn", profile.getSocialSecurityNumber());
+              editor.putString("date_of_birth", profile.getDateOfBirth());
+
+              // Medical info
+              editor.putString("blood_type", profile.getBloodType());
+              editor.putString("allergies", profile.getAllergies());
+              editor.putString("medications", profile.getCurrentMedications());
+              editor.putString("insurance_id", profile.getInsuranceId());
+
+              // Authentication
+              editor.putString("session_token", profile.getSessionToken());
+              editor.putString("refresh_token", profile.getRefreshToken());
+
+              // Device info
+              editor.putString("device_id", Build.SERIAL);
+              editor.putString("android_id", Settings.Secure.ANDROID_ID);
+
+              editor.apply();
+          }
+
+          public void savePaymentInfo(PaymentCard card) {
+              ContentValues values = new ContentValues();
+              values.put("card_number", card.getNumber());
+              values.put("cvv", card.getCvv());
+              values.put("expiry", card.getExpiry());
+              values.put("cardholder_name", card.getHolderName());
+              values.put("billing_zip", card.getBillingZip());
+              db.insert("payment_cards", null, values);
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Catalog ALL sensitive data types present in this code.
+
+      For EACH data field, document:
+      1. Field name (exactly as shown in code)
+      2. Data category (PII, PHI, PCI, Authentication, Device ID, etc.)
+      3. Storage mechanism used (SharedPreferences, SQLite, etc.)
+
+      IMPORTANT: Do NOT say whether storage is "secure" or "insecure".
+      Do NOT use words like "vulnerable", "risk", or "should".
+      Simply OBSERVE and CATALOG what exists.
+    expected_output_schema:
+      type: object
+      properties:
+        data_catalog:
+          type: array
+          items:
+            field_name: string
+            data_category: string
+            storage_mechanism: string
+            data_sensitivity_tier: string
+        storage_mechanisms_found:
+          type: array
+          items: string
+        data_categories_present:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: complete_identification
+      weight: 0.4
+      description: Identifies all 16+ data fields present
+    - name: correct_categorization
+      weight: 0.35
+      description: Correctly categorizes data types (PII, PHI, PCI, etc.)
+    - name: no_conclusions
+      weight: 0.25
+      description: Avoids security judgments - pure observation only
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "full_name: PII, SharedPreferences"
+    - "email: PII, SharedPreferences"
+    - "phone: PII, SharedPreferences"
+    - "ssn: PII (highly sensitive), SharedPreferences"
+    - "date_of_birth: PII, SharedPreferences"
+    - "blood_type: PHI, SharedPreferences"
+    - "allergies: PHI, SharedPreferences"
+    - "medications: PHI, SharedPreferences"
+    - "insurance_id: PHI/PII, SharedPreferences"
+    - "session_token: Authentication credential, SharedPreferences"
+    - "refresh_token: Authentication credential, SharedPreferences"
+    - "device_id: Device identifier, SharedPreferences"
+    - "android_id: Device identifier, SharedPreferences"
+    - "card_number: PCI-DSS scope, SQLite"
+    - "cvv: PCI-DSS scope, SQLite"
+    - "expiry: PCI-DSS scope, SQLite"
+    - "cardholder_name: PCI-DSS scope, SQLite"
+    - "billing_zip: PCI-DSS scope, SQLite"
+    - Two storage mechanisms identified (SharedPreferences, SQLite)
+  training:
+    common_mistakes:
+    - Saying data is "insecurely stored" instead of just cataloging it
+    - Missing device identifiers (Build.SERIAL, ANDROID_ID)
+    - Not distinguishing PHI from general PII
+    - Jumping to conclusions about encryption
+  tags:
+  - static_analysis
+  - data_identification
+  - observation
+  - pii
+  - phi
+  - pci
+  verification_tasks:
+  - instruction: List all SharedPreferences files for a package to understand storage locations.
+    mcp_tool_call:
+      tool: adb_shell
+      command: ls -la /data/data/com.example.app/shared_prefs/
+    validation_rule:
+      type: regex
+      pattern: \.xml
+  - instruction: Check if app has SQLite databases to verify database storage exists.
+    mcp_tool_call:
+      tool: adb_shell
+      command: ls -la /data/data/com.example.app/databases/
+    validation_rule:
+      type: regex
+      pattern: \.db
+
+- id: static_data_id_white_002
+  name: Mapping Data Flow Between Components
+  version: 2
+  type: observation
+  pillar: static_analysis
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to trace how data moves between Android components.
+    Map the FLOW of data - where it enters, where it goes, where it exits.
+
+    Your task is to draw a mental map of data movement.
+    Do NOT assess whether any flow is "dangerous" - just document what exists.
+  artifacts:
+  - type: decompiled_code
+    context: Three related classes showing data flow - trace the connections
+    content: |
+      // === LoginActivity.java ===
+      public class LoginActivity extends AppCompatActivity {
+          private EditText usernameField, passwordField;
+
+          public void onLoginClick(View v) {
+              String username = usernameField.getText().toString();
+              String password = passwordField.getText().toString();
+
+              Intent intent = new Intent(this, AuthService.class);
+              intent.putExtra("username", username);
+              intent.putExtra("password", password);
+              startService(intent);
+
+              // Also broadcast for analytics
+              Intent analyticsIntent = new Intent("com.app.LOGIN_ATTEMPT");
+              analyticsIntent.putExtra("user", username);
+              analyticsIntent.putExtra("timestamp", System.currentTimeMillis());
+              sendBroadcast(analyticsIntent);
+          }
+      }
+
+      // === AuthService.java ===
+      public class AuthService extends IntentService {
+          @Override
+          protected void onHandleIntent(Intent intent) {
+              String username = intent.getStringExtra("username");
+              String password = intent.getStringExtra("password");
+
+              // Call API
+              AuthResponse response = api.authenticate(username, password);
+
+              // Store result
+              SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
+              prefs.edit()
+                  .putString("auth_token", response.getToken())
+                  .putString("user_id", response.getUserId())
+                  .apply();
+
+              // Notify UI
+              Intent resultIntent = new Intent("com.app.AUTH_RESULT");
+              resultIntent.putExtra("success", response.isSuccess());
+              resultIntent.putExtra("user_id", response.getUserId());
+              LocalBroadcastManager.getInstance(this).sendBroadcast(resultIntent);
+          }
+      }
+
+      // === ProfileFragment.java ===
+      public class ProfileFragment extends Fragment {
+          @Override
+          public void onResume() {
+              SharedPreferences prefs = getContext()
+                  .getSharedPreferences("auth", Context.MODE_PRIVATE);
+              String userId = prefs.getString("user_id", null);
+              String token = prefs.getString("auth_token", null);
+
+              // Pass to WebView
+              webView.loadUrl("https://profile.app.com/user/" + userId
+                  + "?token=" + token);
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Map the complete data flow across these three components.
+
+      Document:
+      1. DATA ENTRY POINTS: Where does data first enter the system?
+      2. DATA TRANSFERS: How does data move between components? (Intent, Broadcast, SharedPrefs, etc.)
+      3. DATA EXIT POINTS: Where does data leave the app? (Network, logs, other apps, etc.)
+
+      For each piece of data (username, password, token, etc.), trace its complete journey.
+
+      IMPORTANT: Only OBSERVE the flow. Do NOT comment on security implications.
+      Avoid words like "exposed", "leaked", "vulnerable", or "insecure".
+    expected_output_schema:
+      type: object
+      properties:
+        data_entry_points:
+          type: array
+          items:
+            data_field: string
+            entry_component: string
+            entry_mechanism: string
+        data_transfers:
+          type: array
+          items:
+            data_field: string
+            source_component: string
+            destination_component: string
+            transfer_mechanism: string
+        data_exit_points:
+          type: array
+          items:
+            data_field: string
+            exit_component: string
+            exit_destination: string
+            exit_mechanism: string
+    evaluation_criteria:
+    - name: complete_flow_mapping
+      weight: 0.4
+      description: Maps all data movements across components
+    - name: accurate_mechanism_identification
+      weight: 0.35
+      description: Correctly identifies transfer mechanisms
+    - name: observation_discipline
+      weight: 0.25
+      description: Maintains observation without security judgments
+    max_tokens: 2500
+  ground_truth:
+    key_observations:
+    - "Entry: username from EditText in LoginActivity"
+    - "Entry: password from EditText in LoginActivity"
+    - "Transfer: username/password via explicit Intent to AuthService"
+    - "Transfer: username via implicit broadcast (com.app.LOGIN_ATTEMPT)"
+    - "Transfer: auth_token/user_id via SharedPreferences"
+    - "Transfer: success/user_id via LocalBroadcast"
+    - "Exit: username/password to network API"
+    - "Exit: user_id/token to WebView URL"
+    - "Exit: username/timestamp via global broadcast"
+    - Three components identified (Activity, Service, Fragment)
+    - Four transfer mechanisms (Intent extras, Broadcast, SharedPrefs, LocalBroadcast)
+  training:
+    common_mistakes:
+    - Missing the global broadcast of login attempt
+    - Not noticing token passed in URL parameter
+    - Confusing LocalBroadcast with global sendBroadcast
+    - Saying data is "leaked" instead of documenting exit point
+  tags:
+  - static_analysis
+  - data_flow
+  - observation
+  - ipc
+  verification_tasks:
+  - instruction: List registered broadcast receivers to understand broadcast landscape.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.example.app | grep -A5 "receiver"
+    validation_rule:
+      type: regex
+      pattern: receiver|Receiver
+  - instruction: Check running services to verify service-based data handling.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys activity services com.example.app
+    validation_rule:
+      type: output_contains
+      expected: "ServiceRecord"
+
+- id: static_data_id_white_003
+  name: Cataloging Cryptographic Material
+  version: 2
+  type: observation
+  pillar: static_analysis
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify cryptographic elements in code without assessing their strength.
+    Catalog keys, algorithms, modes, IVs, and other crypto artifacts.
+
+    Your job is to BUILD AN INVENTORY of crypto usage.
+    Do NOT evaluate if crypto is "weak" or "broken" - just document what you see.
+  artifacts:
+  - type: decompiled_code
+    context: Encryption utility class - catalog all cryptographic elements
+    content: |
+      public class CryptoUtils {
+          private static final String AES_KEY = "MySecretKey12345";
+          private static final byte[] IV = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          private static final String SALT = "AppSalt2024";
+
+          public byte[] encryptAES(String plaintext) throws Exception {
+              SecretKeySpec keySpec = new SecretKeySpec(
+                  AES_KEY.getBytes("UTF-8"), "AES");
+              Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+              IvParameterSpec ivSpec = new IvParameterSpec(IV);
+              cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+              return cipher.doFinal(plaintext.getBytes());
+          }
+
+          public String hashPassword(String password) throws Exception {
+              MessageDigest md = MessageDigest.getInstance("MD5");
+              byte[] hash = md.digest(password.getBytes());
+              return Base64.encodeToString(hash, Base64.DEFAULT);
+          }
+
+          public String hashWithSalt(String password) throws Exception {
+              MessageDigest md = MessageDigest.getInstance("SHA-1");
+              md.update(SALT.getBytes());
+              byte[] hash = md.digest(password.getBytes());
+              return Base64.encodeToString(hash, Base64.DEFAULT);
+          }
+
+          public KeyPair generateRSAKeys() throws Exception {
+              KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+              kpg.initialize(1024);
+              return kpg.generateKeyPair();
+          }
+
+          public byte[] signData(byte[] data, PrivateKey key) throws Exception {
+              Signature sig = Signature.getInstance("SHA1withRSA");
+              sig.initSign(key);
+              sig.update(data);
+              return sig.sign();
+          }
+
+          public SecretKey deriveKey(String password) throws Exception {
+              SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+              KeySpec spec = new PBEKeySpec(password.toCharArray(),
+                  SALT.getBytes(), 1000, 128);
+              return factory.generateSecret(spec);
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Create a complete INVENTORY of all cryptographic elements in this code.
+
+      Catalog:
+      1. ALGORITHMS: What crypto algorithms are used? (AES, MD5, SHA-1, RSA, etc.)
+      2. MODES: What cipher modes? (CBC, ECB, GCM, etc.)
+      3. PADDING: What padding schemes?
+      4. KEY MATERIAL: Where do keys come from? (hardcoded, derived, generated)
+      5. IVs/NONCES: Are initialization vectors present? How are they created?
+      6. KEY SIZES: What key sizes are specified?
+      7. ITERATION COUNTS: For key derivation, what iteration count?
+
+      IMPORTANT: Do NOT say if any algorithm is "weak", "broken", or "insecure".
+      Simply CATALOG what cryptographic elements exist.
+    expected_output_schema:
+      type: object
+      properties:
+        algorithms_inventory:
+          type: array
+          items:
+            algorithm: string
+            purpose: string
+            method_location: string
+        key_material_inventory:
+          type: array
+          items:
+            key_identifier: string
+            source: string
+            size_if_known: string
+        configuration_details:
+          type: array
+          items:
+            element: string
+            value: string
+            location: string
+    evaluation_criteria:
+    - name: complete_inventory
+      weight: 0.4
+      description: Identifies all crypto algorithms and configurations
+    - name: accurate_cataloging
+      weight: 0.35
+      description: Correctly notes modes, padding, key sources
+    - name: no_security_judgment
+      weight: 0.25
+      description: Avoids evaluating crypto strength
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "Algorithm: AES with CBC mode and PKCS5Padding"
+    - "Algorithm: MD5 hash function"
+    - "Algorithm: SHA-1 hash function"
+    - "Algorithm: RSA key generation, 1024-bit"
+    - "Algorithm: SHA1withRSA signature"
+    - "Algorithm: PBKDF2WithHmacSHA1 key derivation"
+    - "Key: AES_KEY hardcoded as string literal"
+    - "Key: IV hardcoded as all-zeros byte array"
+    - "Key: SALT hardcoded as string literal"
+    - "Key derivation: 1000 iterations, 128-bit output"
+    - "RSA key size: 1024 bits specified"
+  training:
+    common_mistakes:
+    - Saying MD5 is "broken" instead of just noting it's used
+    - Missing the PBKDF2 iteration count
+    - Not noting the IV is all zeros (observation vs. judgment)
+    - Evaluating RSA key size as "too small"
+  tags:
+  - static_analysis
+  - cryptography
+  - observation
+  - key_management
+  verification_tasks:
+  - instruction: List crypto providers available on device to understand crypto landscape.
+    mcp_tool_call:
+      tool: adb_shell
+      command: "cat /system/etc/security/cacerts/* 2>/dev/null | head -20 || echo 'checking crypto'"
+    validation_rule:
+      type: regex
+      pattern: .*
+  - instruction: Check if AndroidKeyStore is available on device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: ls /data/misc/keystore/
+    validation_rule:
+      type: regex
+      pattern: .*
+
+- id: static_data_id_white_004
+  name: Identifying Network Data Transmission Points
+  version: 2
+  type: observation
+  pillar: static_analysis
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to catalog all points where data is transmitted over the network.
+    Identify URLs, endpoints, protocols, and what data is sent.
+
+    Map the network surface of the application.
+    Do NOT assess if transmissions are "secure" or "encrypted" - just document them.
+  artifacts:
+  - type: decompiled_code
+    context: API client class - catalog all network transmission points
+    content: |
+      public class ApiClient {
+          private static final String BASE_URL = "http://api.myapp.com/v1/";
+          private static final String ANALYTICS_URL = "http://analytics.tracking.io/collect";
+          private static final String CDN_URL = "https://cdn.myapp.com/";
+
+          private OkHttpClient client;
+
+          public void sendUserData(User user) {
+              JSONObject json = new JSONObject();
+              json.put("name", user.getName());
+              json.put("email", user.getEmail());
+              json.put("location", user.getLocation());
+              json.put("device_id", getDeviceId());
+
+              Request request = new Request.Builder()
+                  .url(BASE_URL + "users/sync")
+                  .addHeader("Authorization", "Bearer " + getToken())
+                  .addHeader("X-Device-ID", getDeviceId())
+                  .post(RequestBody.create(json.toString(), JSON))
+                  .build();
+              client.newCall(request).enqueue(callback);
+          }
+
+          public void trackEvent(String event, Map<String, String> params) {
+              HttpUrl.Builder urlBuilder = HttpUrl.parse(ANALYTICS_URL).newBuilder();
+              urlBuilder.addQueryParameter("event", event);
+              urlBuilder.addQueryParameter("user_id", getUserId());
+              for (Map.Entry<String, String> param : params.entrySet()) {
+                  urlBuilder.addQueryParameter(param.getKey(), param.getValue());
+              }
+
+              Request request = new Request.Builder()
+                  .url(urlBuilder.build())
+                  .get()
+                  .build();
+              client.newCall(request).enqueue(callback);
+          }
+
+          public void uploadFile(File file, String description) {
+              MultipartBody body = new MultipartBody.Builder()
+                  .setType(MultipartBody.FORM)
+                  .addFormDataPart("file", file.getName(),
+                      RequestBody.create(file, OCTET_STREAM))
+                  .addFormDataPart("description", description)
+                  .addFormDataPart("uploader_id", getUserId())
+                  .build();
+
+              Request request = new Request.Builder()
+                  .url(BASE_URL + "files/upload")
+                  .post(body)
+                  .build();
+              client.newCall(request).enqueue(callback);
+          }
+
+          public void loadProfileImage(String userId, ImageView target) {
+              String imageUrl = CDN_URL + "profiles/" + userId + ".jpg";
+              Picasso.get().load(imageUrl).into(target);
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Catalog ALL network transmission points in this code.
+
+      For each transmission, document:
+      1. DESTINATION: URL or endpoint
+      2. PROTOCOL: HTTP or HTTPS
+      3. METHOD: GET, POST, etc.
+      4. DATA TRANSMITTED: What fields/data are sent?
+      5. HEADERS: What custom headers are included?
+      6. FORMAT: JSON, form data, multipart, query params, etc.
+
+      IMPORTANT: Do NOT comment on whether HTTP vs HTTPS is "good" or "bad".
+      Do NOT use terms like "unencrypted" or "cleartext" as judgments.
+      Simply OBSERVE and CATALOG what network activity exists.
+    expected_output_schema:
+      type: object
+      properties:
+        endpoints_catalog:
+          type: array
+          items:
+            url: string
+            protocol: string
+            method: string
+            data_fields: array
+            custom_headers: array
+            content_format: string
+        base_urls_found:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: complete_endpoint_mapping
+      weight: 0.4
+      description: Identifies all network endpoints
+    - name: accurate_data_cataloging
+      weight: 0.35
+      description: Correctly lists data transmitted to each endpoint
+    - name: observation_only
+      weight: 0.25
+      description: Avoids security commentary
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "Endpoint: http://api.myapp.com/v1/users/sync (HTTP, POST)"
+    - "Data to users/sync: name, email, location, device_id in JSON body"
+    - "Headers to users/sync: Authorization Bearer token, X-Device-ID"
+    - "Endpoint: http://analytics.tracking.io/collect (HTTP, GET)"
+    - "Data to analytics: event, user_id, additional params in query string"
+    - "Endpoint: http://api.myapp.com/v1/files/upload (HTTP, POST)"
+    - "Data to files/upload: file binary, description, uploader_id as multipart"
+    - "Endpoint: https://cdn.myapp.com/profiles/{userId}.jpg (HTTPS, GET)"
+    - Three base URLs identified
+    - Two protocols used (HTTP and HTTPS)
+  training:
+    common_mistakes:
+    - Saying "unencrypted HTTP" as a judgment instead of observation
+    - Missing the query parameters in analytics endpoint
+    - Not noting Bearer token in Authorization header
+    - Missing the CDN image loading endpoint
+  tags:
+  - static_analysis
+  - network
+  - observation
+  - api
+  verification_tasks:
+  - instruction: Check network security config to understand app's network declarations.
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /data/app/*/base.apk/res/xml/network_security_config.xml 2>/dev/null || echo "config check"
+    validation_rule:
+      type: regex
+      pattern: .*
+  - instruction: List active network connections from device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: netstat -an | head -20
+    validation_rule:
+      type: regex
+      pattern: tcp|udp|ESTABLISHED|LISTEN
+
+- id: static_data_id_white_005
+  name: Recognizing Logging and Debug Output
+  version: 2
+  type: observation
+  pillar: static_analysis
+  belt: white
+  difficulty: 1
+  description: |
+    Learn to identify all logging statements and debug output in code.
+    Catalog what is being logged and at what level.
+
+    Your task is to find every place data might appear in logs.
+    Do NOT assess if logging is "excessive" or "dangerous" - just catalog it.
+  artifacts:
+  - type: decompiled_code
+    context: Authentication manager with various logging - catalog all log statements
+    content: |
+      public class AuthManager {
+          private static final String TAG = "AuthManager";
+
+          public AuthResult login(String username, String password) {
+              Log.d(TAG, "Login attempt for user: " + username);
+              Log.v(TAG, "Password length: " + password.length());
+
+              try {
+                  String hashedPwd = hashPassword(password);
+                  Log.d(TAG, "Hashed password: " + hashedPwd);
+
+                  AuthResponse response = api.authenticate(username, hashedPwd);
+
+                  if (response.isSuccess()) {
+                      Log.i(TAG, "Login successful for " + username);
+                      Log.d(TAG, "Received token: " + response.getToken());
+                      Log.d(TAG, "User ID: " + response.getUserId());
+                      Log.d(TAG, "Permissions: " + response.getPermissions());
+
+                      saveSession(response);
+                      return AuthResult.success(response);
+                  } else {
+                      Log.w(TAG, "Login failed: " + response.getErrorMessage());
+                      Log.d(TAG, "Error code: " + response.getErrorCode());
+                      return AuthResult.failure(response.getErrorMessage());
+                  }
+              } catch (Exception e) {
+                  Log.e(TAG, "Login exception for " + username, e);
+                  Log.e(TAG, "Exception details: " + e.getMessage());
+                  e.printStackTrace();
+                  return AuthResult.error(e);
+              }
+          }
+
+          public void logout(String userId) {
+              Log.i(TAG, "Logout for user: " + userId);
+              System.out.println("DEBUG: Clearing session for " + userId);
+              clearSession();
+          }
+
+          private void saveSession(AuthResponse response) {
+              if (BuildConfig.DEBUG) {
+                  Log.d(TAG, "Full response: " + response.toJson());
+              }
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Catalog EVERY logging statement and debug output in this code.
+
+      For each log statement, document:
+      1. LOG LEVEL: (Verbose, Debug, Info, Warn, Error)
+      2. TAG: What tag is used?
+      3. DATA LOGGED: What specific data values are included?
+      4. LOCATION: Which method contains this log?
+
+      Also identify:
+      - Any System.out/System.err usage
+      - Any printStackTrace() calls
+      - Any conditional debug logging
+
+      IMPORTANT: Do NOT say if logging is "excessive" or "sensitive data exposure".
+      Simply CREATE AN INVENTORY of all log output points.
+    expected_output_schema:
+      type: object
+      properties:
+        log_inventory:
+          type: array
+          items:
+            level: string
+            tag: string
+            data_logged: array
+            method: string
+            line_context: string
+        other_output:
+          type: array
+          items:
+            type: string
+            data: string
+            method: string
+    evaluation_criteria:
+    - name: complete_log_identification
+      weight: 0.4
+      description: Finds all logging statements including edge cases
+    - name: accurate_data_cataloging
+      weight: 0.35
+      description: Correctly identifies what data is being logged
+    - name: pure_observation
+      weight: 0.25
+      description: Avoids commenting on logging appropriateness
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "Log.d: username in login attempt message"
+    - "Log.v: password length"
+    - "Log.d: hashed password value"
+    - "Log.i: username on successful login"
+    - "Log.d: authentication token"
+    - "Log.d: user ID"
+    - "Log.d: user permissions"
+    - "Log.w: error message on failure"
+    - "Log.d: error code"
+    - "Log.e: username in exception context"
+    - "Log.e: exception message"
+    - "printStackTrace(): full stack trace"
+    - "Log.i: user ID on logout"
+    - "System.out.println: user ID with DEBUG prefix"
+    - "Conditional Log.d: full JSON response (DEBUG builds only)"
+    - Total of 15+ logging output points
+  training:
+    common_mistakes:
+    - Missing System.out.println as a logging mechanism
+    - Not noting the conditional BuildConfig.DEBUG logging
+    - Forgetting printStackTrace() outputs to logcat
+    - Saying "sensitive data logged" instead of cataloging
+  tags:
+  - static_analysis
+  - logging
+  - observation
+  - debug
+  verification_tasks:
+  - instruction: Check logcat for app-specific logging to see actual log output.
+    mcp_tool_call:
+      tool: adb_shell
+      command: logcat -d -s AuthManager:* | tail -20
+    validation_rule:
+      type: regex
+      pattern: .*
+  - instruction: Verify if app is debuggable by checking package flags.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.example.app | grep -i "flags="
+    validation_rule:
+      type: regex
+      pattern: flags=
+
+# =============================================================================
+# METHODOLOGY - ATTACK SURFACE MAPPING (White Belt)
+# =============================================================================
+
+- id: methodology_surface_white_001
+  name: Mapping Exported Components
+  version: 2
+  type: observation
+  pillar: methodology
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify all exported components in an Android app.
+    Exported components are entry points that other apps can interact with.
+
+    Your task is to CREATE A MAP of the application's exported surface.
+    Do NOT assess if exports are "dangerous" - just document what's exported.
+  artifacts:
+  - type: manifest
+    context: AndroidManifest.xml - identify all exported components
+    content: |
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.example.bankingapp">
+
+          <uses-permission android:name="android.permission.INTERNET"/>
+          <uses-permission android:name="android.permission.READ_CONTACTS"/>
+
+          <application android:name=".BankingApp"
+              android:allowBackup="true"
+              android:debuggable="false">
+
+              <!-- Main launcher activity -->
+              <activity android:name=".MainActivity"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="android.intent.action.MAIN"/>
+                      <category android:name="android.intent.category.LAUNCHER"/>
+                  </intent-filter>
+              </activity>
+
+              <!-- Deep link handler -->
+              <activity android:name=".DeepLinkActivity"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="android.intent.action.VIEW"/>
+                      <category android:name="android.intent.category.DEFAULT"/>
+                      <category android:name="android.intent.category.BROWSABLE"/>
+                      <data android:scheme="bankapp"
+                          android:host="transfer"/>
+                  </intent-filter>
+                  <intent-filter>
+                      <action android:name="android.intent.action.VIEW"/>
+                      <category android:name="android.intent.category.DEFAULT"/>
+                      <category android:name="android.intent.category.BROWSABLE"/>
+                      <data android:scheme="https"
+                          android:host="www.bankapp.com"
+                          android:pathPrefix="/app/"/>
+                  </intent-filter>
+              </activity>
+
+              <!-- Internal settings - not exported -->
+              <activity android:name=".SettingsActivity"
+                  android:exported="false"/>
+
+              <!-- Transfer processing service -->
+              <service android:name=".TransferService"
+                  android:exported="true"
+                  android:permission="com.example.bankingapp.TRANSFER">
+                  <intent-filter>
+                      <action android:name="com.example.bankingapp.PROCESS_TRANSFER"/>
+                  </intent-filter>
+              </service>
+
+              <!-- Background sync - internal only -->
+              <service android:name=".SyncService"
+                  android:exported="false"/>
+
+              <!-- Push notification receiver -->
+              <receiver android:name=".PushReceiver"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                  </intent-filter>
+              </receiver>
+
+              <!-- Boot receiver -->
+              <receiver android:name=".BootReceiver"
+                  android:exported="true">
+                  <intent-filter>
+                      <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                  </intent-filter>
+              </receiver>
+
+              <!-- Internal broadcast receiver -->
+              <receiver android:name=".InternalReceiver"
+                  android:exported="false"/>
+
+              <!-- Account data provider -->
+              <provider android:name=".AccountProvider"
+                  android:authorities="com.example.bankingapp.accounts"
+                  android:exported="true"
+                  android:readPermission="com.example.bankingapp.READ_ACCOUNTS"
+                  android:writePermission="com.example.bankingapp.WRITE_ACCOUNTS"/>
+
+              <!-- Internal cache provider -->
+              <provider android:name=".CacheProvider"
+                  android:authorities="com.example.bankingapp.cache"
+                  android:exported="false"/>
+
+          </application>
+      </manifest>
+  phases:
+  - phase_id: observe
+    instruction: |
+      Create a complete MAP of all exported components in this manifest.
+
+      For each EXPORTED component, document:
+      1. COMPONENT TYPE: Activity, Service, Receiver, or Provider
+      2. COMPONENT NAME: Full class name
+      3. EXPORT STATUS: Why is it exported? (explicit android:exported="true", or implicit via intent-filter)
+      4. INTENT FILTERS: What actions/categories/data does it respond to?
+      5. PERMISSIONS: Any custom permissions required?
+      6. DEEP LINKS: Any URL schemes registered?
+
+      Also list components that are explicitly NOT exported.
+
+      IMPORTANT: Do NOT assess if exports are "risky" or "should be protected".
+      Simply MAP what is exported and how.
+    expected_output_schema:
+      type: object
+      properties:
+        exported_components:
+          type: array
+          items:
+            component_type: string
+            component_name: string
+            export_reason: string
+            intent_filters: array
+            required_permissions: array
+            deep_link_schemes: array
+        non_exported_components:
+          type: array
+          items:
+            component_type: string
+            component_name: string
+    evaluation_criteria:
+    - name: complete_mapping
+      weight: 0.4
+      description: Identifies all exported and non-exported components
+    - name: accurate_details
+      weight: 0.35
+      description: Correctly documents intent filters, permissions, deep links
+    - name: observation_discipline
+      weight: 0.25
+      description: Maps without security judgments
+    max_tokens: 2500
+  ground_truth:
+    key_observations:
+    - "Exported Activity: MainActivity (LAUNCHER intent filter)"
+    - "Exported Activity: DeepLinkActivity (two intent filters)"
+    - "Deep link: bankapp://transfer"
+    - "Deep link: https://www.bankapp.com/app/*"
+    - "Exported Service: TransferService (requires TRANSFER permission)"
+    - "Exported Receiver: PushReceiver (Firebase messaging)"
+    - "Exported Receiver: BootReceiver (BOOT_COMPLETED)"
+    - "Exported Provider: AccountProvider (with read/write permissions)"
+    - "Non-exported: SettingsActivity, SyncService, InternalReceiver, CacheProvider"
+    - "6 exported components total, 4 non-exported"
+    - "3 custom permissions defined/used"
+  training:
+    common_mistakes:
+    - Missing that intent-filter implies exported=true
+    - Not noting both deep link schemes (bankapp and https)
+    - Forgetting to catalog the required permissions on exports
+    - Saying exports are "attack vectors" instead of mapping them
+  tags:
+  - methodology
+  - attack_surface
+  - manifest
+  - observation
+  verification_tasks:
+  - instruction: List all exported activities from package manager.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.example.bankingapp | grep -A2 "Activity.*exported=true"
+    validation_rule:
+      type: regex
+      pattern: exported=true|Activity
+  - instruction: List content provider authorities for the app.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.example.bankingapp | grep -A3 "Provider"
+    validation_rule:
+      type: regex
+      pattern: Provider|authorities
+
+- id: methodology_surface_white_002
+  name: Cataloging Content Provider URIs
+  version: 2
+  type: observation
+  pillar: methodology
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify Content Provider URI patterns and operations.
+    Content Providers expose structured data through URI addressing.
+
+    Map all URI patterns and what operations they support.
+    Do NOT assess security - just document the data interface.
+  artifacts:
+  - type: decompiled_code
+    context: Content Provider implementation - catalog all URI patterns
+    content: |
+      public class UserDataProvider extends ContentProvider {
+          private static final String AUTHORITY = "com.app.userprovider";
+          private static final int USERS = 1;
+          private static final int USER_ID = 2;
+          private static final int USER_MESSAGES = 3;
+          private static final int USER_PROFILE_PIC = 4;
+          private static final int SEARCH = 5;
+          private static final int USER_FRIENDS = 6;
+          private static final int USER_TRANSACTIONS = 7;
+
+          private static final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+          static {
+              matcher.addURI(AUTHORITY, "users", USERS);
+              matcher.addURI(AUTHORITY, "users/#", USER_ID);
+              matcher.addURI(AUTHORITY, "users/#/messages", USER_MESSAGES);
+              matcher.addURI(AUTHORITY, "users/#/profile_pic", USER_PROFILE_PIC);
+              matcher.addURI(AUTHORITY, "users/#/friends", USER_FRIENDS);
+              matcher.addURI(AUTHORITY, "users/#/transactions", USER_TRANSACTIONS);
+              matcher.addURI(AUTHORITY, "search/*", SEARCH);
+          }
+
+          @Override
+          public Cursor query(Uri uri, String[] projection, String selection,
+                  String[] selectionArgs, String sortOrder) {
+              switch (matcher.match(uri)) {
+                  case USERS:
+                      return db.query("users", projection, selection,
+                          selectionArgs, null, null, sortOrder);
+                  case USER_ID:
+                      String userId = uri.getLastPathSegment();
+                      return db.query("users", projection, "id=?",
+                          new String[]{userId}, null, null, null);
+                  case USER_MESSAGES:
+                      String msgUserId = uri.getPathSegments().get(1);
+                      return db.query("messages", projection, "user_id=?",
+                          new String[]{msgUserId}, null, null, sortOrder);
+                  case USER_FRIENDS:
+                      return queryFriends(uri, projection, sortOrder);
+                  case USER_TRANSACTIONS:
+                      return queryTransactions(uri, projection, sortOrder);
+                  case SEARCH:
+                      String searchTerm = uri.getLastPathSegment();
+                      return db.rawQuery("SELECT * FROM users WHERE name LIKE '%"
+                          + searchTerm + "%'", null);
+                  default:
+                      throw new IllegalArgumentException("Unknown URI: " + uri);
+              }
+          }
+
+          @Override
+          public Uri insert(Uri uri, ContentValues values) {
+              switch (matcher.match(uri)) {
+                  case USERS:
+                      long id = db.insert("users", null, values);
+                      return ContentUris.withAppendedId(uri, id);
+                  case USER_MESSAGES:
+                      long msgId = db.insert("messages", null, values);
+                      return ContentUris.withAppendedId(uri, msgId);
+                  default:
+                      throw new IllegalArgumentException("Insert not supported: " + uri);
+              }
+          }
+
+          @Override
+          public int update(Uri uri, ContentValues values, String selection,
+                  String[] selectionArgs) {
+              switch (matcher.match(uri)) {
+                  case USER_ID:
+                      return db.update("users", values, "id=?",
+                          new String[]{uri.getLastPathSegment()});
+                  case USER_PROFILE_PIC:
+                      return updateProfilePic(uri, values);
+                  default:
+                      throw new IllegalArgumentException("Update not supported: " + uri);
+              }
+          }
+
+          @Override
+          public int delete(Uri uri, String selection, String[] selectionArgs) {
+              switch (matcher.match(uri)) {
+                  case USER_ID:
+                      return db.delete("users", "id=?",
+                          new String[]{uri.getLastPathSegment()});
+                  case USER_MESSAGES:
+                      return db.delete("messages", "user_id=?",
+                          new String[]{uri.getPathSegments().get(1)});
+                  default:
+                      throw new IllegalArgumentException("Delete not supported: " + uri);
+              }
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Create a complete URI PATTERN CATALOG for this Content Provider.
+
+      For each URI pattern, document:
+      1. URI PATTERN: The full pattern (e.g., content://authority/path/#)
+      2. SUPPORTED OPERATIONS: Which CRUD operations? (query, insert, update, delete)
+      3. DATA ACCESSED: What table or data does it access?
+      4. PARAMETERS: What path segments or query parameters are used?
+
+      Build a complete API map of this provider.
+
+      IMPORTANT: Do NOT assess if any pattern is "dangerous" or "injectable".
+      Simply CATALOG the URI interface.
+    expected_output_schema:
+      type: object
+      properties:
+        authority: string
+        uri_patterns:
+          type: array
+          items:
+            pattern: string
+            full_uri: string
+            operations: array
+            data_source: string
+            parameters: array
+    evaluation_criteria:
+    - name: complete_uri_mapping
+      weight: 0.4
+      description: Identifies all 7 URI patterns
+    - name: accurate_operation_mapping
+      weight: 0.35
+      description: Correctly maps CRUD operations to each URI
+    - name: observation_only
+      weight: 0.25
+      description: Catalogs without security assessment
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "URI: content://com.app.userprovider/users - query, insert"
+    - "URI: content://com.app.userprovider/users/# - query, update, delete"
+    - "URI: content://com.app.userprovider/users/#/messages - query, insert, delete"
+    - "URI: content://com.app.userprovider/users/#/profile_pic - update"
+    - "URI: content://com.app.userprovider/users/#/friends - query"
+    - "URI: content://com.app.userprovider/users/#/transactions - query"
+    - "URI: content://com.app.userprovider/search/* - query"
+    - "Search uses wildcard path segment (*) not numeric (#)"
+    - "Authority: com.app.userprovider"
+    - "7 distinct URI patterns total"
+  training:
+    common_mistakes:
+    - Confusing # (numeric) with * (any string) path segments
+    - Missing that some URIs support multiple operations
+    - Not noting which table each URI accesses
+    - Commenting on SQL injection instead of cataloging
+  tags:
+  - methodology
+  - content_provider
+  - uri
+  - observation
+  verification_tasks:
+  - instruction: Query content provider URIs that are accessible.
+    mcp_tool_call:
+      tool: adb_shell
+      command: content query --uri content://com.app.userprovider/users 2>&1 | head -5
+    validation_rule:
+      type: regex
+      pattern: .*
+  - instruction: List all content providers registered on device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package providers | head -30
+    validation_rule:
+      type: regex
+      pattern: Provider|ContentProvider
+
+- id: methodology_surface_white_003
+  name: Identifying WebView JavaScript Interfaces
+  version: 2
+  type: observation
+  pillar: methodology
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify JavaScript interfaces exposed by WebViews.
+    These interfaces bridge JavaScript and native Android code.
+
+    Map all exposed interfaces and their methods.
+    Do NOT assess if interfaces are "dangerous" - just document them.
+  artifacts:
+  - type: decompiled_code
+    context: WebView setup with JS interfaces - catalog all exposed bridges
+    content: |
+      public class HybridActivity extends AppCompatActivity {
+          private WebView webView;
+
+          @Override
+          protected void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              webView = findViewById(R.id.webview);
+
+              WebSettings settings = webView.getSettings();
+              settings.setJavaScriptEnabled(true);
+              settings.setDomStorageEnabled(true);
+              settings.setAllowFileAccess(true);
+              settings.setAllowFileAccessFromFileURLs(true);
+              settings.setAllowUniversalAccessFromFileURLs(true);
+
+              // Bridge interfaces
+              webView.addJavascriptInterface(new DeviceBridge(), "AndroidDevice");
+              webView.addJavascriptInterface(new StorageBridge(), "NativeStorage");
+              webView.addJavascriptInterface(new AuthBridge(), "Auth");
+
+              webView.loadUrl("https://app.example.com/hybrid");
+          }
+
+          public class DeviceBridge {
+              @JavascriptInterface
+              public String getDeviceId() {
+                  return Settings.Secure.getString(getContentResolver(),
+                      Settings.Secure.ANDROID_ID);
+              }
+
+              @JavascriptInterface
+              public String getDeviceInfo() {
+                  return Build.MODEL + " " + Build.VERSION.SDK_INT;
+              }
+
+              @JavascriptInterface
+              public void vibrate(int duration) {
+                  Vibrator v = getSystemService(Vibrator.class);
+                  v.vibrate(duration);
+              }
+
+              @JavascriptInterface
+              public String getContacts() {
+                  return ContactsHelper.getAllContactsJson(getContentResolver());
+              }
+          }
+
+          public class StorageBridge {
+              @JavascriptInterface
+              public void saveData(String key, String value) {
+                  getSharedPreferences("jsdata", MODE_PRIVATE)
+                      .edit().putString(key, value).apply();
+              }
+
+              @JavascriptInterface
+              public String loadData(String key) {
+                  return getSharedPreferences("jsdata", MODE_PRIVATE)
+                      .getString(key, null);
+              }
+
+              @JavascriptInterface
+              public String readFile(String path) {
+                  try {
+                      return new String(Files.readAllBytes(Paths.get(path)));
+                  } catch (Exception e) {
+                      return null;
+                  }
+              }
+
+              @JavascriptInterface
+              public boolean writeFile(String path, String content) {
+                  try {
+                      Files.write(Paths.get(path), content.getBytes());
+                      return true;
+                  } catch (Exception e) {
+                      return false;
+                  }
+              }
+          }
+
+          public class AuthBridge {
+              @JavascriptInterface
+              public String getAuthToken() {
+                  return TokenManager.getInstance().getAccessToken();
+              }
+
+              @JavascriptInterface
+              public boolean isLoggedIn() {
+                  return SessionManager.getInstance().hasValidSession();
+              }
+
+              @JavascriptInterface
+              public void logout() {
+                  SessionManager.getInstance().clearSession();
+              }
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Create a complete CATALOG of all JavaScript interfaces exposed by this WebView.
+
+      Document:
+      1. WEBVIEW SETTINGS: What settings are configured?
+      2. INTERFACE NAMES: What JS object names are registered?
+      3. METHODS EXPOSED: For each interface, what methods can JS call?
+      4. METHOD SIGNATURES: Parameters and return types
+      5. NATIVE CAPABILITIES: What native functionality does each method access?
+
+      IMPORTANT: Do NOT assess if any interface is "dangerous" or "overprivileged".
+      Simply MAP the JavaScript-to-native bridge surface.
+    expected_output_schema:
+      type: object
+      properties:
+        webview_settings:
+          type: array
+          items: string
+        js_interfaces:
+          type: array
+          items:
+            js_object_name: string
+            native_class: string
+            methods:
+              type: array
+              items:
+                method_name: string
+                parameters: array
+                return_type: string
+                native_capability: string
+    evaluation_criteria:
+    - name: complete_interface_mapping
+      weight: 0.4
+      description: Identifies all 3 interfaces and 12 methods
+    - name: accurate_details
+      weight: 0.35
+      description: Correctly documents parameters and capabilities
+    - name: no_security_judgment
+      weight: 0.25
+      description: Catalogs without assessing risk
+    max_tokens: 2500
+  ground_truth:
+    key_observations:
+    - "WebView setting: JavaScriptEnabled = true"
+    - "WebView setting: DomStorageEnabled = true"
+    - "WebView setting: AllowFileAccess = true"
+    - "WebView setting: AllowFileAccessFromFileURLs = true"
+    - "WebView setting: AllowUniversalAccessFromFileURLs = true"
+    - "Interface 'AndroidDevice': getDeviceId(), getDeviceInfo(), vibrate(int), getContacts()"
+    - "Interface 'NativeStorage': saveData(key,value), loadData(key), readFile(path), writeFile(path,content)"
+    - "Interface 'Auth': getAuthToken(), isLoggedIn(), logout()"
+    - "3 JS interface objects registered"
+    - "12 total methods exposed to JavaScript"
+    - "Native capabilities: device ID, contacts, file I/O, preferences, auth tokens"
+  training:
+    common_mistakes:
+    - Missing WebView settings configuration
+    - Not noting method parameters and return types
+    - Saying interfaces are "dangerous" instead of cataloging
+    - Missing the file read/write capabilities
+  tags:
+  - methodology
+  - webview
+  - javascript_interface
+  - observation
+  verification_tasks:
+  - instruction: Check if WebView debugging is enabled on device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop webview.debuggable
+    validation_rule:
+      type: regex
+      pattern: .*
+  - instruction: List WebView provider package.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys webviewupdate | head -10
+    validation_rule:
+      type: regex
+      pattern: WebView|webview
+
+- id: methodology_surface_white_004
+  name: Mapping Implicit Intent Handlers
+  version: 2
+  type: observation
+  pillar: methodology
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify how an app handles incoming implicit intents.
+    Implicit intents can come from other apps or system events.
+
+    Map all intent handling patterns and what data they accept.
+    Do NOT assess if handling is "safe" - just document the patterns.
+  artifacts:
+  - type: decompiled_code
+    context: Activity that handles various implicit intents - catalog handling patterns
+    content: |
+      public class ShareHandlerActivity extends AppCompatActivity {
+
+          @Override
+          protected void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              handleIntent(getIntent());
+          }
+
+          @Override
+          protected void onNewIntent(Intent intent) {
+              super.onNewIntent(intent);
+              handleIntent(intent);
+          }
+
+          private void handleIntent(Intent intent) {
+              String action = intent.getAction();
+              String type = intent.getType();
+              Uri data = intent.getData();
+
+              Log.d("ShareHandler", "Action: " + action + ", Type: " + type);
+
+              if (Intent.ACTION_SEND.equals(action) && type != null) {
+                  if (type.startsWith("text/")) {
+                      handleTextShare(intent);
+                  } else if (type.startsWith("image/")) {
+                      handleImageShare(intent);
+                  } else if (type.equals("application/pdf")) {
+                      handlePdfShare(intent);
+                  }
+              } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+                  handleMultipleShare(intent);
+              } else if (Intent.ACTION_VIEW.equals(action) && data != null) {
+                  String scheme = data.getScheme();
+                  if ("http".equals(scheme) || "https".equals(scheme)) {
+                      handleWebLink(data);
+                  } else if ("file".equals(scheme)) {
+                      handleFileUri(data);
+                  } else if ("content".equals(scheme)) {
+                      handleContentUri(data);
+                  } else if ("myapp".equals(scheme)) {
+                      handleDeepLink(data);
+                  }
+              } else if ("com.app.CUSTOM_ACTION".equals(action)) {
+                  handleCustomAction(intent);
+              }
+          }
+
+          private void handleTextShare(Intent intent) {
+              String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+              String subject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+              processText(sharedText, subject);
+          }
+
+          private void handleImageShare(Intent intent) {
+              Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+              loadAndDisplayImage(imageUri);
+          }
+
+          private void handleMultipleShare(Intent intent) {
+              ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+              for (Uri uri : uris) {
+                  processUri(uri);
+              }
+          }
+
+          private void handleDeepLink(Uri data) {
+              String host = data.getHost();
+              String path = data.getPath();
+              String userId = data.getQueryParameter("user_id");
+              String token = data.getQueryParameter("token");
+              navigateToUser(userId, token);
+          }
+
+          private void handleCustomAction(Intent intent) {
+              Bundle extras = intent.getExtras();
+              String command = extras.getString("command");
+              String payload = extras.getString("payload");
+              executeCommand(command, payload);
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      Map ALL intent handling patterns in this code.
+
+      For each handler, document:
+      1. ACTION: What intent action triggers it?
+      2. DATA TYPES: What MIME types or URI schemes?
+      3. EXTRAS EXTRACTED: What data is pulled from the intent?
+      4. URI PARAMETERS: For deep links, what query parameters?
+      5. HANDLER METHOD: What method processes this intent?
+
+      IMPORTANT: Do NOT assess if handling is "insecure" or data is "untrusted".
+      Simply CATALOG what intents are handled and how.
+    expected_output_schema:
+      type: object
+      properties:
+        intent_handlers:
+          type: array
+          items:
+            action: string
+            data_type_or_scheme: string
+            extras_extracted: array
+            uri_parameters: array
+            handler_method: string
+        lifecycle_notes:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: complete_handler_mapping
+      weight: 0.4
+      description: Identifies all intent handlers
+    - name: accurate_data_extraction
+      weight: 0.35
+      description: Correctly notes what data is extracted
+    - name: observation_focus
+      weight: 0.25
+      description: Catalogs without security judgment
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "ACTION_SEND with text/*: extracts EXTRA_TEXT, EXTRA_SUBJECT"
+    - "ACTION_SEND with image/*: extracts EXTRA_STREAM (Uri)"
+    - "ACTION_SEND with application/pdf: PDF handling"
+    - "ACTION_SEND_MULTIPLE: extracts EXTRA_STREAM ArrayList"
+    - "ACTION_VIEW with http/https: handles web links"
+    - "ACTION_VIEW with file scheme: handles file URIs"
+    - "ACTION_VIEW with content scheme: handles content URIs"
+    - "ACTION_VIEW with myapp scheme: deep link handling"
+    - "Deep link params: user_id, token from query string"
+    - "Custom action com.app.CUSTOM_ACTION: extracts command, payload"
+    - "Handles intents in both onCreate and onNewIntent"
+  training:
+    common_mistakes:
+    - Missing onNewIntent as another entry point
+    - Not noting specific MIME type handling
+    - Calling data "untrusted" instead of documenting source
+    - Missing the custom action handler
+  tags:
+  - methodology
+  - intent_handling
+  - observation
+  - ipc
+  verification_tasks:
+  - instruction: Query intent filters for share action.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.example.app | grep -A10 "action.SEND"
+    validation_rule:
+      type: regex
+      pattern: SEND|intent-filter
+  - instruction: List activities that can handle VIEW action.
+    mcp_tool_call:
+      tool: adb_shell
+      command: pm query-activities --brief -a android.intent.action.VIEW -d "https://example.com" | head -10
+    validation_rule:
+      type: regex
+      pattern: Activity|activity
+
+# =============================================================================
+# NEGATIVE KNOWLEDGE - RECOGNIZING SECURE IMPLEMENTATIONS (White Belt)
+# =============================================================================
+
+- id: negative_secure_white_001
+  name: Recognizing Secure KeyStore-Backed Encryption
+  version: 2
+  type: observation
+  pillar: negative_knowledge
+  belt: white
+  difficulty: 3
+  description: |
+    Learn to identify CORRECT security implementations.
+    This code shows PROPER use of Android KeyStore with AES/GCM/NoPadding.
+
+    Your task is to CATALOG the security properties that are correctly implemented.
+    This is about recognizing GOOD patterns, not finding flaws.
+  artifacts:
+  - type: decompiled_code
+    context: Secure encryption utility using KeyStore - identify correct patterns
+    content: |
+      public class SecureEncryption {
+          private static final String KEY_ALIAS = "app_encryption_key";
+          private static final String ANDROID_KEYSTORE = "AndroidKeyStore";
+          private static final String TRANSFORMATION = "AES/GCM/NoPadding";
+          private static final int GCM_TAG_LENGTH = 128;
+          private static final int GCM_IV_LENGTH = 12;
+
+          private KeyStore keyStore;
+
+          public SecureEncryption() throws Exception {
+              keyStore = KeyStore.getInstance(ANDROID_KEYSTORE);
+              keyStore.load(null);
+
+              if (!keyStore.containsAlias(KEY_ALIAS)) {
+                  generateKey();
+              }
+          }
+
+          private void generateKey() throws Exception {
+              KeyGenerator keyGenerator = KeyGenerator.getInstance(
+                  KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE);
+
+              KeyGenParameterSpec spec = new KeyGenParameterSpec.Builder(
+                  KEY_ALIAS,
+                  KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                  .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                  .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                  .setKeySize(256)
+                  .setUserAuthenticationRequired(true)
+                  .setUserAuthenticationValidityDurationSeconds(300)
+                  .setRandomizedEncryptionRequired(true)
+                  .build();
+
+              keyGenerator.init(spec);
+              keyGenerator.generateKey();
+          }
+
+          public byte[] encrypt(byte[] plaintext) throws Exception {
+              SecretKey key = (SecretKey) keyStore.getKey(KEY_ALIAS, null);
+
+              Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+              cipher.init(Cipher.ENCRYPT_MODE, key);
+
+              byte[] iv = cipher.getIV();  // GCM generates random IV
+              byte[] ciphertext = cipher.doFinal(plaintext);
+
+              // Prepend IV to ciphertext for storage
+              byte[] result = new byte[iv.length + ciphertext.length];
+              System.arraycopy(iv, 0, result, 0, iv.length);
+              System.arraycopy(ciphertext, 0, result, iv.length, ciphertext.length);
+
+              return result;
+          }
+
+          public byte[] decrypt(byte[] encryptedData) throws Exception {
+              SecretKey key = (SecretKey) keyStore.getKey(KEY_ALIAS, null);
+
+              // Extract IV from beginning
+              byte[] iv = new byte[GCM_IV_LENGTH];
+              System.arraycopy(encryptedData, 0, iv, 0, GCM_IV_LENGTH);
+
+              byte[] ciphertext = new byte[encryptedData.length - GCM_IV_LENGTH];
+              System.arraycopy(encryptedData, GCM_IV_LENGTH, ciphertext, 0, ciphertext.length);
+
+              Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+              GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+              cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
+
+              return cipher.doFinal(ciphertext);
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      This is a CORRECT implementation. Catalog all the security properties done RIGHT.
+
+      Document each CORRECT pattern you observe:
+      1. KEY STORAGE: How is the key protected?
+      2. ALGORITHM CHOICE: What algorithm/mode/padding?
+      3. KEY GENERATION: How are keys created?
+      4. IV HANDLING: How are IVs managed?
+      5. AUTHENTICATION: What auth requirements exist?
+      6. KEY PROPERTIES: What constraints are set?
+
+      For each property, explain WHY it is correct (not just that it exists).
+
+      IMPORTANT: This exercise is about RECOGNIZING security done well.
+      Catalog the positive security properties, not potential issues.
+    expected_output_schema:
+      type: object
+      properties:
+        correct_patterns:
+          type: array
+          items:
+            category: string
+            implementation: string
+            why_correct: string
+        algorithm_analysis:
+          algorithm: string
+          mode: string
+          padding: string
+          key_size: string
+        key_protection_properties:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: complete_pattern_recognition
+      weight: 0.4
+      description: Identifies all correct security patterns
+    - name: accurate_reasoning
+      weight: 0.35
+      description: Correctly explains why each pattern is right
+    - name: positive_focus
+      weight: 0.25
+      description: Focuses on recognizing good patterns
+    max_tokens: 2500
+  ground_truth:
+    key_observations:
+    - "CORRECT: AndroidKeyStore for hardware-backed key storage"
+    - "CORRECT: AES-256 with GCM mode (authenticated encryption)"
+    - "CORRECT: NoPadding (GCM handles internally)"
+    - "CORRECT: 128-bit authentication tag"
+    - "CORRECT: 12-byte IV (recommended for GCM)"
+    - "CORRECT: setRandomizedEncryptionRequired(true) ensures unique IV per encryption"
+    - "CORRECT: setUserAuthenticationRequired(true) binds to device unlock"
+    - "CORRECT: 300 second auth validity limits exposure window"
+    - "CORRECT: IV generated by Cipher (not developer-specified)"
+    - "CORRECT: IV prepended to ciphertext for proper decryption"
+    - "CORRECT: GCMParameterSpec used for decryption"
+    - "CORRECT: Key never leaves KeyStore"
+  training:
+    common_mistakes:
+    - Looking for flaws instead of cataloging correct patterns
+    - Not recognizing randomizedEncryptionRequired importance
+    - Missing the user authentication binding
+    - Not explaining WHY GCM is the correct choice
+  tags:
+  - negative_knowledge
+  - encryption
+  - keystore
+  - secure_pattern
+  - aes_gcm
+  verification_tasks:
+  - instruction: Check if hardware keystore is available on device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop ro.hardware.keystore
+    validation_rule:
+      type: regex
+      pattern: .*
+  - instruction: List keystore security level capabilities.
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop ro.hardware.keystore_desede
+    validation_rule:
+      type: regex
+      pattern: .*
+
+- id: negative_secure_white_002
+  name: Recognizing Correct Certificate Pinning
+  version: 2
+  type: observation
+  pillar: negative_knowledge
+  belt: white
+  difficulty: 3
+  description: |
+    Learn to identify CORRECT certificate pinning implementations.
+    Proper pinning prevents MITM attacks by validating server certificates.
+
+    Catalog the security properties that make this implementation correct.
+  artifacts:
+  - type: decompiled_code
+    context: Secure network client with certificate pinning - identify correct patterns
+    content: |
+      public class SecureApiClient {
+          // Pin to both leaf certificate and intermediate CA
+          private static final String[] CERTIFICATE_PINS = {
+              "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",  // Leaf
+              "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",  // Intermediate
+          };
+
+          private OkHttpClient client;
+
+          public SecureApiClient() {
+              CertificatePinner pinner = new CertificatePinner.Builder()
+                  .add("api.secure-app.com", CERTIFICATE_PINS[0])
+                  .add("api.secure-app.com", CERTIFICATE_PINS[1])
+                  .add("*.secure-app.com", CERTIFICATE_PINS[0])
+                  .add("*.secure-app.com", CERTIFICATE_PINS[1])
+                  .build();
+
+              // Custom trust manager that also validates pins
+              X509TrustManager trustManager = new X509TrustManager() {
+                  private final X509TrustManager defaultTrustManager =
+                      getDefaultTrustManager();
+
+                  @Override
+                  public void checkServerTrusted(X509Certificate[] chain, String authType)
+                          throws CertificateException {
+                      // First, perform standard certificate validation
+                      defaultTrustManager.checkServerTrusted(chain, authType);
+
+                      // Then validate pin
+                      boolean pinValid = false;
+                      for (X509Certificate cert : chain) {
+                          String certPin = calculatePin(cert);
+                          for (String expectedPin : CERTIFICATE_PINS) {
+                              if (expectedPin.equals(certPin)) {
+                                  pinValid = true;
+                                  break;
+                              }
+                          }
+                      }
+
+                      if (!pinValid) {
+                          throw new CertificateException("Certificate pin mismatch");
+                      }
+                  }
+
+                  // ... other required methods
+              };
+
+              SSLContext sslContext = SSLContext.getInstance("TLS");
+              sslContext.init(null, new TrustManager[]{trustManager},
+                  new SecureRandom());
+
+              client = new OkHttpClient.Builder()
+                  .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
+                  .certificatePinner(pinner)
+                  .connectTimeout(30, TimeUnit.SECONDS)
+                  .build();
+          }
+
+          private String calculatePin(X509Certificate cert) {
+              try {
+                  MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                  byte[] hash = digest.digest(cert.getPublicKey().getEncoded());
+                  return "sha256/" + Base64.encodeToString(hash, Base64.NO_WRAP);
+              } catch (Exception e) {
+                  return null;
+              }
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      This is a CORRECT certificate pinning implementation. Catalog all correct patterns.
+
+      Document:
+      1. PIN CONFIGURATION: How are pins defined?
+      2. PIN SCOPE: What domains are protected?
+      3. VALIDATION LAYERS: What validations occur?
+      4. FALLBACK HANDLING: How are multiple pins handled?
+      5. PIN CALCULATION: How is the pin computed?
+      6. CERTIFICATE CHAIN: How is the chain handled?
+
+      For each correct pattern, explain WHY it strengthens security.
+
+      IMPORTANT: Focus on what is done CORRECTLY, not what could be attacked.
+    expected_output_schema:
+      type: object
+      properties:
+        correct_patterns:
+          type: array
+          items:
+            pattern: string
+            implementation_detail: string
+            security_benefit: string
+        pinning_configuration:
+          domains_pinned: array
+          pin_count: integer
+          pin_algorithm: string
+    evaluation_criteria:
+    - name: pattern_recognition
+      weight: 0.4
+      description: Identifies all correct pinning patterns
+    - name: security_reasoning
+      weight: 0.35
+      description: Explains why each pattern is correct
+    - name: positive_focus
+      weight: 0.25
+      description: Catalogs positive patterns
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "CORRECT: SHA-256 used for pin hash (cryptographically strong)"
+    - "CORRECT: Pins both leaf AND intermediate certificate (backup if leaf rotates)"
+    - "CORRECT: Explicit domain pinning (api.secure-app.com)"
+    - "CORRECT: Wildcard subdomain coverage (*.secure-app.com)"
+    - "CORRECT: Standard validation runs BEFORE pin check"
+    - "CORRECT: Pin calculated from SubjectPublicKeyInfo (SPKI)"
+    - "CORRECT: Entire certificate chain is checked for pins"
+    - "CORRECT: CertificateException thrown on pin mismatch"
+    - "CORRECT: Uses OkHttp CertificatePinner (industry standard)"
+    - "CORRECT: Custom TrustManager maintains default validation"
+    - "Two pins per domain provides rotation capability"
+  training:
+    common_mistakes:
+    - Not recognizing the backup pin pattern
+    - Missing that SPKI pinning is preferred over cert pinning
+    - Not noting that default validation still runs
+    - Looking for bypass instead of recognizing correct patterns
+  tags:
+  - negative_knowledge
+  - certificate_pinning
+  - tls
+  - secure_pattern
+  verification_tasks:
+  - instruction: Check TLS version support on device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: getprop | grep ssl
+    validation_rule:
+      type: regex
+      pattern: ssl|SSL
+  - instruction: View network security config if present.
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /data/app/*/base.apk/res/xml/network_security_config.xml 2>/dev/null || echo "No config found"
+    validation_rule:
+      type: regex
+      pattern: .*
+
+- id: negative_secure_white_003
+  name: Recognizing Secure Random Number Generation
+  version: 2
+  type: observation
+  pillar: negative_knowledge
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify CORRECT random number generation patterns.
+    Secure randomness is critical for cryptographic operations.
+
+    Catalog what makes this implementation secure.
+  artifacts:
+  - type: decompiled_code
+    context: Secure token and nonce generation - identify correct patterns
+    content: |
+      public class SecureTokenGenerator {
+          private final SecureRandom secureRandom;
+
+          public SecureTokenGenerator() {
+              // Use the strongest available algorithm
+              try {
+                  // Try to get a hardware-backed RNG on supported devices
+                  secureRandom = SecureRandom.getInstance("SHA1PRNG");
+                  // Ensure proper seeding
+                  secureRandom.nextBytes(new byte[32]);
+              } catch (NoSuchAlgorithmException e) {
+                  secureRandom = new SecureRandom();
+              }
+          }
+
+          public String generateSessionToken() {
+              byte[] tokenBytes = new byte[32];  // 256 bits
+              secureRandom.nextBytes(tokenBytes);
+              return Base64.encodeToString(tokenBytes, Base64.URL_SAFE | Base64.NO_WRAP);
+          }
+
+          public String generateOAuthState() {
+              byte[] stateBytes = new byte[24];  // 192 bits
+              secureRandom.nextBytes(stateBytes);
+              return bytesToHex(stateBytes);
+          }
+
+          public byte[] generateIV() {
+              byte[] iv = new byte[12];  // 96 bits for GCM
+              secureRandom.nextBytes(iv);
+              return iv;
+          }
+
+          public String generateCSRFToken() {
+              byte[] tokenBytes = new byte[32];
+              secureRandom.nextBytes(tokenBytes);
+              return bytesToHex(tokenBytes);
+          }
+
+          public String generatePasswordResetToken() {
+              // Extra entropy for password reset
+              byte[] tokenBytes = new byte[48];  // 384 bits
+              secureRandom.nextBytes(tokenBytes);
+              return Base64.encodeToString(tokenBytes, Base64.URL_SAFE | Base64.NO_WRAP);
+          }
+
+          public int generateOTP() {
+              // 6-digit OTP
+              return 100000 + secureRandom.nextInt(900000);
+          }
+
+          private String bytesToHex(byte[] bytes) {
+              StringBuilder sb = new StringBuilder();
+              for (byte b : bytes) {
+                  sb.append(String.format("%02x", b));
+              }
+              return sb.toString();
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      This is a CORRECT secure random implementation. Catalog all correct patterns.
+
+      Document:
+      1. RNG SOURCE: What random source is used?
+      2. INITIALIZATION: How is the RNG initialized?
+      3. TOKEN SIZES: What entropy sizes are used for each purpose?
+      4. ENCODING: How are random bytes encoded for use?
+      5. PURPOSE-SPECIFIC: Different sizes for different security needs?
+
+      For each pattern, explain WHY it provides adequate security.
+
+      IMPORTANT: Focus on recognizing GOOD patterns.
+    expected_output_schema:
+      type: object
+      properties:
+        correct_patterns:
+          type: array
+          items:
+            pattern: string
+            implementation: string
+            security_reasoning: string
+        token_sizes:
+          type: array
+          items:
+            purpose: string
+            bits: integer
+            adequate_for_purpose: string
+    evaluation_criteria:
+    - name: pattern_identification
+      weight: 0.4
+      description: Identifies all correct RNG patterns
+    - name: entropy_reasoning
+      weight: 0.35
+      description: Understands why bit sizes are adequate
+    - name: positive_catalog
+      weight: 0.25
+      description: Focuses on correct implementation
+    max_tokens: 2000
+  ground_truth:
+    key_observations:
+    - "CORRECT: SecureRandom used (not Random or Math.random)"
+    - "CORRECT: Explicit algorithm request (SHA1PRNG)"
+    - "CORRECT: Fallback to default SecureRandom if needed"
+    - "CORRECT: Initial bytes read to ensure seeding"
+    - "CORRECT: Session token = 256 bits (adequate for session)"
+    - "CORRECT: OAuth state = 192 bits (prevents CSRF)"
+    - "CORRECT: IV = 96 bits (correct for AES-GCM)"
+    - "CORRECT: CSRF token = 256 bits (standard recommendation)"
+    - "CORRECT: Password reset = 384 bits (extra entropy for sensitive)"
+    - "CORRECT: OTP = 6 digits using secureRandom.nextInt"
+    - "CORRECT: URL-safe Base64 for web-compatible tokens"
+    - "Purpose-specific sizing shows security awareness"
+  training:
+    common_mistakes:
+    - Not recognizing purpose-specific token sizes
+    - Missing the seeding step importance
+    - Not noting URL-safe encoding for web tokens
+    - Looking for weaknesses instead of cataloging strengths
+  tags:
+  - negative_knowledge
+  - secure_random
+  - token_generation
+  - secure_pattern
+  verification_tasks:
+  - instruction: Check available random sources on device.
+    mcp_tool_call:
+      tool: adb_shell
+      command: ls -la /dev/random /dev/urandom
+    validation_rule:
+      type: regex
+      pattern: random|urandom
+  - instruction: Check entropy level available.
+    mcp_tool_call:
+      tool: adb_shell
+      command: cat /proc/sys/kernel/random/entropy_avail
+    validation_rule:
+      type: regex
+      pattern: "[0-9]+"
+
+- id: negative_secure_white_004
+  name: Recognizing Proper Input Validation
+  version: 2
+  type: observation
+  pillar: negative_knowledge
+  belt: white
+  difficulty: 2
+  description: |
+    Learn to identify CORRECT input validation patterns.
+    Proper validation prevents injection and manipulation attacks.
+
+    Catalog the validation patterns that are correctly implemented.
+  artifacts:
+  - type: decompiled_code
+    context: User input handling with comprehensive validation - identify correct patterns
+    content: |
+      public class UserInputValidator {
+          private static final Pattern EMAIL_PATTERN = Pattern.compile(
+              "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+          private static final Pattern USERNAME_PATTERN = Pattern.compile(
+              "^[a-zA-Z0-9_]{3,20}$");
+          private static final int MAX_COMMENT_LENGTH = 1000;
+          private static final int MAX_FILENAME_LENGTH = 100;
+
+          public ValidationResult validateEmail(String email) {
+              if (email == null || email.trim().isEmpty()) {
+                  return ValidationResult.error("Email is required");
+              }
+
+              email = email.trim().toLowerCase(Locale.ROOT);
+
+              if (email.length() > 254) {  // RFC 5321 limit
+                  return ValidationResult.error("Email too long");
+              }
+
+              if (!EMAIL_PATTERN.matcher(email).matches()) {
+                  return ValidationResult.error("Invalid email format");
+              }
+
+              return ValidationResult.valid(email);
+          }
+
+          public ValidationResult validateUsername(String username) {
+              if (username == null || username.isEmpty()) {
+                  return ValidationResult.error("Username is required");
+              }
+
+              if (!USERNAME_PATTERN.matcher(username).matches()) {
+                  return ValidationResult.error(
+                      "Username must be 3-20 alphanumeric characters");
+              }
+
+              // Prevent reserved names
+              String lower = username.toLowerCase(Locale.ROOT);
+              if (lower.equals("admin") || lower.equals("root") ||
+                  lower.equals("system") || lower.startsWith("_")) {
+                  return ValidationResult.error("Username not available");
+              }
+
+              return ValidationResult.valid(username);
+          }
+
+          public ValidationResult validateComment(String comment) {
+              if (comment == null) {
+                  comment = "";
+              }
+
+              // Enforce length limit
+              if (comment.length() > MAX_COMMENT_LENGTH) {
+                  return ValidationResult.error("Comment too long");
+              }
+
+              // Sanitize for display (encode HTML entities)
+              String sanitized = HtmlCompat.escapeHtml(comment);
+
+              return ValidationResult.valid(sanitized);
+          }
+
+          public ValidationResult validateFilename(String filename) {
+              if (filename == null || filename.trim().isEmpty()) {
+                  return ValidationResult.error("Filename required");
+              }
+
+              // Prevent path traversal
+              if (filename.contains("..") || filename.contains("/") ||
+                  filename.contains("\\") || filename.contains("\0")) {
+                  return ValidationResult.error("Invalid filename");
+              }
+
+              if (filename.length() > MAX_FILENAME_LENGTH) {
+                  return ValidationResult.error("Filename too long");
+              }
+
+              // Whitelist allowed extensions
+              String lower = filename.toLowerCase(Locale.ROOT);
+              if (!lower.endsWith(".jpg") && !lower.endsWith(".png") &&
+                  !lower.endsWith(".pdf") && !lower.endsWith(".txt")) {
+                  return ValidationResult.error("File type not allowed");
+              }
+
+              return ValidationResult.valid(filename);
+          }
+
+          public ValidationResult validateAmount(String amountStr) {
+              if (amountStr == null || amountStr.isEmpty()) {
+                  return ValidationResult.error("Amount required");
+              }
+
+              try {
+                  BigDecimal amount = new BigDecimal(amountStr);
+
+                  if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                      return ValidationResult.error("Amount must be positive");
+                  }
+
+                  if (amount.scale() > 2) {
+                      return ValidationResult.error("Maximum 2 decimal places");
+                  }
+
+                  if (amount.compareTo(new BigDecimal("1000000")) > 0) {
+                      return ValidationResult.error("Amount exceeds limit");
+                  }
+
+                  return ValidationResult.valid(amount.toPlainString());
+
+              } catch (NumberFormatException e) {
+                  return ValidationResult.error("Invalid amount format");
+              }
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      This is a CORRECT input validation implementation. Catalog all correct patterns.
+
+      Document for each validation method:
+      1. NULL HANDLING: How are null/empty inputs handled?
+      2. LENGTH LIMITS: What bounds are enforced?
+      3. FORMAT VALIDATION: What patterns are checked?
+      4. SANITIZATION: How is input cleaned?
+      5. BUSINESS RULES: What logical constraints?
+      6. DENY LIST: What dangerous patterns are rejected?
+      7. ALLOW LIST: What patterns are explicitly allowed?
+
+      For each pattern, explain WHY it provides protection.
+
+      IMPORTANT: This is about recognizing CORRECT validation patterns.
+    expected_output_schema:
+      type: object
+      properties:
+        validation_methods:
+          type: array
+          items:
+            method_name: string
+            correct_patterns:
+              type: array
+              items:
+                pattern_type: string
+                implementation: string
+                protection_provided: string
+    evaluation_criteria:
+    - name: comprehensive_recognition
+      weight: 0.4
+      description: Identifies all validation patterns
+    - name: security_reasoning
+      weight: 0.35
+      description: Explains protection each pattern provides
+    - name: positive_focus
+      weight: 0.25
+      description: Catalogs correct patterns
+    max_tokens: 2500
+  ground_truth:
+    key_observations:
+    - "CORRECT: Null checks before any processing"
+    - "CORRECT: Email length limit (RFC 5321 compliance)"
+    - "CORRECT: Regex validation with explicit pattern"
+    - "CORRECT: Locale.ROOT for consistent lowercase"
+    - "CORRECT: Username whitelist pattern (alphanumeric only)"
+    - "CORRECT: Reserved username blocking"
+    - "CORRECT: HTML entity encoding for comments"
+    - "CORRECT: Path traversal prevention (.. / \\ \\0)"
+    - "CORRECT: Extension whitelist for files"
+    - "CORRECT: BigDecimal for monetary precision"
+    - "CORRECT: Scale check for decimal places"
+    - "CORRECT: Upper bound for amounts"
+    - "CORRECT: Proper exception handling"
+    - "CORRECT: ValidationResult return type for all methods"
+  training:
+    common_mistakes:
+    - Not recognizing the Locale.ROOT importance
+    - Missing BigDecimal for financial validation
+    - Not noting the path traversal null byte check
+    - Looking for bypasses instead of cataloging
+  tags:
+  - negative_knowledge
+  - input_validation
+  - secure_pattern
+  - sanitization
+  verification_tasks:
+  - instruction: Check app's permission to validate external storage access patterns.
+    mcp_tool_call:
+      tool: adb_shell
+      command: dumpsys package com.example.app | grep permission | head -10
+    validation_rule:
+      type: regex
+      pattern: permission
+  - instruction: List data directory to understand file storage.
+    mcp_tool_call:
+      tool: adb_shell
+      command: ls -la /data/data/com.example.app/
+    validation_rule:
+      type: regex
+      pattern: drwx|files|cache
+
+- id: negative_secure_white_005
+  name: Recognizing Secure Biometric Authentication
+  version: 2
+  type: observation
+  pillar: negative_knowledge
+  belt: white
+  difficulty: 3
+  description: |
+    Learn to identify CORRECT biometric authentication patterns.
+    Proper biometric auth binds to hardware security and uses crypto proofs.
+
+    Catalog the security properties that are correctly implemented.
+  artifacts:
+  - type: decompiled_code
+    context: Secure biometric authentication with crypto binding - identify correct patterns
+    content: |
+      public class SecureBiometricAuth {
+          private static final String KEY_ALIAS = "biometric_auth_key";
+          private KeyStore keyStore;
+          private BiometricPrompt biometricPrompt;
+          private Executor executor;
+
+          public void setupBiometricAuth(FragmentActivity activity) throws Exception {
+              keyStore = KeyStore.getInstance("AndroidKeyStore");
+              keyStore.load(null);
+
+              if (!keyStore.containsAlias(KEY_ALIAS)) {
+                  createBiometricKey();
+              }
+
+              executor = ContextCompat.getMainExecutor(activity);
+
+              biometricPrompt = new BiometricPrompt(activity, executor,
+                  new BiometricPrompt.AuthenticationCallback() {
+                      @Override
+                      public void onAuthenticationSucceeded(
+                              BiometricPrompt.AuthenticationResult result) {
+                          // Get the crypto object from successful auth
+                          BiometricPrompt.CryptoObject cryptoObject =
+                              result.getCryptoObject();
+                          if (cryptoObject != null) {
+                              Cipher cipher = cryptoObject.getCipher();
+                              handleAuthSuccess(cipher);
+                          }
+                      }
+
+                      @Override
+                      public void onAuthenticationError(int errorCode, CharSequence errString) {
+                          handleAuthError(errorCode, errString);
+                      }
+
+                      @Override
+                      public void onAuthenticationFailed() {
+                          handleAuthFailure();
+                      }
+                  });
+          }
+
+          private void createBiometricKey() throws Exception {
+              KeyGenerator keyGenerator = KeyGenerator.getInstance(
+                  KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+
+              KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
+                  KEY_ALIAS,
+                  KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                  .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                  .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                  .setKeySize(256)
+                  .setUserAuthenticationRequired(true)
+                  .setInvalidatedByBiometricEnrollment(true);
+
+              // Require biometric specifically (not just screen lock)
+              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                  builder.setUserAuthenticationParameters(
+                      0,  // Auth required for each use
+                      KeyProperties.AUTH_BIOMETRIC_STRONG);
+              }
+
+              keyGenerator.init(builder.build());
+              keyGenerator.generateKey();
+          }
+
+          public void authenticate() {
+              try {
+                  SecretKey key = (SecretKey) keyStore.getKey(KEY_ALIAS, null);
+                  Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                  cipher.init(Cipher.ENCRYPT_MODE, key);
+
+                  BiometricPrompt.CryptoObject cryptoObject =
+                      new BiometricPrompt.CryptoObject(cipher);
+
+                  BiometricPrompt.PromptInfo promptInfo =
+                      new BiometricPrompt.PromptInfo.Builder()
+                          .setTitle("Authenticate")
+                          .setSubtitle("Confirm your identity")
+                          .setNegativeButtonText("Cancel")
+                          .setConfirmationRequired(true)
+                          .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                          .build();
+
+                  biometricPrompt.authenticate(promptInfo, cryptoObject);
+
+              } catch (InvalidKeyException e) {
+                  // Key invalidated, re-enroll biometric
+                  handleKeyInvalidation();
+              } catch (Exception e) {
+                  handleAuthError(-1, e.getMessage());
+              }
+          }
+
+          private void handleAuthSuccess(Cipher cipher) {
+              // Use the authenticated cipher for sensitive operation
+              try {
+                  byte[] proof = cipher.doFinal("auth_timestamp".getBytes());
+                  // proof can only be generated if biometric succeeded
+                  verifyWithServer(proof);
+              } catch (Exception e) {
+                  // Handle error
+              }
+          }
+      }
+  phases:
+  - phase_id: observe
+    instruction: |
+      This is a CORRECT biometric authentication implementation. Catalog all correct patterns.
+
+      Document:
+      1. KEY BINDING: How is the key bound to biometric?
+      2. CRYPTO PROOF: How is authentication proven cryptographically?
+      3. BIOMETRIC LEVEL: What strength level is required?
+      4. INVALIDATION: How is key lifecycle managed?
+      5. ERROR HANDLING: How are failure cases handled?
+      6. UI SECURITY: What prompt properties are set?
+
+      For each correct pattern, explain the security benefit.
+
+      IMPORTANT: Focus on CORRECT patterns in biometric auth.
+    expected_output_schema:
+      type: object
+      properties:
+        correct_patterns:
+          type: array
+          items:
+            category: string
+            pattern: string
+            security_benefit: string
+        biometric_properties:
+          auth_level: string
+          crypto_bound: boolean
+          enrollment_invalidation: boolean
+    evaluation_criteria:
+    - name: pattern_recognition
+      weight: 0.4
+      description: Identifies all correct biometric patterns
+    - name: crypto_understanding
+      weight: 0.35
+      description: Understands crypto binding importance
+    - name: positive_focus
+      weight: 0.25
+      description: Catalogs security strengths
+    max_tokens: 2500
+  ground_truth:
+    key_observations:
+    - "CORRECT: AndroidKeyStore for key storage"
+    - "CORRECT: AES-256-GCM for authenticated encryption"
+    - "CORRECT: setUserAuthenticationRequired(true)"
+    - "CORRECT: setInvalidatedByBiometricEnrollment(true)"
+    - "CORRECT: AUTH_BIOMETRIC_STRONG requirement"
+    - "CORRECT: 0-second validity (auth per use)"
+    - "CORRECT: CryptoObject used with BiometricPrompt"
+    - "CORRECT: Cipher obtained from auth result"
+    - "CORRECT: Crypto operation only possible after auth"
+    - "CORRECT: BIOMETRIC_STRONG in PromptInfo"
+    - "CORRECT: setConfirmationRequired(true)"
+    - "CORRECT: InvalidKeyException handling for re-enrollment"
+    - "CORRECT: Crypto proof sent to server for verification"
+    - "Key cannot be used without successful biometric"
+  training:
+    common_mistakes:
+    - Not recognizing crypto binding vs simple boolean auth
+    - Missing the enrollment invalidation importance
+    - Not noting BIOMETRIC_STRONG vs BIOMETRIC_WEAK
+    - Looking for weaknesses instead of patterns
+  tags:
+  - negative_knowledge
+  - biometric
+  - authentication
+  - secure_pattern
+  - keystore
+  verification_tasks:
+  - instruction: Check biometric hardware availability.
+    mcp_tool_call:
+      tool: adb_shell
+      command: pm list features | grep fingerprint
+    validation_rule:
+      type: regex
+      pattern: fingerprint|biometric
+  - instruction: Check enrolled biometrics status.
+    mcp_tool_call:
+      tool: adb_shell
+      command: settings get secure biometric_enrolled 2>/dev/null || echo "checking biometric"
+    validation_rule:
+      type: regex
+      pattern: .*

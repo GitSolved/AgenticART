@@ -21,39 +21,21 @@ def test_imports():
     print("Testing imports...")
 
     try:
-        from dojo.rag import (
-            RAGConfig,
-            RAGSystem,
-            RAGPromptAugmenter,
-            EmbeddingPipeline,
-            RAGRetriever,
-            RAGContextBuilder,
-            create_rag_system,
-        )
+        import dojo.rag  # noqa: F401
         print("  ✓ Core RAG imports successful")
     except ImportError as e:
         print(f"  ✗ Import error: {e}")
         return False
 
     try:
-        from dojo.rag.knowledge_bases import (
-            BaseKnowledgeBase,
-            AndroidAPIKnowledgeBase,
-            VulnDBKnowledgeBase,
-            ExamplesKnowledgeBase,
-            ToolDocsKnowledgeBase,
-        )
+        import dojo.rag.knowledge_bases  # noqa: F401
         print("  ✓ Knowledge base imports successful")
     except ImportError as e:
         print(f"  ✗ Knowledge base import error: {e}")
         return False
 
     try:
-        from dojo.rag.loaders import (
-            CWELoader,
-            OWASPMobileLoader,
-            CurriculumLoader,
-        )
+        import dojo.rag.loaders  # noqa: F401
         print("  ✓ Loader imports successful")
     except ImportError as e:
         print(f"  ✗ Loader import error: {e}")
@@ -66,10 +48,10 @@ def test_config():
     """Test RAG configuration."""
     print("\nTesting configuration...")
 
-    from dojo.rag import RAGConfig, PILLAR_KB_WEIGHTS
+    from dojo.rag import PILLAR_KB_WEIGHTS, RAGConfig
 
     config = RAGConfig()
-    print(f"  ✓ Default config created")
+    print("  ✓ Default config created")
     print(f"    - Embedding model: {config.embedding.model_name}")
     print(f"    - Context budget: {config.context_budget_tokens} tokens")
     print(f"    - Persist dir: {config.persist_dir}")
@@ -85,7 +67,7 @@ def test_embedding_pipeline():
     print("\nTesting embedding pipeline...")
 
     try:
-        from dojo.rag import EmbeddingPipeline, EmbeddingConfig
+        from dojo.rag import EmbeddingConfig, EmbeddingPipeline
 
         config = EmbeddingConfig()
         pipeline = EmbeddingPipeline(config)
@@ -94,7 +76,7 @@ def test_embedding_pipeline():
         text = "SQL injection vulnerability in Android ContentProvider"
         embedding = pipeline.embed(text)
 
-        print(f"  ✓ Single embedding generated")
+        print("  ✓ Single embedding generated")
         print(f"    - Dimensions: {len(embedding)}")
         print(f"    - First 5 values: {embedding[:5]}")
 
@@ -128,7 +110,7 @@ def test_owasp_loader():
 
         # Check data is present
         owasp_ids = loader.get_owasp_ids()
-        print(f"  ✓ OWASP Mobile Top 10 data loaded")
+        print("  ✓ OWASP Mobile Top 10 data loaded")
         print(f"    - Categories: {', '.join(owasp_ids)}")
 
         # Check CWE mappings
@@ -149,7 +131,8 @@ def test_rag_system_creation():
 
     try:
         import tempfile
-        from dojo.rag import create_rag_system, RAGConfig
+
+        from dojo.rag import RAGConfig, create_rag_system
 
         # Use temp directory for test
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -158,7 +141,7 @@ def test_rag_system_creation():
 
             rag = create_rag_system(config=config)
 
-            print(f"  ✓ RAG system created")
+            print("  ✓ RAG system created")
 
             # Get stats
             stats = rag.get_stats()
@@ -179,9 +162,9 @@ def test_praxis_rag_integration():
     print("\nTesting Praxis RAG integration...")
 
     try:
-        from dojo.graders.praxis_runner import PraxisRunner, RAG_AVAILABLE
+        from dojo.graders.praxis_runner import RAG_AVAILABLE, PraxisRunner
 
-        print(f"  ✓ PraxisRunner imported")
+        print("  ✓ PraxisRunner imported")
         print(f"    - RAG_AVAILABLE: {RAG_AVAILABLE}")
 
         # Check that RAG parameters are accepted (don't actually create runner)

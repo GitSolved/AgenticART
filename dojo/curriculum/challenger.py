@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable, Optional, Protocol
+from typing import Any, Callable, Optional, Protocol
 
 from dojo.curriculum.context_injector import ContextInjector
 from dojo.curriculum.error_extractor import ErrorContext, ErrorExtractor

@@ -20,6 +20,12 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+from dojo.models_v2 import ChallengeV2
+
+if TYPE_CHECKING:
+    pass
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -42,11 +48,19 @@ def setup_logging(verbose: bool = False):
 def load_challenge_from_yaml(challenge_id: str) -> "ChallengeV2":
     """Load a challenge directly from YAML files."""
     import yaml
+
     from dojo.models import Belt
     from dojo.models_v2 import (
-        Artifact, ArtifactType, ChallengeType, ChallengeV2,
-        EvaluationCriteria, GroundTruth, Phase, PhaseID, Pillar,
-        TrainingMetadata, VerificationTask,
+        Artifact,
+        ArtifactType,
+        ChallengeType,
+        EvaluationCriteria,
+        GroundTruth,
+        Phase,
+        PhaseID,
+        Pillar,
+        TrainingMetadata,
+        VerificationTask,
     )
 
     curriculum_dir = Path(__file__).parent.parent / "dojo" / "curriculum" / "v2" / "pillars"
@@ -290,7 +304,7 @@ async def run_with_rag_mlx(
 
         # Calibration results
         cal = result.calibration
-        logger.info(f"\nCalibration:")
+        logger.info("\nCalibration:")
         logger.info(f"  Category: {cal.category.value}")
         logger.info(f"  Reasoning score: {cal.reasoning_score:.2f}")
         logger.info(f"  Stated confidence: {cal.stated_confidence:.2f}")
@@ -307,7 +321,7 @@ async def run_with_rag_mlx(
 
         # Generated DPO pair
         if result.dpo_pair:
-            logger.info(f"\nDPO Pair Generated:")
+            logger.info("\nDPO Pair Generated:")
             logger.info(f"  Source: {result.dpo_pair.source}")
             logger.info(f"  Signal type: {result.dpo_pair.metadata.get('signal_type', 'unknown')}")
 

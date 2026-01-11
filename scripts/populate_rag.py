@@ -130,7 +130,7 @@ def populate_android_api(android_api_kb) -> int:
     print("\n📱 Loading Android API documentation...")
 
     # Security-relevant Android APIs
-    ANDROID_APIS = [
+    android_apis = [
         {
             "signature": "WebView.setJavaScriptEnabled(boolean)",
             "package": "android.webkit",
@@ -242,7 +242,7 @@ def populate_android_api(android_api_kb) -> int:
     ]
 
     count = 0
-    for api in ANDROID_APIS:
+    for api in android_apis:
         android_api_kb.add_api_entry(
             signature=api["signature"],
             package=api["package"],
@@ -267,7 +267,7 @@ def populate_tool_docs(tool_docs_kb) -> int:
     count = 0
 
     # ADB Commands
-    ADB_COMMANDS = [
+    adb_commands = [
         ("adb devices", "adb devices [-l]", "Lists connected Android devices", "device",
          ["adb devices", "adb devices -l"], "Verify device serial matches expected device."),
         ("adb shell", "adb shell [command]", "Opens shell or runs command on device", "shell",
@@ -276,6 +276,8 @@ def populate_tool_docs(tool_docs_kb) -> int:
          ["adb pull /data/data/com.app/shared_prefs/prefs.xml ./"], "Access to /data/data/ requires root."),
         ("adb push", "adb push <local> <remote>", "Copies file from local to device", "file",
          ["adb push frida-server /data/local/tmp/"], "Deploy Frida server and test payloads."),
+        ("adb install", "adb install [-r] [-t] [-g] <apk>", "Installs APK on device", "package",
+         ["adb install app.apk", "adb install -r -t modified.apk"], "Use -t for repackaged APKs."),
         ("adb install", "adb install [-r] [-t] [-g] <apk>", "Installs APK on device", "package",
          ["adb install app.apk", "adb install -r -t modified.apk"], "Use -t for repackaged APKs."),
         ("adb logcat", "adb logcat [filter-spec]", "Prints device log output", "debug",
@@ -294,7 +296,7 @@ def populate_tool_docs(tool_docs_kb) -> int:
          ["adb shell dumpsys package com.app"], "Shows permissions, components, signatures."),
     ]
 
-    for cmd, syntax, desc, cat, examples, notes in ADB_COMMANDS:
+    for cmd, syntax, desc, cat, examples, notes in adb_commands:
         tool_docs_kb.add_command("adb", cmd, syntax, desc, category=cat, examples=examples, security_notes=notes)
         count += 1
 

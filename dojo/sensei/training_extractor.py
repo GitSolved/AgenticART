@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 from dojo.curriculum import ChallengeSession, ErrorContext
 from dojo.models import (
-    Challenge,
     Grade,
     SenseiAssessment,
     TrainingExample,

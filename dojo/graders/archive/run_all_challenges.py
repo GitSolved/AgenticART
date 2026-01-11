@@ -20,13 +20,13 @@ import yaml
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from dojo.graders.dpo_generator import DPOPair, export_dpo_dataset
-from dojo.graders.reasoning_grader import ReasoningGrader
 from dojo.graders.archive.training_amplifier import (
     AmplificationConfig,
     TrainingAmplifier,
     calculate_amplification_stats,
 )
+from dojo.graders.dpo_generator import DPOPair, export_dpo_dataset
+from dojo.graders.reasoning_grader import ReasoningGrader
 from dojo.models import Belt
 from dojo.models_v2 import (
     Artifact,

@@ -19,10 +19,9 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Optional
+from typing import Any, Optional
 
 from dojo.exceptions import ExecutionError
-from dojo.models import Challenge, ScriptType
 
 logger = logging.getLogger(__name__)
 
