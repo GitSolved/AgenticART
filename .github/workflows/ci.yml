@@ -26,7 +26,7 @@ jobs:
         run: ruff check .
         
       - name: Run Mypy (Type Check)
-        run: mypy . --ignore-missing-imports
+        run: mypy .
 
   test:
     name: Unit Tests (Mocked)
