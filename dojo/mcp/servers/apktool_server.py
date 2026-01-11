@@ -272,7 +272,7 @@ def create_apktool_server(
             if parse_components and app_elem is not None:
                 for comp_type in ["activity", "service", "receiver", "provider"]:
                     for comp in app_elem.findall(comp_type):
-                        name = comp.get(f"{ANDROID_NS}name", "")
+                        name = str(comp.get(f"{ANDROID_NS}name", ""))
                         exported = comp.get(f"{ANDROID_NS}exported")
 
                         # Parse intent filters
@@ -298,6 +298,7 @@ def create_apktool_server(
 
                         # Determine effective export status
                         # If exported is not set, it's true if there are intent filters
+                        effective_exported: bool
                         if exported is None:
                             effective_exported = len(intent_filters) > 0
                         else:
@@ -321,11 +322,12 @@ def create_apktool_server(
                         })
 
             # Count exported components (attack surface)
-            exported_count = sum(
+            exported_list = [
                 1 for comp_list in components.values()
                 for comp in comp_list
                 if comp["exported"]
-            )
+            ]
+            exported_count = len(exported_list)
 
             return {
                 "success": True,

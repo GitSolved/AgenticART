@@ -337,7 +337,7 @@ def create_jadx_server(
             source = file_path.read_text(errors="ignore")
 
             # Extract class metadata
-            class_info = {
+            class_info: dict[str, Any] = {
                 "package": None,
                 "imports": [],
                 "class_type": "class",

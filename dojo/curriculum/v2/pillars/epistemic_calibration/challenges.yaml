@@ -1,0 +1,570 @@
+# Epistemic Calibration Challenges
+# These train the model to assess confidence accurately and detect hallucinations
+
+challenges:
+# ═══════════════════════════════════════════════════════════════════════════════
+# 2.1 PHANTOM API IDENTIFICATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+- id: epistemic_phantom_white_001
+  name: Identifying Phantom APIs in Decompiled Code
+  version: 2
+  type: observation
+  pillar: epistemic_calibration
+  belt: white
+  difficulty: 3
+  description: |
+    Not all APIs you see in decompiled code actually exist on the target device.
+    Learn to identify "phantom APIs" - methods that appear in code but may be:
+    - Deprecated and removed in newer Android versions
+    - Misspelled by the decompiler
+    - From a library not actually included
+    - Hallucinated by a previous analysis tool
+
+  artifacts:
+  - type: decompiled_code
+    context: Decompiled code from an app targeting Android 14 (API 34)
+    content: |
+      // EDUCATIONAL: Which APIs actually exist on Android 14?
+
+      public class DeviceManager {
+
+          public void checkDeviceState() {
+              // Call 1
+              TelephonyManager tm = getSystemService(TELEPHONY_SERVICE);
+              String deviceId = tm.getDeviceId();  // Returns IMEI
+
+              // Call 2
+              WifiManager wm = getSystemService(WIFI_SERVICE);
+              String macAddr = wm.getMacAddress();
+
+              // Call 3
+              Settings.Secure.putString(getContentResolver(),
+                  Settings.Secure.ANDROID_ID, "custom_id");
+
+              // Call 4
+              PackageManager pm = getPackageManager();
+              List<PackageInfo> packages = pm.getInstalledPackages(
+                  PackageManager.GET_UNINSTALLED_PACKAGES);
+
+              // Call 5
+              BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
+              String btMac = bt.getAddress();
+          }
+      }
+
+  phases:
+  - phase_id: observe
+    instruction: |
+      For each numbered API call (1-5):
+      1. Does this API exist on Android 14 (API 34)?
+      2. If deprecated/removed, when was it deprecated?
+      3. What does this API return on modern Android? (actual value or error?)
+      4. What is the CORRECT modern alternative?
+
+      You MUST cross-reference against actual Android documentation.
+      Do NOT guess - if you're uncertain, say so explicitly.
+
+    expected_output_schema:
+      type: object
+      properties:
+        api_analysis:
+          type: array
+          items:
+            call_number: integer
+            api_signature: string
+            exists_on_api_34: boolean
+            deprecation_info: string
+            actual_behavior: string
+            modern_alternative: string
+            confidence: float
+            evidence_source: string
+    evaluation_criteria:
+    - name: correctness
+      weight: 0.40
+      description: Correctly identifies which APIs work/don't work
+    - name: evidence_citation
+      weight: 0.30
+      description: Cites actual documentation or empirical evidence
+    - name: calibration
+      weight: 0.30
+      description: Confidence scores match actual correctness
+    max_tokens: 2000
+
+  ground_truth:
+    key_observations:
+    - "Call 1: getDeviceId() deprecated API 26, returns null on API 29+"
+    - "Call 2: getMacAddress() returns 02:00:00:00:00:00 on API 23+"
+    - "Call 3: ANDROID_ID is read-only, putString() will silently fail"
+    - "Call 4: GET_UNINSTALLED_PACKAGES deprecated API 24, use MATCH_UNINSTALLED_PACKAGES"
+    - "Call 5: getAddress() returns 02:00:00:00:00:00 on API 23+"
+  training:
+    common_mistakes:
+    - Assuming deprecated APIs throw exceptions (many return dummy values)
+    - Not knowing about privacy changes in Android 10+
+    - Trusting decompiled code without verification
+    negative_examples:
+    - "All these APIs work fine on Android 14"
+    - "getDeviceId() returns the IMEI"
+
+- id: epistemic_phantom_yellow_001
+  name: Cross-Referencing APIs Against Device Behavior
+  version: 2
+  type: verification
+  pillar: epistemic_calibration
+  belt: yellow
+  difficulty: 5
+  description: |
+    Static analysis tells you what the CODE says. Dynamic analysis tells you what ACTUALLY HAPPENS.
+    These can differ dramatically on Android due to:
+    - Permission enforcement at runtime
+    - API behavior changes across versions
+    - Device-specific modifications (OEM customizations)
+
+    Learn to verify API behavior empirically.
+
+  artifacts:
+  - type: decompiled_code
+    context: Code that attempts to access sensitive data
+    content: |
+      public class SensorCollector {
+
+          public Map<String, String> collectDeviceInfo() {
+              Map<String, String> info = new HashMap<>();
+
+              // Attempt 1: Get SIM serial
+              TelephonyManager tm = getSystemService(TELEPHONY_SERVICE);
+              info.put("sim_serial", tm.getSimSerialNumber());
+
+              // Attempt 2: Get location from last known
+              LocationManager lm = getSystemService(LOCATION_SERVICE);
+              Location loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+              if (loc != null) {
+                  info.put("lat", String.valueOf(loc.getLatitude()));
+                  info.put("lon", String.valueOf(loc.getLongitude()));
+              }
+
+              // Attempt 3: Get WiFi scan results
+              WifiManager wm = getSystemService(WIFI_SERVICE);
+              List<ScanResult> scans = wm.getScanResults();
+              info.put("wifi_count", String.valueOf(scans.size()));
+
+              return info;
+          }
+      }
+  - type: apk_metadata
+    context: App metadata
+    content: |
+      Target SDK: 34
+      Min SDK: 21
+      Permissions declared:
+        - android.permission.READ_PHONE_STATE
+        - android.permission.ACCESS_FINE_LOCATION
+        - android.permission.ACCESS_WIFI_STATE
+
+  phases:
+  - phase_id: hypothesize
+    instruction: |
+      BEFORE testing, predict what will actually happen for each API call:
+      1. What will the return value be?
+      2. Will it throw an exception? What kind?
+      3. What permissions are actually required vs declared?
+      4. Assign a confidence score (0.0-1.0) to each prediction
+
+    expected_output_schema:
+      type: object
+      properties:
+        predictions:
+          type: array
+          items:
+            api_call: string
+            predicted_result: string
+            predicted_exception: string
+            required_permissions: array
+            confidence: float
+            reasoning: string
+    max_tokens: 1500
+
+  - phase_id: test
+    instruction: |
+      Now design Frida hooks to empirically test your predictions:
+      1. Hook each API call
+      2. Log actual return values and exceptions
+      3. Compare against your predictions
+      4. Update your confidence calibration
+
+    expected_output_schema:
+      type: object
+      properties:
+        frida_hooks:
+          type: array
+          items:
+            target_method: string
+            hook_code: string
+        expected_results: array
+    max_tokens: 2000
+
+  ground_truth:
+    root_cause: |
+      PREDICTION vs REALITY:
+
+      1. getSimSerialNumber()
+         - Predicted: Returns SIM serial (permission declared)
+         - Actual: SecurityException on API 29+ (requires READ_PRIVILEGED_PHONE_STATE, not grantable to 3rd party)
+         - Calibration lesson: Declared permission != granted permission
+
+      2. getLastKnownLocation()
+         - Predicted: Returns location or null
+         - Actual: Requires runtime permission grant + location enabled
+         - On API 30+: Also requires ACCESS_BACKGROUND_LOCATION for background access
+         - Calibration lesson: Runtime permissions change API behavior
+
+      3. getScanResults()
+         - Predicted: Returns WiFi scan list
+         - Actual: On API 28+, requires CHANGE_WIFI_STATE AND location permission
+         - Returns empty list if location off (even with permissions granted)
+         - Calibration lesson: Hidden permission requirements
+  training:
+    common_mistakes:
+    - Assuming declared permissions are granted
+    - Not knowing about runtime permission model
+    - Missing Android version-specific behavior changes
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 2.2 CONFIDENCE CALIBRATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+- id: epistemic_confidence_white_001
+  name: Calibrated Confidence Scoring
+  version: 2
+  type: observation
+  pillar: epistemic_calibration
+  belt: white
+  difficulty: 3
+  description: |
+    Security analysts must accurately assess their own certainty.
+    Overconfidence leads to missed vulnerabilities.
+    Underconfidence leads to wasted investigation time.
+
+    Learn to assign calibrated confidence scores where:
+    - 0.9 confidence means you're right 90% of the time
+    - 0.5 confidence means you're right 50% of the time
+
+  artifacts:
+  - type: decompiled_code
+    context: Authentication code - assess confidence in your analysis
+    content: |
+      public class LoginManager {
+
+          private static final String ADMIN_HASH = "5f4dcc3b5aa765d61d8327deb882cf99";
+
+          public boolean authenticate(String username, String password) {
+              // Path A
+              if ("debug".equals(username) && "debug123".equals(password)) {
+                  return true;
+              }
+
+              // Path B
+              String hash = md5(password);
+              if (ADMIN_HASH.equals(hash)) {
+                  return true;
+              }
+
+              // Path C
+              return serverAuthenticate(username, password);
+          }
+
+          private native String md5(String input);
+
+          private boolean serverAuthenticate(String user, String pass) {
+              // Implementation not shown
+          }
+      }
+
+  phases:
+  - phase_id: observe
+    instruction: |
+      Analyze this authentication code and make claims with calibrated confidence:
+
+      For EACH claim you make, you MUST provide:
+      1. The claim itself
+      2. Confidence score (0.0-1.0)
+      3. Evidence supporting this confidence level
+      4. What would INCREASE your confidence?
+      5. What would DECREASE your confidence?
+
+      Example calibration:
+      - 0.95+: Multiple independent evidence sources confirm
+      - 0.80-0.94: Strong evidence but single source
+      - 0.60-0.79: Reasonable inference, needs verification
+      - 0.40-0.59: Uncertain, could go either way
+      - <0.40: Speculation, low evidence
+
+    expected_output_schema:
+      type: object
+      properties:
+        claims:
+          type: array
+          items:
+            claim: string
+            confidence: float
+            evidence: array
+            would_increase_confidence: string
+            would_decrease_confidence: string
+        calibration_summary:
+          total_claims: integer
+          high_confidence_count: integer
+          needs_verification_count: integer
+    evaluation_criteria:
+    - name: calibration_accuracy
+      weight: 0.40
+      description: Confidence scores match actual correctness
+    - name: evidence_quality
+      weight: 0.30
+      description: Evidence cited supports confidence level
+    - name: uncertainty_acknowledgment
+      weight: 0.30
+      description: Appropriately acknowledges unknowns
+    max_tokens: 2000
+
+  ground_truth:
+    key_observations:
+    - "Path A backdoor: Confidence should be 0.95+ (explicit in code)"
+    - "ADMIN_HASH is MD5 of 'password': Confidence depends on whether you recognized the hash (0.9 if known, 0.6 if guessing)"
+    - "serverAuthenticate security: Confidence must be LOW (<0.5) - implementation not visible"
+    - "md5() is native: Confidence in its behavior should be MEDIUM (0.6-0.7) - could be modified"
+    valid_hypotheses:
+    - statement: "There is a hardcoded debug backdoor"
+      confidence_range: [0.90, 0.99]
+      required_elements: ["debug", "debug123", "explicit credentials"]
+    - statement: "ADMIN_HASH is the MD5 of a weak password"
+      confidence_range: [0.70, 0.95]
+      required_elements: ["MD5", "hash lookup", "5f4dcc3b5aa765d61d8327deb882cf99"]
+    - statement: "Server authentication is secure"
+      confidence_range: [0.0, 0.50]
+      required_elements: ["cannot verify", "implementation hidden"]
+  training:
+    common_mistakes:
+    - 0.99 confidence on everything (overconfidence)
+    - Not distinguishing between what's visible vs hidden
+    - Guessing hash values without stating uncertainty
+    difficulty_factors:
+    - Native method obscures md5 implementation
+    - Server code not visible
+
+- id: epistemic_confidence_yellow_001
+  name: Multi-Claim Calibration Tracking
+  version: 2
+  type: observation
+  pillar: epistemic_calibration
+  belt: yellow
+  difficulty: 5
+  description: |
+    Track your confidence calibration across multiple claims.
+    After analysis, you'll verify claims and check if your confidence was accurate.
+
+    Target: If you assign 80% confidence to 10 claims, 8 should be correct.
+
+  artifacts:
+  - type: decompiled_code
+    context: Multiple code snippets - make calibrated claims about each
+    content: |
+      // Snippet 1: Network code
+      public void sendData(String data) {
+          URL url = new URL("http://api.example.com/data");
+          HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+          conn.setRequestMethod("POST");
+          conn.getOutputStream().write(data.getBytes());
+      }
+
+      // Snippet 2: Storage code
+      public void saveToken(String token) {
+          SharedPreferences prefs = getSharedPreferences("auth", MODE_WORLD_READABLE);
+          prefs.edit().putString("token", token).apply();
+      }
+
+      // Snippet 3: Crypto code
+      public String encrypt(String data) {
+          Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+          SecretKey key = KeyStore.getInstance("AndroidKeyStore")
+              .getKey("app_key", null);
+          c.init(Cipher.ENCRYPT_MODE, key);
+          return Base64.encode(c.doFinal(data.getBytes()));
+      }
+
+      // Snippet 4: Intent handling
+      public void handleIntent(Intent intent) {
+          String url = intent.getDataString();
+          webView.loadUrl(url);
+      }
+
+      // Snippet 5: SQL query
+      public Cursor search(String term) {
+          return db.query("items", null, "name LIKE ?",
+              new String[]{"%" + term + "%"}, null, null, null);
+      }
+
+  phases:
+  - phase_id: observe
+    instruction: |
+      Make EXACTLY 10 security claims across these 5 snippets.
+      Each claim must have a confidence score.
+
+      After you submit, your claims will be verified.
+      Goal: Your confidence calibration should be accurate.
+      (8/10 correct if average confidence is 0.8)
+
+    expected_output_schema:
+      type: object
+      properties:
+        claims:
+          type: array
+          minItems: 10
+          maxItems: 10
+          items:
+            snippet_number: integer
+            claim: string
+            confidence: float
+            evidence: string
+        meta:
+          average_confidence: float
+          expected_correct: float
+    max_tokens: 2500
+
+  ground_truth:
+    key_observations:
+    - "Snippet 1: HTTP (not HTTPS) - cleartext traffic, HIGH confidence (0.95)"
+    - "Snippet 2: MODE_WORLD_READABLE - world-readable storage, VERY HIGH confidence (0.98)"
+    - "Snippet 3: AES/GCM + AndroidKeyStore - SECURE pattern, HIGH confidence (0.90)"
+    - "Snippet 4: loadUrl from intent - potential XSS/redirect, HIGH confidence (0.85)"
+    - "Snippet 5: Parameterized query - SECURE pattern, HIGH confidence (0.90)"
+  training:
+    common_mistakes:
+    - Claiming Snippet 5 is SQL injection (it's parameterized!)
+    - Missing MODE_WORLD_READABLE deprecation
+    - Not recognizing AndroidKeyStore as secure
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 2.3 TOOL FAILURE DIAGNOSIS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+- id: epistemic_toolfail_white_001
+  name: Recognizing Tool Output Errors
+  version: 2
+  type: observation
+  pillar: epistemic_calibration
+  belt: white
+  difficulty: 4
+  description: |
+    Tools lie. jadx mis-decompiles, Frida crashes, adb disconnects.
+    A good analyst recognizes when tool output is WRONG.
+
+  artifacts:
+  - type: decompiled_code
+    context: jadx output that may contain decompilation errors
+    content: |
+      // EDUCATIONAL: This jadx output contains errors - find them
+
+      public class PaymentProcessor {
+
+          public void processPayment(int amount) {
+              // jadx note: variable names recovered from debug info
+              int r0 = amount;
+              int r1 = r0 * 100;
+
+              // jadx: Unable to fully decompile this block
+              // Original bytecode uses tableswitch
+              switch (r1) {
+                  case 0:
+                  case 1:
+                  case 2:
+                      handleSmallPayment(r1);
+                      break;
+                  default:
+                      /* jadx: missing cases */
+                      break;
+              }
+
+              // jadx WARNING: Code restructure failed
+              // Keeping original structure
+              if (r1 > 1000) {
+                  if (r1 < 1000) {  // Suspicious: contradictory condition
+                      flagFraud();
+                  }
+              }
+
+              // jadx: Inlined method call
+              String status = C0001a.m0001a(r1);  // Obfuscated name
+          }
+      }
+  - type: frida_output
+    context: Frida trace that may have issues
+    content: |
+      [Frida] Attaching to PID 12345...
+      [Frida] Hooking PaymentProcessor.processPayment...
+
+      processPayment called with: 50
+      processPayment called with: 100
+      [Frida] Script crashed: ReferenceError: 'amount' is not defined
+      [Frida] Attempting to reload...
+      processPayment called with: undefined
+      processPayment called with: 200
+
+  phases:
+  - phase_id: observe
+    instruction: |
+      Identify ALL tool errors/issues in the provided artifacts:
+
+      1. What decompilation errors are present in the jadx output?
+      2. What's wrong with the Frida trace?
+      3. Which parts of the output can you trust? Which cannot?
+      4. What would you do to get accurate information?
+
+    expected_output_schema:
+      type: object
+      properties:
+        jadx_issues:
+          type: array
+          items:
+            location: string
+            issue: string
+            impact: string
+            workaround: string
+        frida_issues:
+          type: array
+          items:
+            location: string
+            issue: string
+            impact: string
+            workaround: string
+        trustworthy_data:
+          type: array
+          items: string
+        untrustworthy_data:
+          type: array
+          items: string
+    evaluation_criteria:
+    - name: issue_identification
+      weight: 0.40
+      description: Finds all tool output errors
+    - name: impact_assessment
+      weight: 0.30
+      description: Understands how errors affect analysis
+    - name: workaround_knowledge
+      weight: 0.30
+      description: Knows how to get correct data
+    max_tokens: 2000
+
+  ground_truth:
+    key_observations:
+    - "jadx: 'r0, r1' register names indicate failed variable recovery"
+    - "jadx: 'missing cases' in switch means incomplete decompilation"
+    - "jadx: 'r1 > 1000 && r1 < 1000' is IMPOSSIBLE - restructure error"
+    - "jadx: C0001a.m0001a is obfuscated, need to trace actual implementation"
+    - "Frida: Script crashed mid-trace, 'undefined' value is invalid"
+    - "Frida: Post-crash data unreliable, need to fix hook and re-run"
+  training:
+    common_mistakes:
+    - Analyzing impossible conditions as real logic
+    - Trusting post-crash Frida output
+    - Not recognizing obfuscated names as information loss

@@ -169,12 +169,12 @@ class Challenger:
         self.max_retries = max_retries
         self.on_attempt = on_attempt
 
-    def run_challenge(self, challenge: Challenge) -> ChallengeSession:
+    def run_challenge(self, challenge: Any) -> ChallengeSession:
         """
         Run a challenge with the feedback loop.
 
         Args:
-            challenge: The challenge to attempt.
+            challenge: The challenge to attempt (V1 or V2).
 
         Returns:
             ChallengeSession with all attempts recorded.

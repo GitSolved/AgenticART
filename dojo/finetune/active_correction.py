@@ -36,7 +36,7 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -176,12 +176,16 @@ class MLXLoRATrainer:
             # Load model with existing adapter if provided
             if self.adapter_path and self.adapter_path.exists():
                 logger.info(f"Loading existing adapter: {self.adapter_path}")
-                self._model, self._tokenizer = load(
+                loaded = load(
                     self.base_model,
                     adapter_path=str(self.adapter_path),
                 )
+                self._model = loaded[0]
+                self._tokenizer = loaded[1]
             else:
-                self._model, self._tokenizer = load(self.base_model)
+                loaded = load(self.base_model)
+                self._model = loaded[0]
+                self._tokenizer = loaded[1]
 
             self._initialized = True
             logger.info(f"Model loaded. Device: {get_mlx_device_info()}")
@@ -438,12 +442,13 @@ class ActiveLearningLoop:
 
     def __init__(
         self,
-        base_model: str = "mlx-community/Qwen2.5-Coder-7B-Instruct-4bit",
+        base_model: str = "mlx-community/Qwen2.5-Coder-32B-Instruct-4bit",
         lora_rank: int = 8,
         output_dir: Optional[Path] = None,
         auto_train: bool = True,
         train_batch_size: int = 1,
         min_calibration_error: float = 0.3,
+        max_retries: int = 30,  # Increased to 30 for "Superhuman Persistence"
     ):
         """
         Initialize active learning loop.
@@ -455,6 +460,7 @@ class ActiveLearningLoop:
             auto_train: Automatically train on hallucinations
             train_batch_size: Batch training pairs before update
             min_calibration_error: Minimum error to trigger training
+            max_retries: Maximum self-correction attempts (Inference-Time Compute)
         """
         self.output_dir = output_dir or Path("active_learning_output")
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -476,6 +482,7 @@ class ActiveLearningLoop:
             model_id=base_model,
             llm_client=self.trainer,  # Trainer implements generate()
             output_dir=self.output_dir / "runs",
+            max_self_corrections=max_retries,
         )
 
         # Pending training pairs (for batch training)
@@ -660,7 +667,7 @@ Revised hypothesis with appropriate uncertainty:
     async def run_curriculum(
         self,
         challenges: list,
-        phase_response_generator: callable,
+        phase_response_generator: Callable,
     ) -> dict:
         """
         Run a full curriculum with active learning.
@@ -746,7 +753,7 @@ async def main():
     parser = argparse.ArgumentParser(description="MLX Active Learning Loop")
     parser.add_argument(
         "--model",
-        default="mlx-community/Qwen2.5-Coder-7B-Instruct-4bit",
+        default="mlx-community/Qwen2.5-Coder-32B-Instruct-4bit",
         help="MLX model to fine-tune",
     )
     parser.add_argument(
@@ -760,6 +767,12 @@ async def main():
         default="method_observe_white_001",
         help="Challenge ID to run",
     )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=30,
+        help="Max self-correction retries",
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -767,6 +780,7 @@ async def main():
     print("=" * 60)
     print(f"Model: {args.model}")
     print(f"LoRA Rank: {args.lora_rank}")
+    print(f"Max Retries: {args.retries}")
     print(f"MLX Available: {check_mlx_available()}")
     print(f"Device Info: {get_mlx_device_info()}")
     print("=" * 60)
@@ -782,6 +796,7 @@ async def main():
         base_model=args.model,
         lora_rank=args.lora_rank,
         auto_train=True,
+        max_retries=args.retries,
     )
 
     # Load challenge

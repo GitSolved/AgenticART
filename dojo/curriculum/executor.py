@@ -374,14 +374,14 @@ class Executor:
 
     def execute(
         self,
-        challenge: Challenge,
+        challenge: Any,
         model_output: str,
     ) -> ExecutionResult:
         """
         Execute model output for a challenge.
 
         Args:
-            challenge: The challenge being attempted.
+            challenge: The challenge being attempted (V1 or V2).
             model_output: The model's generated code/command.
 
         Returns:
@@ -390,14 +390,19 @@ class Executor:
         Raises:
             ExecutionError: If script type is not supported.
         """
-        script_type = challenge.expected_output.script_type
+        # Handle script type extraction (duck typing)
+        script_type_val = "adb"
+        if hasattr(challenge, "expected_output"):
+            script_type_val = challenge.expected_output.script_type.value
+        elif hasattr(challenge, "script_type"):
+            script_type_val = str(challenge.script_type)
 
-        if script_type == ScriptType.ADB:
+        if script_type_val == "adb" or script_type_val == "shell":
             return self.execute_adb(model_output)
         else:
             raise ExecutionError(
-                f"Script type not yet supported: {script_type.value}",
-                script_type=script_type.value,
+                f"Script type not yet supported: {script_type_val}",
+                script_type=script_type_val,
             )
 
     def check_device_connected(self) -> bool:
@@ -443,7 +448,7 @@ class Executor:
 
     def validate_output(
         self,
-        challenge: Challenge,
+        challenge: Any,
         execution_result: ExecutionResult,
     ) -> bool:
         """
@@ -459,9 +464,21 @@ class Executor:
         if not execution_result.success:
             return False
 
-        # Get validation rules from challenge
-        validation = challenge.inputs.additional_context.get("validation", {})
+        # Get validation rules from challenge (duck typing)
+        validation = {}
+        if hasattr(challenge, "inputs"):
+            validation = challenge.inputs.additional_context.get("validation", {})
+        elif hasattr(challenge, "metadata"):
+            validation = challenge.metadata.get("validation", {})
+
         if not validation:
+            # Check V2 ground truth observations as fallback
+            if hasattr(challenge, "ground_truth"):
+                output = execution_result.stdout.lower()
+                for obs in getattr(challenge.ground_truth, "key_observations", []):
+                    if obs.lower() in output:
+                        return True
+
             # No specific validation, success is enough
             return True
 

@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from dojo.graders.dpo_generator import DPOPair, export_dpo_dataset
 from dojo.graders.reasoning_grader import ReasoningGrader
-from dojo.graders.training_amplifier import (
+from dojo.graders.archive.training_amplifier import (
     AmplificationConfig,
     TrainingAmplifier,
     calculate_amplification_stats,
@@ -735,7 +735,7 @@ def run_all_challenges(verbose: bool = False) -> None:
     print("=" * 70)
 
     # Load all challenges
-    curriculum_dir = Path(__file__).parent.parent / "curriculum"
+    curriculum_dir = Path(__file__).parent.parent.parent / "curriculum"
     challenges_by_pillar = load_all_challenges(curriculum_dir)
 
     total_challenges = sum(len(c) for c in challenges_by_pillar.values())
@@ -912,7 +912,7 @@ def generate_amplified_training_data(
     print("=" * 70)
 
     # Load all challenges
-    curriculum_dir = Path(__file__).parent.parent / "curriculum"
+    curriculum_dir = Path(__file__).parent.parent.parent / "curriculum"
     challenges_by_pillar = load_all_challenges(curriculum_dir)
 
     total_challenges = sum(len(c) for c in challenges_by_pillar.values())

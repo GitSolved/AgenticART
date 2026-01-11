@@ -1,31 +1,21 @@
-# AgenticART Architecture V2: Discovery-Oriented Training
+# AgenticART Architecture: Praxis (V2)
 
 ## Executive Summary
 
-The original architecture trains models to **execute commands** given descriptions.
-This architecture trains models to **reason about vulnerabilities** through structured cognitive phases.
+The AgenticART architecture trains models to **reason about vulnerabilities** through structured cognitive phases, using tool execution as binary ground truth.
 
 ---
 
-## Core Paradigm Shift
+## Core Paradigm
 
-### V1 (Current): Command Generation
-```
-Input: "List installed packages"
-Output: "shell pm list packages"
-Evaluation: Did command succeed?
-```
-
-### V2 (New): Reasoning Chain
-```
+### Reasoning Chain
 Input: APK + manifest + decompiled code
-Phase 1 - OBSERVE: "What security-relevant artifacts exist?"
-Phase 2 - HYPOTHESIZE: "What could be vulnerable and why?"
-Phase 3 - TEST: "How do I verify this hypothesis?"
-Phase 4 - ANALYZE: "What is the root cause?"
-Phase 5 - SYNTHESIZE: "Where else might this pattern exist?"
-Evaluation: Quality of reasoning at EACH phase
-```
+1. **OBSERVE**: Identify security-relevant artifacts.
+2. **HYPOTHESIZE**: Identify attack surface and potential vulnerabilities.
+3. **TEST**: Design and execute MCP verification tasks.
+4. **CALIBRATE**: Compare confidence to execution pass rate.
+5. **CORRECT**: If execution fails, revise hypothesis.
+6. **TRAIN**: Capture high-quality DPO chosen/rejected pairs.
 
 ---
 

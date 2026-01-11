@@ -39,7 +39,7 @@ from dojo.models_v2 import (
 APK_PATH = Path(__file__).parent.parent / "targets/vulnerable_apks/cryptovault/app/build/outputs/apk/debug/app-debug.apk"
 
 
-async def get_real_code_artifacts(executor: MCPExecutor, apk_path: str) -> tuple[str, str, str]:
+async def get_real_code_artifacts(executor: MCPExecutor, apk_path: str) -> tuple[str, str, str, str, str]:
     """Use MCP to get real code from the APK for the challenge."""
 
     # Decompile with JADX

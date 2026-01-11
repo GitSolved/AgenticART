@@ -23,6 +23,10 @@ websockets>=13.0.0,<14.0.0 # Pin for frida-tools compatibility
 # ─── Vector Store (Memory) ───────────────────────────────────────────────────
 chromadb>=0.4.0
 
+# ─── RAG (Retrieval-Augmented Generation) ────────────────────────────────────
+sentence-transformers>=2.2.0  # Embedding models for semantic search
+lxml>=5.0.0                   # XML parsing for CWE database
+
 # ─── Dynamic Analysis ────────────────────────────────────────────────────────
 frida-tools>=12.0.0      # Runtime instrumentation, hooking
 objection>=1.11.0        # Frida-powered mobile exploration

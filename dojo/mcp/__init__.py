@@ -30,10 +30,6 @@ from dojo.mcp.executor import (
     ToolResult,
     quick_execute,
 )
-from dojo.mcp.servers import (
-    create_apktool_server,
-    create_jadx_server,
-)
 
 __all__ = [
     # Configuration
@@ -41,9 +37,6 @@ __all__ = [
     "ServerConfig",
     "load_config",
     "get_available_servers",
-    # Server factories
-    "create_jadx_server",
-    "create_apktool_server",
     # Executor
     "MCPExecutor",
     "ToolResult",

@@ -15,24 +15,32 @@ Get AgenticART running in 5 minutes.
 ```bash
 git clone https://github.com/GitSolved/AgenticART.git
 cd AgenticART
+
+# Install Core & Dojo dependencies
+pip install -r requirements.txt
 pip install -r dojo/requirements.txt
+
+# For M3 Max (Fine-tuning support)
+pip install mlx-lm
 ```
 
 ### 2. Start Android Emulator
 
 ```bash
-# For Android Studio AVD
+# For Android Studio AVD (Rooted recommended)
 emulator -avd <your_avd_name>
-
-# For Genymotion
-# Start via Genymotion Desktop application
 ```
 
 ### 3. Start Ollama
 
 ```bash
 ollama serve
-ollama pull llama3.2
+
+# Recommended (32B Coder) - Requires 24GB+ RAM
+ollama pull qwen2.5-coder:32b
+
+# Fast Alternative (7B Coder) - Requires 8GB RAM
+ollama pull qwen2.5-coder:7b
 ```
 
 ## Run Challenges
@@ -40,43 +48,32 @@ ollama pull llama3.2
 ### Basic Test Run
 
 ```bash
-# Run white belt challenges (safest)
-python -m dojo.test_end_to_end --mode live --belt white
+# Run white belt challenges using Ollama
+python -m dojo.test_end_to_end --mode live --belt white --model qwen2.5-coder:32b
 ```
 
 This will:
 
-1. Load white belt challenges
-2. Send each challenge to your LLM
-3. Execute generated commands on the emulator
-4. Grade the results
-5. Save trajectories for training
+1. Load **White Belt (Observation)** challenges.
+2. Send artifacts (APK/Manifest) to the LLM.
+3. Use the **Praxis Loop** to verify reasoning against the emulator.
+4. Grade the results and capture **DPO Training Data**.
 
 ### Execution Modes
 
-| Mode | Command | Description |
-|------|---------|-------------|
-| Dry Run | `--mode dry_run` | Validate only, no execution |
-| Docker | `--mode docker` | Isolated container execution (recommended) |
-| Live | `--mode live` | Direct execution on host |
-
-!!! warning "Docker Mode Setup"
-    For Docker mode, first build the sandbox image:
-    ```bash
-    docker-compose build sandbox
-    docker network create --internal agentic-sandbox-net
-    ```
+| Mode | Flag | Description |
+|------|------|-------------|
+| Live | `--mode live` | Real-time execution via Ollama |
+| MLX | `--mode mlx` | Native Apple Silicon execution (Fastest) |
+| Mock | `--mode mock` | CI/CD testing without a real LLM |
 
 ### Belt Progression
 
 ```bash
-# Start with white belt
-python -m dojo.test_end_to_end --mode docker --belt white
-
-# Progress through belts
-python -m dojo.test_end_to_end --mode docker --belt yellow
-python -m dojo.test_end_to_end --mode docker --belt orange
-# ... and so on
+# Progress through belts as the model improves
+python -m dojo.test_end_to_end --mode live --belt white
+python -m dojo.test_end_to_end --mode live --belt yellow
+python -m dojo.test_end_to_end --mode live --belt orange
 ```
 
 ## Package Training Data

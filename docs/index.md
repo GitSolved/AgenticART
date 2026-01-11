@@ -23,22 +23,19 @@ LLMs generate exploit code that **looks correct** but doesn't run:
 
 ## The Solution
 
-AgenticART creates a **feedback loop** between the model and a real Android device:
+AgenticART creates a **Praxis Loop**: a reasoning-to-verification feedback loop between the model and a real Android device:
 
 ```mermaid
-flowchart LR
-    A[Challenge] --> B[Generate]
-    B --> C[Execute]
-    C --> D{Success?}
-    D -->|No| E[Extract Error]
-    E --> F[Inject Context]
-    F --> B
-    D -->|Yes| G[Training Data]
+flowchart TD
+    A[Artifacts: APK/Manifest] --> B[Reasoning: OBSERVE/HYPOTHESIZE]
+    B --> C[Verification: Execute MCP Tools]
+    C --> D{Calibration OK?}
+    D -->|Hallucination| E[Self-Correction]
+    E --> B
+    D -->|Verified| G[DPO Training Data]
 ```
 
-**Failures become training data.** The model learns what works and how to recover from what doesn't.
-
-AgenticART targets **Android** devices, with testing focused on Samsung, Xiaomi, and Google Pixel phones.
+**Failures become intelligence.** The model learns to match its confidence to reality through empirical verification.
 
 ---
 
@@ -46,9 +43,10 @@ AgenticART targets **Android** devices, with testing focused on Samsung, Xiaomi,
 
 | Metric | Result |
 |--------|--------|
-| Distillation improvement | **+80 percentage points** |
-| Model compression | 70B → 7B parameters |
-| Challenge curriculum | 192 structured challenges |
+| Reasoner Model | **Qwen 2.5 Coder 32B** |
+| Reasoning Improvement | **+80 percentage points** |
+| Zero-Shot Pass Rate | **43% (on Android 11/14 benchmarks)** |
+| Challenge Curriculum | 31 Reasoning Challenges (V2) |
 
 ---
 

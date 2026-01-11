@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from dojo.curriculum import ChallengeSession, ErrorContext
 from dojo.models import (
@@ -261,13 +261,18 @@ class TrainingExtractor:
         """
         challenge = session.challenge
 
-        if not challenge.kata_solution:
+        # Duck typing for golden solution
+        kata_solution = getattr(challenge, "kata_solution", None)
+        if not kata_solution and hasattr(challenge, "ground_truth"):
+            kata_solution = getattr(challenge.ground_truth, "exploitation_path", None)
+
+        if not kata_solution:
             return None
 
         return TrainingExample(
             instruction=self._build_instruction(challenge),
             input_text=self._build_input(challenge),
-            output_text=challenge.kata_solution,
+            output_text=kata_solution,
             source_challenge_id=challenge.id,
             example_type="kata",
             belt=challenge.belt,
@@ -297,9 +302,14 @@ class TrainingExtractor:
         examples = []
         challenge = session.challenge
 
+        # Duck typing for golden solution
+        kata_solution = getattr(challenge, "kata_solution", None)
+        if not kata_solution and hasattr(challenge, "ground_truth"):
+            kata_solution = getattr(challenge.ground_truth, "exploitation_path", None)
+
         # Case 1: Kata (chosen) vs hallucinated model output (rejected)
         if (
-            challenge.kata_solution
+            kata_solution
             and assessment.has_hallucinations
         ):
             prompt = f"{self._build_instruction(challenge)}\n\n{self._build_input(challenge)}"
@@ -373,7 +383,7 @@ class TrainingExtractor:
             f"REASON: {rejection_reason}"
         )
 
-    def _build_instruction(self, challenge: Challenge) -> str:
+    def _build_instruction(self, challenge: Any) -> str:
         """
         Build instruction text from challenge.
 
@@ -385,7 +395,7 @@ class TrainingExtractor:
         """
         return challenge.description.strip()
 
-    def _build_input(self, challenge: Challenge) -> str:
+    def _build_input(self, challenge: Any) -> str:
         """
         Build input context from challenge.
 
@@ -397,24 +407,32 @@ class TrainingExtractor:
         """
         parts = []
 
-        # Add device context
-        if challenge.inputs.device_context:
+        # Extract device context (duck typing)
+        device_context = None
+        if hasattr(challenge, "inputs"):
+            device_context = getattr(challenge.inputs, "device_context", None)
+        elif hasattr(challenge, "metadata"):
+            device_context = challenge.metadata.get("device_context")
+
+        if device_context:
             parts.append("Device Context:")
-            for key, value in challenge.inputs.device_context.items():
+            for key, value in device_context.items():
                 parts.append(f"  - {key}: {value}")
 
         # Add hints if available
-        if challenge.hints:
-            parts.append("")
+        hints = getattr(challenge, "hints", [])
+        if hints:
+            if parts:
+                parts.append("")
             parts.append("Hints:")
-            for hint in challenge.hints:
+            for hint in hints:
                 parts.append(f"  - {hint}")
 
         return "\n".join(parts) if parts else ""
 
     def _format_error_recovery_input(
         self,
-        challenge: Challenge,
+        challenge: Any,
         failed_output: str,
         error_context: ErrorContext,
     ) -> str:

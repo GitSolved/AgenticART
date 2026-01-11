@@ -987,11 +987,14 @@ Your revised response:"""
             for phase_id, response in phase_responses.items():
                 if response:
                     pair = DPOPair(
+                        pair_id=f"praxis_hallucination_{challenge.id}",
                         prompt=challenge.description,
                         chosen="[This response was rejected due to hallucination]",
                         rejected=response,
                         challenge_id=challenge.id,
                         phase_id=phase_id,
+                        chosen_score=0.0,
+                        rejected_score=calibration.stated_confidence,
                         margin=calibration.calibration_error,
                         metadata={
                             "calibration_category": calibration.category.value,

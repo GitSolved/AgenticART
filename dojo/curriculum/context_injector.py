@@ -151,40 +151,53 @@ Please provide a corrected command. Output only the command, no explanation."""
 
         return "\n".join(f"- {s}" for s in suggestions)
 
-    def build_initial_prompt(self, challenge: Challenge) -> str:
+    def build_initial_prompt(self, challenge: Any) -> str:
         """
         Build the initial prompt for a challenge (before any retries).
 
         Args:
-            challenge: The challenge to attempt.
+            challenge: The challenge to attempt (V1 or V2).
 
         Returns:
             Initial prompt string.
         """
         prompt_parts = [challenge.description]
 
-        # Add device context if available
-        if challenge.inputs.device_context:
+        # Extract device context (V1: .inputs.device_context, V2: .metadata.device_context)
+        device_context = None
+        if hasattr(challenge, "inputs"):
+            device_context = getattr(challenge.inputs, "device_context", None)
+        elif hasattr(challenge, "metadata"):
+            device_context = challenge.metadata.get("device_context")
+
+        if device_context:
             prompt_parts.append("\n## Device Context")
-            for key, value in challenge.inputs.device_context.items():
+            for key, value in device_context.items():
                 prompt_parts.append(f"- {key}: {value}")
 
         # Add hints if this is first attempt
-        if challenge.hints:
+        hints = getattr(challenge, "hints", [])
+        if hints:
             prompt_parts.append("\n## Hints")
-            for hint in challenge.hints:
+            for hint in hints:
                 prompt_parts.append(f"- {hint}")
 
         # Add output format instruction
         prompt_parts.append("\n## Output Format")
-        script_type = challenge.expected_output.script_type.value
+        # Handle script type extraction
+        script_type = "adb"
+        if hasattr(challenge, "expected_output"):
+            script_type = challenge.expected_output.script_type.value
+        elif hasattr(challenge, "script_type"):
+            script_type = str(challenge.script_type)
+
         prompt_parts.append(
             f"Provide only the {script_type} command/script. No explanations or markdown."
         )
 
         return "\n".join(prompt_parts)
 
-    def build_system_prompt(self, challenge: Challenge) -> str:
+    def build_system_prompt(self, challenge: Any) -> str:
         """
         Build a system prompt for the challenge.
 
@@ -194,7 +207,14 @@ Please provide a corrected command. Output only the command, no explanation."""
         Returns:
             System prompt string.
         """
-        script_type = challenge.expected_output.script_type.value
+        # Handle script type extraction
+        script_type = "adb"
+        if hasattr(challenge, "expected_output"):
+            script_type = challenge.expected_output.script_type.value
+        elif hasattr(challenge, "script_type"):
+            script_type = str(challenge.script_type)
+
+        belt_display = challenge.belt.display if hasattr(challenge.belt, "display") else str(challenge.belt)
 
         return f"""You are an Android security expert. Your task is to generate {script_type} commands/scripts that execute correctly on Android devices.
 
@@ -205,5 +225,5 @@ Rules:
 4. Use proper escaping for shell special characters
 5. Assume ADB is connected to the target device
 
-Belt Level: {challenge.belt.display}
+Belt Level: {belt_display}
 Difficulty: {challenge.difficulty}/5"""

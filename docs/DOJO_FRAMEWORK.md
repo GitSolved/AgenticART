@@ -107,16 +107,11 @@ dojo/
 
 | Belt | Name | Challenge Type | Success Criteria |
 |------|------|----------------|------------------|
-| ⬜ White | Fundamentals | ADB command syntax, device enumeration | Valid commands, correct output parsing |
-| 🟨 Yellow | Reconnaissance | Package listing, permission analysis | Complete device profile extraction |
-| 🟧 Orange | Vulnerability Mapping | CVE matching, version fingerprinting | Accurate CVE-to-device correlation |
-| 🟩 Green | Scripting | Python/Bash exploit scaffolding | Syntactically correct, executable scripts |
-| 🟦 Blue | Exploitation | Known CVE reproduction | Successful privilege escalation |
-| 🟪 Purple | Evasion | SELinux bypass, detection avoidance | Undetected execution |
-| 🟫 Brown | Chaining | Multi-phase attack orchestration | Complete chain from recon to verify |
-| ⬛ Black | Novel Exploit | Zero-day pattern generation | Working exploit for unpatched vuln |
+| ⬜ White | Observation | Systematic artifact identification | 100% key artifact discovery |
+| 🟨 Yellow | Hypothesis | Testable security hypotheses | Accurate CWE mapping & Test Design |
+| 🟧 Orange | Verification | Execution against live targets | Successful exploit verification |
 
-> **Current Implementation:** White, Yellow, and Orange belt challenges are implemented. Higher belts are planned.
+> **Current Implementation:** White belt is 100% operational with pre-built targets. Yellow belt is in the "Connector Phase" with physical targets currently being integrated.
 
 ### Challenge YAML Format
 

@@ -181,7 +181,7 @@ class UnifiedCurriculum:
 
     def _load_v2(self, challenge_id: str) -> ChallengeV2:
         """Load a V2 challenge directly."""
-        from dojo.graders.run_all_challenges import load_all_challenges
+        from dojo.graders.archive.run_all_challenges import load_all_challenges
 
         curriculum_dir = Path(__file__).parent
         all_v2 = load_all_challenges(curriculum_dir.parent / "curriculum")

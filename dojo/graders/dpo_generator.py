@@ -69,6 +69,9 @@ class DPOPair:
     execution_pass_rate: Optional[float] = None  # Actual verification result
     is_hallucination: bool = False  # Quick flag for filtering
 
+    # General metadata
+    metadata: dict = field(default_factory=dict)
+
     # Timestamp
     created_at: datetime = field(default_factory=datetime.now)
 

@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from dojo.graders.dpo_generator import DPOPair
 from dojo.graders.runner import GradingRun, GradingRunner
@@ -45,6 +45,14 @@ except ImportError:
     AdapterConfig = None
     AdapterManager = None
     MLXAdapterClient = None
+
+# Optional RAG imports
+try:
+    from dojo.rag import RAGPromptAugmenter
+    RAG_AVAILABLE = True
+except ImportError:
+    RAG_AVAILABLE = False
+    RAGPromptAugmenter = None
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +281,10 @@ class PraxisRunner:
         enable_adapter_switching: bool = True,
         adapter_config: Optional["AdapterConfig"] = None,
         mlx_client: Optional["MLXAdapterClient"] = None,
+        # RAG settings
+        enable_rag: bool = False,
+        rag_persist_dir: Optional[Path] = None,
+        rag_max_tokens: int = 2000,
     ):
         """
         Initialize Praxis Runner.
@@ -289,6 +301,9 @@ class PraxisRunner:
             enable_adapter_switching: Enable automatic LoRA adapter switching (M3 Max)
             adapter_config: Configuration for Expert Mixture adapters
             mlx_client: Pre-configured MLX adapter client
+            enable_rag: Enable RAG context augmentation for prompts
+            rag_persist_dir: Directory for RAG vector store persistence
+            rag_max_tokens: Maximum tokens for RAG context
         """
         self.model_id = model_id
         self.output_dir = output_dir or Path("praxis_output")
@@ -319,6 +334,18 @@ class PraxisRunner:
                     "[Expert Mixture] Adapter switching enabled. "
                     "MLX client will be initialized on first challenge."
                 )
+
+        # RAG configuration
+        self._rag_enabled = enable_rag and RAG_AVAILABLE
+        self._rag_persist_dir = rag_persist_dir
+        self._rag_max_tokens = rag_max_tokens
+        self._rag_augmenter: Optional["RAGPromptAugmenter"] = None
+
+        if self._rag_enabled:
+            logger.info(
+                "[RAG] RAG augmentation enabled. "
+                "Augmenter will be initialized on first use."
+            )
 
         # Underlying V2 grader
         self.grading_runner = GradingRunner(
@@ -363,6 +390,14 @@ class PraxisRunner:
         # =====================================================================
         if self.enable_adapter_switching:
             await self._switch_adapter_for_challenge(challenge)
+
+        # =====================================================================
+        # RAG: Log RAG status for this challenge
+        # =====================================================================
+        if self._rag_enabled:
+            logger.info(
+                f"[RAG] Active for {challenge.id} (pillar={challenge.pillar.value})"
+            )
 
         started_at = datetime.now()
 
@@ -434,6 +469,103 @@ class PraxisRunner:
 
         return praxis_run
 
+    async def generate_and_run_challenge(
+        self,
+        challenge: ChallengeV2,
+        temperature: float = 0.7,
+    ) -> PraxisRun:
+        """
+        Generate phase responses with RAG augmentation and run the Praxis loop.
+
+        This is the primary method for end-to-end RAG-augmented evaluation.
+        It generates LLM responses using RAG-enhanced prompts, then evaluates
+        them with the full Praxis loop.
+
+        Args:
+            challenge: The challenge to evaluate
+            temperature: Temperature for LLM generation
+
+        Returns:
+            PraxisRun with evaluation results
+
+        Raises:
+            ValueError: If no LLM client is configured
+        """
+        if not self.llm_client:
+            raise ValueError(
+                "LLM client required for generate_and_run_challenge(). "
+                "Pass llm_client to PraxisRunner constructor."
+            )
+
+        # Log RAG status
+        if self._rag_enabled:
+            logger.info(
+                f"[RAG] Generating responses with RAG augmentation for {challenge.id}"
+            )
+            augmenter = self._get_rag_augmenter()
+            if augmenter:
+                stats = augmenter.get_stats()
+                logger.info(
+                    f"[RAG] KBs available: {list(stats.get('collections', {}).keys())}, "
+                    f"Total docs: {stats.get('total_documents', 0)}"
+                )
+
+        # Generate phase responses
+        phase_responses = await self._generate_phase_responses(
+            challenge=challenge,
+            temperature=temperature,
+        )
+
+        # Run the Praxis loop
+        return await self.run_challenge(
+            challenge=challenge,
+            phase_responses=phase_responses,
+        )
+
+    async def _generate_phase_responses(
+        self,
+        challenge: ChallengeV2,
+        temperature: float = 0.7,
+    ) -> dict[PhaseID, str]:
+        """
+        Generate responses for all phases using the LLM with RAG augmentation.
+
+        Args:
+            challenge: The challenge
+            temperature: Generation temperature
+
+        Returns:
+            Dict mapping PhaseID to generated response
+        """
+        phase_responses: dict[PhaseID, str] = {}
+
+        for i, phase in enumerate(challenge.phases):
+            # Get RAG-augmented prompt
+            prompt = self.get_augmented_prompt(challenge, phase_index=i)
+
+            logger.debug(
+                f"[Generate] Phase {phase.phase_id.value}: "
+                f"prompt length={len(prompt)} chars"
+            )
+
+            # Generate response
+            response = await self.llm_client.generate(
+                prompt=prompt,
+                temperature=temperature,
+            )
+
+            # Extract content from response
+            if hasattr(response, 'content'):
+                content = response.content
+            elif hasattr(response, 'text'):
+                content = response.text
+            else:
+                content = str(response)
+
+            phase_responses[phase.phase_id] = content
+
+        return phase_responses
+
     # -------------------------------------------------------------------------
     # BEST-OF-N TREE SEARCH
     # -------------------------------------------------------------------------
@@ -441,7 +573,7 @@ class PraxisRunner:
     async def run_challenge_best_of_n(
         self,
         challenge: ChallengeV2,
-        generate_candidates_fn: Optional[callable] = None,
+        generate_candidates_fn: Optional[Callable] = None,
     ) -> tuple[Optional[PraxisRun], BestOfNResult]:
         """
         Execute the Praxis Loop with Best-of-N tree search.
@@ -721,8 +853,8 @@ class PraxisRunner:
         candidates = []
         config = self.best_of_n_config
 
-        # Generate prompt from challenge
-        prompt = challenge.to_prompt(phase_index=0)
+        # Generate prompt from challenge (with optional RAG augmentation)
+        prompt = self.get_augmented_prompt(challenge, phase_index=0)
 
         for i in range(num_candidates):
             logger.debug(f"[Best-of-N] Generating candidate {i+1}/{num_candidates}")
@@ -1058,8 +1190,8 @@ class PraxisRunner:
 
         import uuid
 
-        # Build prompt from challenge
-        prompt = challenge.to_prompt(0)
+        # Build prompt from challenge (with RAG augmentation if enabled)
+        prompt = self.get_augmented_prompt(challenge, phase_index=0)
 
         # Determine the primary phase for this DPO pair
         primary_phase = challenge.phases[0].phase_id if challenge.phases else PhaseID.OBSERVE
@@ -1185,6 +1317,10 @@ class PraxisRunner:
         start_time = time.time()
 
         try:
+            if not self.mlx_client:
+                 logger.warning("[Expert Mixture] MLX client not initialized")
+                 return False
+
             success = self.mlx_client.switch_adapter(pillar)
 
             if success:
@@ -1249,6 +1385,95 @@ class PraxisRunner:
 
         if self.mlx_client:
             stats["mlx_client_stats"] = self.mlx_client.get_adapter_stats()
+
+        return stats
+
+    # -------------------------------------------------------------------------
+    # RAG INTEGRATION
+    # -------------------------------------------------------------------------
+
+    def _get_rag_augmenter(self) -> Optional["RAGPromptAugmenter"]:
+        """
+        Get or initialize the RAG prompt augmenter (lazy initialization).
+
+        Returns:
+            RAGPromptAugmenter instance or None if RAG is disabled
+        """
+        if not self._rag_enabled:
+            return None
+
+        if self._rag_augmenter is None and RAG_AVAILABLE:
+            logger.info("[RAG] Initializing RAG prompt augmenter...")
+            self._rag_augmenter = RAGPromptAugmenter(
+                persist_dir=self._rag_persist_dir,
+                enabled=True,
+                max_context_tokens=self._rag_max_tokens,
+            )
+            logger.info("[RAG] RAG prompt augmenter initialized")
+
+        return self._rag_augmenter
+
+    def set_rag_enabled(self, enabled: bool) -> bool:
+        """
+        Enable or disable RAG augmentation at runtime.
+
+        Args:
+            enabled: Whether to enable RAG
+
+        Returns:
+            True if RAG is now in the requested state
+        """
+        if enabled and not RAG_AVAILABLE:
+            logger.warning("[RAG] Cannot enable RAG - module not available")
+            return False
+
+        self._rag_enabled = enabled
+        if enabled:
+            logger.info("[RAG] RAG augmentation enabled")
+        else:
+            logger.info("[RAG] RAG augmentation disabled")
+
+        return True
+
+    def get_augmented_prompt(
+        self,
+        challenge: ChallengeV2,
+        phase_index: int = 0,
+    ) -> str:
+        """
+        Get a challenge prompt augmented with RAG context.
+
+        If RAG is disabled, returns the base prompt.
+
+        Args:
+            challenge: The challenge
+            phase_index: Phase index for prompt generation
+
+        Returns:
+            Augmented prompt string
+        """
+        base_prompt = challenge.to_prompt(phase_index)
+
+        augmenter = self._get_rag_augmenter()
+        if augmenter is None:
+            return base_prompt
+
+        return augmenter.augment_challenge_prompt(
+            challenge=challenge,
+            phase_index=phase_index,
+        )
+
+    def get_rag_stats(self) -> dict:
+        """Get RAG system statistics."""
+        stats = {
+            "enabled": self._rag_enabled,
+            "rag_available": RAG_AVAILABLE,
+            "max_context_tokens": self._rag_max_tokens,
+        }
+
+        augmenter = self._get_rag_augmenter()
+        if augmenter:
+            stats["augmenter_stats"] = augmenter.get_stats()
 
         return stats
 

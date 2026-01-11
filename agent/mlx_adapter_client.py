@@ -85,7 +85,7 @@ class AdapterConfig:
     """Configuration for the Expert Mixture Adapter system."""
 
     # Base model configuration
-    base_model_path: str = "models/qwen2.5-7b-instruct"
+    base_model_path: str = "mlx-community/Qwen2.5-Coder-32B-Instruct-4bit"
     adapter_base_dir: str = "adapters"
 
     # Pillar-to-adapter mappings
@@ -497,7 +497,10 @@ class MLXAdapterClient:
             from mlx_lm import load
 
             # Load model and tokenizer
-            self._model, self._tokenizer = load(self.config.base_model_path)
+            # Use manual unpacking to avoid mypy errors with mlx_lm.load return values
+            loaded = load(self.config.base_model_path)
+            self._model = loaded[0]
+            self._tokenizer = loaded[1]
 
             # Set model reference in adapter manager
             self.adapter_manager.set_model(self._model, self._tokenizer)
