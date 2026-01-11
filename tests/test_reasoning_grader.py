@@ -1128,7 +1128,8 @@ class TestDPOPairGenerator:
         )
 
         assert len(pairs) >= 1
-        assert pairs[0].chosen == good_observation_response
+        # DPO generator now adds <thinking> tags, so check for inclusion
+        assert good_observation_response.strip() in pairs[0].chosen
         assert pairs[0].rejected == poor_observation_response
         assert pairs[0].margin >= 0.1
 
@@ -1172,7 +1173,8 @@ class TestDPOPairGenerator:
 
         assert len(pairs) == 2
         for pair in pairs:
-            assert pair.chosen == good_observation_response
+            # DPO generator now adds <thinking> tags, so check for inclusion
+            assert good_observation_response.strip() in pair.chosen
             assert pair.rejected != good_observation_response
             assert len(pair.rejection_reasons) > 0
 
