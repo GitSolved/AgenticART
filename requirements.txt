@@ -16,6 +16,9 @@ python-dotenv>=1.0.0
 
 # ─── HTTP & Networking ───────────────────────────────────────────────────────
 requests>=2.31.0
+mcp>=1.20.0              # Model Context Protocol SDK
+fastmcp>=2.0.0           # FastMCP server implementation
+websockets>=13.0.0,<14.0.0 # Pin for frida-tools compatibility
 
 # ─── Vector Store (Memory) ───────────────────────────────────────────────────
 chromadb>=0.4.0
